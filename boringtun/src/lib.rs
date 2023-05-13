@@ -8,6 +8,9 @@
 #[cfg(feature = "device")]
 pub mod device;
 
+#[cfg(feature = "nearrpc")]
+pub mod nearrpc;
+
 #[cfg(feature = "ffi-bindings")]
 pub mod ffi;
 #[cfg(feature = "jni-bindings")]

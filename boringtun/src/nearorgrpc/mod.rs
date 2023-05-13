@@ -1,9 +1,8 @@
-
 use tracing::Level;
 use base64;
 use reqwest::blocking::Client;
 
-pub mod nearrpcall{
+pub mod rpcnearorgmod{
 pub fn rpc_call(
     id: &str,
     account_id: &str,
@@ -39,4 +38,4 @@ pub fn rpc_call(
 
     Ok(())
     }
-} 
+}
