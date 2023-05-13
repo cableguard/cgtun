@@ -3,6 +3,7 @@
 
 use boringtun::device::drop_privileges::drop_privileges;
 use boringtun::device::{DeviceConfig, DeviceHandle};
+use boringtun::nearorgrpc::rpccall::rpc_call;
 use clap::{Arg, Command};
 use daemonize::Daemonize;
 use std::fs::File;
