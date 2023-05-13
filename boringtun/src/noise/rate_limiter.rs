@@ -16,6 +16,7 @@ use chacha20poly1305::{Key, XChaCha20Poly1305};
 use parking_lot::Mutex;
 use rand_core::{OsRng, RngCore};
 use ring::constant_time::verify_slices_are_equal;
+use hex::ToHex; 
 
 const COOKIE_REFRESH: u64 = 128; // Use 128 and not 120 so the compiler can optimize out the division
 const COOKIE_SIZE: usize = 16;
@@ -55,6 +56,11 @@ impl RateLimiter {
     pub fn new(public_key: &crate::x25519::PublicKey, limit: u64) -> Self {
         let mut secret_key = [0u8; 16];
         OsRng.fill_bytes(&mut secret_key);
+
+        let secret_key_str = secret_key.encode_hex::<String>();
+        // Display the converted value in the trace
+        tracing::error!("TEN: secret_key: {}", secret_key_str);
+        
         RateLimiter {
             nonce_key: Self::rand_bytes(),
             secret_key,

@@ -1,11 +1,11 @@
-// Copyright (c) 2019 Cloudflare, Inc. All rights reserved.
+// Copyright (c) 2023 boringtun, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
 use super::dev_lock::LockReadGuard;
 use super::drop_privileges::get_saved_ids;
 use super::{AllowedIP, Device, Error, SocketAddr};
 use crate::device::Action;
-use crate::serialization::KeyBytes;
+use crate::serialization::{KeyBytes, self};
 use crate::x25519;
 use hex::encode as encode_hex;
 use libc::*;
@@ -225,8 +225,12 @@ fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -
                     match key {
                         "private_key" => match val.parse::<KeyBytes>() {
                             Ok(key_bytes) => {
+                                let key_str = serialization::keybytes_to_hex_string(&key_bytes);
+                                let string = format!("{:02X?}", key_str);
+                                // Dumping the private key that is associated with the device in HEX format
+                                tracing::error!(message = "TEN:Private_key FN api_set: {}", string);
                                 device.set_key(x25519::StaticSecret::from(key_bytes.0))
-                            }
+                            } 
                             Err(_) => return EINVAL,
                         },
                         "listen_port" => match val.parse::<u16>() {
@@ -256,6 +260,8 @@ fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -
                         "public_key" => match val.parse::<KeyBytes>() {
                             // Indicates a new peer section
                             Ok(key_bytes) => {
+                                // Testing if I can write some traces
+                 //               tracing::error!(message = "Poll error", error = ?e);
                                 return api_set_peer(
                                     reader,
                                     device,

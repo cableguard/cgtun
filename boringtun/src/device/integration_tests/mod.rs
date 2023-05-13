@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Cloudflare, Inc. All rights reserved.
+// Copyright (c) 2023 boringtun, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
 // This module contains some integration tests for boringtun
@@ -424,6 +424,9 @@ mod tests {
 
         /// Assign a private_key to the interface
         fn wg_set_key(&self, key: StaticSecret) -> String {
+            let bytesk = key.to_bytes();
+            let encoded_key = encode(&bytesk);
+            tracing::error!(message = "TEN:Private_key FN wg_set_key: {}", encoded_key);
             self.wg_set(&format!("private_key={}", encode(key.to_bytes())))
         }
 

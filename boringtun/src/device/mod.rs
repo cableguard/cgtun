@@ -1,6 +1,8 @@
-// Copyright (c) 2019 Cloudflare, Inc. All rights reserved.
+// Copyright (c) 2023 boringtun, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-
+use base64::encode;
+use tracing::error;
+use hex::ToHex; // Import the `ToHex` trait to convert byte arrays to hexadecimal strings
 pub mod allowed_ips;
 pub mod api;
 mod dev_lock;
@@ -323,10 +325,24 @@ impl Device {
 
         let next_index = self.next_index();
         let device_key_pair = self
-            .key_pair
-            .as_ref()
-            .expect("Private key must be set first");
-
+        .key_pair
+        .as_ref()
+        .expect("Private key must be set first");
+    
+        let pub_key_str = pub_key.encode_hex::<String>();
+    
+        // Convert the device_key_pair to strings
+        let private_key_str = device_key_pair.0.encode_hex::<String>();
+        let public_key_str = device_key_pair.1.encode_hex::<String>();
+    
+        // Display the converted values in the trace
+        tracing::error!(
+            "TEN:pub_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
+            pub_key_str,
+            private_key_str,
+            public_key_str
+        );
+    
         let tunn = Tunn::new(
             device_key_pair.0.clone(),
             pub_key,
@@ -336,7 +352,7 @@ impl Device {
             None,
         )
         .unwrap();
-
+        
         let peer = Peer::new(tunn, next_index, endpoint, allowed_ips, preshared_key);
 
         let peer = Arc::new(Mutex::new(peer));
@@ -456,7 +472,16 @@ impl Device {
         let mut bad_peers = vec![];
 
         let public_key = x25519::PublicKey::from(&private_key);
+
+        let tenbytes = public_key.to_bytes();
+        let string = encode(&tenbytes);
+        tracing::error!(message = "TEN:Public_key FN set_key: {}", string);
+        
         let key_pair = Some((private_key.clone(), public_key));
+        
+        let tenpbytes = private_key.to_bytes();
+        let stringp = encode(&tenpbytes);
+        tracing::error!(message = "TEN:Private_key FN set_key: {}", stringp);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.
@@ -468,18 +493,29 @@ impl Device {
 
         for peer in self.peers.values_mut() {
             let mut peer_mut = peer.lock();
-
+        
             if peer_mut
                 .tunnel
                 .set_static_private(
                     private_key.clone(),
-                    public_key,
+                    public_key.clone(),
                     Some(Arc::clone(&rate_limiter)),
                 )
                 .is_err()
             {
+                // Convert private_key and public_key to strings
+                let private_key_str = private_key.encode_hex::<String>();
+                let public_key_str = public_key.encode_hex::<String>();
+        
+                // Display the converted values in the trace
+                tracing::error!(
+                    "TEN: private_key: {}, public_key: {} in fn set_key",
+                    private_key_str,
+                    public_key_str
+                );
+        
                 // In case we encounter an error, we will remove that peer
-                // An error will be a result of bad public key/secret key combination
+                // An error will be a result of a bad public key/secret key combination
                 bad_peers.push(Arc::clone(peer));
             }
         }
@@ -639,12 +675,24 @@ impl Device {
                         }
                         Err(_) => continue,
                     };
-
+                    
                     let peer = match &parsed_packet {
                         Packet::HandshakeInit(p) => {
                             parse_handshake_anon(private_key, public_key, p)
                                 .ok()
                                 .and_then(|hh| {
+                                    let private_key_str = private_key.encode_hex::<String>();
+                                    let public_key_str = public_key.encode_hex::<String>();
+                                    let peer_static_public_str = hh.peer_static_public.encode_hex::<String>();
+                    
+                                    // Display the converted values in the trace
+                                    tracing::error!(
+                                        "TEN: private_key: {}, public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
+                                        private_key_str,
+                                        public_key_str,
+                                        peer_static_public_str
+                                    );
+                    
                                     d.peers.get(&x25519::PublicKey::from(hh.peer_static_public))
                                 })
                         }
@@ -652,6 +700,10 @@ impl Device {
                         Packet::PacketCookieReply(p) => d.peers_by_idx.get(&(p.receiver_idx >> 8)),
                         Packet::PacketData(p) => d.peers_by_idx.get(&(p.receiver_idx >> 8)),
                     };
+                    
+
+
+
 
                     let peer = match peer {
                         None => continue,

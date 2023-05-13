@@ -1,4 +1,14 @@
+#[derive(Debug)]
 pub(crate) struct KeyBytes(pub [u8; 32]);
+
+// Following function converts KeyBytes to String for tracing purposes
+pub (crate) fn keybytes_to_hex_string(key_bytes: &KeyBytes) -> String {
+    let bytes = &key_bytes.0;
+    let hex_digits: Vec<String> = bytes.iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect();
+    hex_digits.join("")
+}
 
 impl std::str::FromStr for KeyBytes {
     type Err = &'static str;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Cloudflare, Inc. All rights reserved.
+// Copyright (c) 2023 boringtun, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
 pub mod errors;
@@ -19,6 +19,7 @@ use std::convert::{TryFrom, TryInto};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::Arc;
 use std::time::Duration;
+use base64::encode;
 
 /// The default value to use for rate limiting, when no other rate limiter is defined
 const PEER_HANDSHAKE_RATE_LIMIT: u64 = 10;
@@ -201,6 +202,21 @@ impl Tunn {
     ) -> Result<Self, &'static str> {
         let static_public = x25519::PublicKey::from(&static_private);
 
+        // Convert the bytes to a hexadecimal string
+//        let static_private_string = format!("{:?}", static_private_string);
+        let static_public_string = format!("{:?}", static_public);
+        let peer_static_public_string = format!("{:?}", peer_static_public);
+        let preshared_key_string = match preshared_key {
+            Some(key) => format!("{:?}", key),
+            None => String::from("None"),
+        };
+
+        // Display variables as trace
+//         tracing::error!(message = "TEN: static_private = {} in fn new/Tunn", static_private_string);
+        tracing::error!(message = "TEN: static_public = {} in fn new/Tunn", static_public_string);
+        tracing::error!(message = "TEN: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
+        tracing::error!(message = "TEN: preshared_key = {} in fn new/Tunn", preshared_key_string);
+ 
         let tunn = Tunn {
             handshake: Handshake::new(
                 static_private,
@@ -596,23 +612,37 @@ mod tests {
 
     use super::*;
     use rand_core::{OsRng, RngCore};
-
+    
     fn create_two_tuns() -> (Tunn, Tunn) {
         let my_secret_key = x25519_dalek::StaticSecret::random_from_rng(OsRng);
         let my_public_key = x25519_dalek::PublicKey::from(&my_secret_key);
         let my_idx = OsRng.next_u32();
-
+    
         let their_secret_key = x25519_dalek::StaticSecret::random_from_rng(OsRng);
         let their_public_key = x25519_dalek::PublicKey::from(&their_secret_key);
         let their_idx = OsRng.next_u32();
-
+    
+        // Convert the keys to strings
+        let my_secret_key_str = encode(my_secret_key.to_bytes());
+        let my_public_key_str = encode(my_public_key.as_bytes());
+        let their_secret_key_str = encode(their_secret_key.to_bytes());
+        let their_public_key_str = encode(their_public_key.as_bytes());
+    
+        // Display the converted values in the trace
+        tracing::error!(
+            "TEN: my_secret_key: {}, my_public_key: {}, their_secret_key: {}, their_public_key: {} in fn create_two_tuns",
+            my_secret_key_str,
+            my_public_key_str,
+            their_secret_key_str,
+            their_public_key_str
+        );
+    
         let my_tun = Tunn::new(my_secret_key, their_public_key, None, None, my_idx, None).unwrap();
-
-        let their_tun =
-            Tunn::new(their_secret_key, my_public_key, None, None, their_idx, None).unwrap();
-
+        let their_tun = Tunn::new(their_secret_key, my_public_key, None, None, their_idx, None).unwrap();
+    
         (my_tun, their_tun)
     }
+    
 
     fn create_handshake_init(tun: &mut Tunn) -> Vec<u8> {
         let mut dst = vec![0u8; 2048];

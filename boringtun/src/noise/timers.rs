@@ -1,11 +1,10 @@
-// Copyright (c) 2019 Cloudflare, Inc. All rights reserved.
+// Copyright (c) 2023 boringtun, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
 use super::errors::WireGuardError;
 use crate::noise::{Tunn, TunnResult};
 use std::mem;
 use std::ops::{Index, IndexMut};
-
 use std::time::Duration;
 
 #[cfg(feature = "mock-instant")]
