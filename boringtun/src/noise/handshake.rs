@@ -16,7 +16,7 @@ use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, CHACHA20_POLY1305};
 use std::convert::TryInto;
 use std::time::{Duration, SystemTime};
 use tracing::error;
-use hex::ToHex; 
+use hex::ToHex;
 
 #[cfg(feature = "mock-instant")]
 use mock_instant::Instant;
@@ -408,7 +408,7 @@ impl NoiseParams {
     }
 
     /// Set a new private key
-    
+
     fn set_static_private(
         &mut self,
         static_private: x25519::StaticSecret,
@@ -417,25 +417,25 @@ impl NoiseParams {
         // Check that the public key indeed matches the private key
         let check_key = x25519::PublicKey::from(&static_private);
         assert_eq!(check_key.as_bytes(), static_public.as_bytes());
-    
+
         // Convert static_private and static_public to strings
         let static_private_str = static_private.to_bytes().encode_hex::<String>();
         let static_public_str = static_public.as_bytes().encode_hex::<String>();
-    
+
         // Display the converted values in the trace
         error!(
             "TEN: static_private: {}, static_public: {} fn set_static_private",
             static_private_str,
             static_public_str
         );
-    
+
         self.static_private = static_private;
         self.static_public = static_public;
-    
+
         self.static_shared = self.static_private.diffie_hellman(&self.peer_static_public);
         Ok(())
     }
-    
+
 }
 
 impl Handshake {

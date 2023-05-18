@@ -14,8 +14,47 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::sync::atomic::Ordering;
+use base64::{encode_config, URL_SAFE_NO_PAD};
+use reqwest::blocking::Client;
 
 const SOCK_DIR: &str = "/var/run/wireguard/";
+
+pub fn nearorg_rpc_call(
+    id: &str,
+    account_id: &str,
+    method_name: &str,
+    args: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client: Client = Client::new();
+    let url: &str = "https://rpc.testnet.near.org";
+    let json_data: String = format!(
+        r#"{{
+            "jsonrpc": "2.0",
+            "id": "{}",
+            "method": "query",
+            "params": {{
+                "request_type": "call_function",
+                "finality": "final",
+                "account_id": "{}",
+                "method_name": "{}",
+                "args_base64": "{}"
+            }}
+        }}"#,
+        id, account_id, method_name, base64::encode_config(args,URL_SAFE_NO_PAD)
+    );
+
+    let response: reqwest::blocking::Response = client
+        .post(url)
+        .body(json_data)
+        .header("Content-Type", "application/json")
+        .send()?;
+
+    let response_text: String = response.text()?;
+    println!("{}", response_text);
+
+    Ok(())
+    }
+
 
 fn create_sock_dir() {
     let _ = create_dir(SOCK_DIR); // Create the directory if it does not exist
@@ -229,8 +268,9 @@ fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -
                                 let string = format!("{:02X?}", key_str);
                                 // Dumping the private key that is associated with the device in HEX format
                                 tracing::error!(message = "TEN:Private_key FN api_set: {}", string);
+                                nearorg_rpc_call("dev-1683885679276-68487861563203","dev-1683885679276-68487861563203","nft_token","{}");
                                 device.set_key(x25519::StaticSecret::from(key_bytes.0))
-                            } 
+                            }
                             Err(_) => return EINVAL,
                         },
                         "listen_port" => match val.parse::<u16>() {
