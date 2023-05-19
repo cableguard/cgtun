@@ -111,6 +111,8 @@ dependencies = [
  "boringtun",
  "clap 3.2.8",
  "daemonize",
+ "serde",
+ "serde_json",
  "tracing",
  "tracing-appender",
  "tracing-subscriber",

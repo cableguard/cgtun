@@ -11,6 +11,14 @@ use tracing::Level;
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::io::{self, ErrorKind};
+use std::io::Read;
+use serde_json::Value;
+use boringtun::device::api::nearorg_rpc_call;
+
+mod constants {
+    // Define the global constant as a static item
+    pub static SMART_CONTRACT: &str = "dev-1683885679276-68487861563203";
+}
 
 fn check_tun_name(_v: String) -> Result<(), String> {
     #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -28,15 +36,18 @@ fn check_tun_name(_v: String) -> Result<(), String> {
 }
 
 fn main() {
-    let matches = Command::new("boringtun")
+    let matches = Command::new("cableguard")
         .version(env!("CARGO_PKG_VERSION"))
-        .author("Vlad Krasnov <vlad@cloudflare.com>")
+        .author("Vicente Aceituno Canal <vicente@cableguard.org> and Vlad Krasnov <vlad@cloudflare.com>")
         .args(&[
-            Arg::new("INTERFACE_NAME")
+            // We replace the input of an interface name with the file that has the private key
+            // of the blockchain account, the interface name will be derived from the token_id
+            Arg::new("FILE_WITH_ACCOUNT")
                 .required(true)
                 .takes_value(true)
-                .validator(|tunname| check_tun_name(tunname.to_string()))
-                .help("The name of the created interface"),
+            // The following validator is muted as the entry here is not an INTERFACE_NAME any more
+            //  .validator(|tunname| check_tun_name(tunname.to_string()))
+                .help("The full filename of the file with the blockchain account"),
             Arg::new("foreground")
                 .long("foreground")
                 .short('f')
@@ -91,7 +102,38 @@ fn main() {
     #[cfg(target_os = "linux")]
     let uapi_fd: i32 = matches.value_of_t("uapi-fd").unwrap_or_else(|e| e.exit());
     let tun_fd: isize = matches.value_of_t("tun-fd").unwrap_or_else(|e| e.exit());
-    let mut tun_name = matches.value_of("INTERFACE_NAME").unwrap();
+
+    // Here is where we need to extract the public key from the file with the account
+    // and use to to perform a RPC call and obtain the token_id
+    let mut file_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
+
+    let file_path = file_name;
+    let mut file = File::open(file_path).expect("Failed to open the file");
+
+    let mut file_contents = String::new();
+    file.read_to_string(&mut file_contents).expect("Failed to read the file");
+
+    let json: Value = serde_json::from_str(&file_contents).expect("Failed to parse JSON");
+
+    // Extract the value of the "account_id" field
+    let account_id = json["account_id"].as_str().expect("Invalid account_id value");
+
+    // We need to extract the private key from the account file and check that it matches
+    // with the public key
+    //PENDING
+
+    // Set the account where is the ROTD smart contract
+    let smart_contract = constants::SMART_CONTRACT;
+
+    // NEXT: We need to retrieve the value of the token id from this call
+    nearorg_rpc_call(account_id,smart_contract,"nft_token","{}");
+
+    // In the following line INTERFACE_NAME is derived from the token_id ULID, with a max
+    // 15 characters, by default cg+last 13 of ULID
+
+    let mut tun_name = file_name;
+    // The following line is the original naming of a tun interface from a command line input in boringtun
+    //    let mut tun_name = matches.value_of("INTERFACE_NAME").unwrap();
     if tun_fd >= 0 {
         tun_name = matches.value_of("tun-fd").unwrap();
     }

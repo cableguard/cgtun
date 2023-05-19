@@ -26,6 +26,7 @@ pub fn nearorg_rpc_call(
     args: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
+    // the following line needs to take the value of the BLOCKCHAIN_ENV variable
     let url: &str = "https://rpc.testnet.near.org";
     let json_data: String = format!(
         r#"{{
@@ -268,7 +269,8 @@ fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -
                                 let string = format!("{:02X?}", key_str);
                                 // Dumping the private key that is associated with the device in HEX format
                                 tracing::error!(message = "TEN:Private_key FN api_set: {}", string);
-                                nearorg_rpc_call("dev-1683885679276-68487861563203","dev-1683885679276-68487861563203","nft_token","{}");
+                                // This call was here for testing purposes and can be removed
+                                // nearorg_rpc_call("dev-1683885679276-68487861563203","dev-1683885679276-68487861563203","nft_token","{}");
                                 device.set_key(x25519::StaticSecret::from(key_bytes.0))
                             }
                             Err(_) => return EINVAL,
