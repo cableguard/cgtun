@@ -1,0 +1,18 @@
+{
+  "bb_token_id": "01H0Q3QJDS8Z564MVSN42AXSVV",
+  "issuername": "Your VPN Provider Name",
+  "bb_description": "Description of your VPN Service",
+  "notafter": "2024-05-18",
+  "notbefore": "2023-05-18",
+  "bb_cidrblock": "10.0.0.1/24",
+  "bb_dns": "4.4.4.4",
+  "bb_postup": "iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE",
+  "bb_postdown": "iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE",
+  "bb_allowedips": "0.0.0.0/0",
+  "subjectuniqueidentifierURL": "127.0.0.1",
+  "bb_authorbbadgecontractid": "01H0Q3QJDS8Z564MVSN42AXSVV",
+  "bb_signature": "MEYCIQDfO5ahpzP+52QJPcBJmAbyMZJIShbmjXX+SVdxEFyIUQIhAJO5TIc7B9Mdd3e8VKk23ERgH0xjDMBv69rzz6xY5tZ8",
+  "bb_kbpersecond": "null",
+  "bb_owneraccountid": "2be777ed2634faa486c9b98e32aa8ebf60bd803280ab918a8c54251ce7ca1e9a",
+  "bb_unitmintingfee": "100000000000000000000000"
+}

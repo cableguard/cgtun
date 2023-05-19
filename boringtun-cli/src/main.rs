@@ -5,10 +5,12 @@ use boringtun::device::drop_privileges::drop_privileges;
 use boringtun::device::{DeviceConfig, DeviceHandle};
 use clap::{Arg, Command};
 use daemonize::Daemonize;
-use std::fs::File;
 use std::os::unix::net::UnixDatagram;
 use std::process::exit;
 use tracing::Level;
+use std::fs::{File, OpenOptions};
+use std::io::prelude::*;
+use std::io::{self, ErrorKind};
 
 fn check_tun_name(_v: String) -> Result<(), String> {
     #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -70,7 +72,7 @@ fn main() {
                 .short('l')
                 .env("WG_LOG_FILE")
                 .help("Log file")
-                .default_value("/tmp/boringtun.out"),
+                .default_value("/tmp/cableguard.out"),
             Arg::new("disable-drop-privileges")
                 .long("disable-drop-privileges")
                 .env("WG_SUDO")
@@ -105,8 +107,19 @@ fn main() {
     if background {
         let log = matches.value_of("log").unwrap();
 
-        let log_file =
-            File::create(log).unwrap_or_else(|_| panic!("Could not create log file {}", log));
+        let log_file = if let Ok(metadata) = std::fs::metadata(&log) {
+            if metadata.is_file() {
+                OpenOptions::new().append(true).open(&log)
+            } else {
+                Err(io::Error::new(
+                    ErrorKind::Other,
+                    format!("{} is not a regular file.", log),
+                ))
+            }
+        } else {
+            File::create(&log)
+        }
+        .unwrap_or_else(|err| panic!("Could not open log file {}: {}", log, err));
 
         let (non_blocking, guard) = tracing_appender::non_blocking(log_file);
 
