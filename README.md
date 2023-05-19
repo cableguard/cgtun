@@ -1,21 +1,21 @@
 ![boringtun logo banner](./banner.png)
 
-# BoringTun
+# CableGuardd
 
 ## Warning
-Boringtun is currently undergoing a restructuring. You should probably not rely on or link to 
+Boringtun is currently undergoing a restructuring. You should probably not rely on or link to
 the master branch right now. Instead you should use the crates.io page.
 
 - boringtun: [![crates.io](https://img.shields.io/crates/v/boringtun.svg)](https://crates.io/crates/boringtun)
 - boringtun-cli [![crates.io](https://img.shields.io/crates/v/boringtun-cli.svg)](https://crates.io/crates/boringtun-cli)
 
-**BoringTun** is an implementation of the [WireGuard<sup>®</sup>](https://www.wireguard.com/) protocol designed for portability and speed.
+**CableGuard** is an implementation of the [WireGuard<sup>®</sup>](https://www.wireguard.com/) protocol designed for portability and speed.
 
-**BoringTun** is successfully deployed on millions of [iOS](https://apps.apple.com/us/app/1-1-1-1-faster-internet/id1423538627) and [Android](https://play.google.com/store/apps/details?id=com.cloudflare.onedotonedotonedotone&hl=en_US) consumer devices as well as thousands of Cloudflare Linux servers. 
+**CableGuard** is successfully deployed on millions of [iOS](https://apps.apple.com/us/app/1-1-1-1-faster-internet/id1423538627) and [Android](https://play.google.com/store/apps/details?id=com.cloudflare.onedotonedotonedotone&hl=en_US) consumer devices as well as thousands of Cloudflare Linux servers.
 
 The project consists of two parts:
 
-* The executable `boringtun-cli`, a [userspace WireGuard](https://www.wireguard.com/xplatform/) 
+* The executable `boringtun-cli`, a [userspace WireGuard](https://www.wireguard.com/xplatform/)
   implementation for Linux and macOS.
 * The library `boringtun` that can be used to implement fast and efficient WireGuard client apps on various platforms, including iOS and Android. It implements the underlying WireGuard protocol, without the network or tunnel stacks, those can be implemented in a platform idiomatic way.
 
@@ -105,4 +105,4 @@ If you want to contribute to this project, please read our [`CONTRIBUTING.md`].
 [`CONTRIBUTING.md`]: https://github.com/cloudflare/.github/blob/master/CONTRIBUTING.md
 
 ---
-<sub><sub><sub><sub>WireGuard is a registered trademark of Jason A. Donenfeld. BoringTun is not sponsored or endorsed by Jason A. Donenfeld.</sub></sub></sub></sub>
+<sub><sub><sub><sub>WireGuard is a registered trademark of Jason A. Donenfeld. CableGuard is not sponsored or endorsed by Jason A. Donenfeld.</sub></sub></sub></sub>

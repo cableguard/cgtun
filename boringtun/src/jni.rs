@@ -4,7 +4,7 @@
 // temporary, we need to do some verification around these bindings later
 #![allow(clippy::missing_safety_doc)]
 
-/// JNI bindings for BoringTun library
+/// JNI bindings for CableGuard library
 use std::os::raw::c_char;
 use std::ptr;
 

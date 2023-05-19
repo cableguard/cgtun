@@ -136,15 +136,15 @@ fn main() {
             .exit_action(move || {
                 let mut b = [0u8; 1];
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
-                    println!("BoringTun started successfully");
+                    println!("CableGuard started successfully");
                 } else {
-                    eprintln!("BoringTun failed to start");
+                    eprintln!("CableGuard failed to start. Check if the capabilites are set and you are running with enough privileges.");
                     exit(1);
                 };
             });
 
         match daemonize.start() {
-            Ok(_) => tracing::info!("BoringTun started successfully"),
+            Ok(_) => tracing::info!("CableGuard started successfully"),
             Err(e) => {
                 tracing::error!(error = ?e);
                 exit(1);
@@ -188,7 +188,7 @@ fn main() {
     sock1.send(&[1]).unwrap();
     drop(sock1);
 
-    tracing::info!("BoringTun started successfully");
+    tracing::info!("CableGuard started successfully");
 
     device_handle.wait();
 }
