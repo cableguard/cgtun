@@ -16,18 +16,47 @@ use std::os::unix::net::{UnixListener, UnixStream};
 use std::sync::atomic::Ordering;
 use base64::{encode_config, URL_SAFE_NO_PAD};
 use reqwest::blocking::Client;
+use serde_json::{Value};
+use serde::{Deserialize, Serialize};
 
 const SOCK_DIR: &str = "/var/run/wireguard/";
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CgRotd {
+        token_id: String,
+        owner_id: String,
+        metadata: CgRotdMetadata,
+        approved_account_ids: serde_json::Value,
+        royalty: serde_json::Value,
+    }
+    
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CgRotdMetadata {
+        title: String,
+        description: String,
+        expiresat: String,
+        startsat: String,
+        cidrblock: String,
+        dns: String,
+        postup: String,
+        postdown: String,
+        allowedips: String,
+        endpoint: String,
+        authornftcontractid: String,
+        authorsignature: String,
+        kbpersecond: String,
+}
 
 pub fn nearorg_rpc_call(
     id: &str,
     account_id: &str,
     method_name: &str,
     args: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<CgRotd, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     // the following line needs to take the value of the BLOCKCHAIN_ENV variable
     let url: &str = "https://rpc.testnet.near.org";
+    println!("{}",url);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -35,7 +64,7 @@ pub fn nearorg_rpc_call(
             "method": "query",
             "params": {{
                 "request_type": "call_function",
-                "finality": "final",
+                "finality": "optimistic",
                 "account_id": "{}",
                 "method_name": "{}",
                 "args_base64": "{}"
@@ -51,11 +80,49 @@ pub fn nearorg_rpc_call(
         .send()?;
 
     let response_text: String = response.text()?;
-    println!("{}", response_text);
 
-    Ok(())
+    let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
+
+    let result_array = parsed_json["result"]["result"].as_array().unwrap();    
+
+    // Convert Vec<Value> to &[u8]
+    let result_bytes: Vec<u8> = result_array
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
+    let result_slice: &[u8] = &result_bytes;
+
+    let result_string = core::str::from_utf8(&result_slice).unwrap();
+
+    let result_struct: Vec<CgRotd> = serde_json::from_str(result_string).unwrap();
+
+    let mut result_iter = serde_json::from_str::<Vec<CgRotd>>(result_string)?.into_iter();
+
+    if let Some(cgrotd) = result_iter.next() {
+        for cgrotd in result_struct {
+            println!("token_id: {}", cgrotd.token_id);
+            println!("owner_id: {}", cgrotd.owner_id);
+            println!("title: {}", cgrotd.metadata.title);
+            println!("description: {}", cgrotd.metadata.description);
+            println!("expiresat: {}", cgrotd.metadata.expiresat);
+            println!("startsat: {}", cgrotd.metadata.startsat);
+            println!("cidrblock: {}", cgrotd.metadata.cidrblock);
+            println!("dns: {}", cgrotd.metadata.dns);
+            println!("postup: {}", cgrotd.metadata.postup);
+            println!("postdown: {}", cgrotd.metadata.postdown);
+            println!("allowedips: {}", cgrotd.metadata.allowedips);
+            println!("endpoint: {}", cgrotd.metadata.endpoint);
+            println!("authornftcontractid: {}", cgrotd.metadata.authornftcontractid);
+            println!("authorsignature: {}", cgrotd.metadata.authorsignature);
+            println!("kbpersecond: {}", cgrotd.metadata.kbpersecond);
+        }
+        // Return the first CgRotd instance as the result
+        return Ok(cgrotd);
+    } else {
+        // If no CgRotd instance is available, return an error
+        return Err("No CgRotd instance found".into());
     }
-
+}
 
 fn create_sock_dir() {
     let _ = create_dir(SOCK_DIR); // Create the directory if it does not exist

@@ -9,7 +9,7 @@ use std::os::unix::net::UnixDatagram;
 use std::process::exit;
 use tracing::Level;
 use std::fs::{File, OpenOptions};
-use std::io::prelude::*;
+// use std::io::prelude::*;
 use std::io::{self, ErrorKind};
 use std::io::Read;
 use serde_json::Value;
@@ -17,9 +17,10 @@ use boringtun::device::api::nearorg_rpc_call;
 
 mod constants {
     // Define the global constant as a static item
-    pub static SMART_CONTRACT: &str = "dev-1683885679276-68487861563203";
+    pub static SMART_CONTRACT: &str = "dev-1685354692039-21267193472211";
 }
 
+// The following function changes as tun name is not an input anymore
 fn check_tun_name(_v: String) -> Result<(), String> {
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     {
@@ -105,7 +106,7 @@ fn main() {
 
     // Here is where we need to extract the public key from the file with the account
     // and use to to perform a RPC call and obtain the token_id
-    let mut file_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
+    let file_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
 
     let file_path = file_name;
     let mut file = File::open(file_path).expect("Failed to open the file");
@@ -115,21 +116,30 @@ fn main() {
 
     let json: Value = serde_json::from_str(&file_contents).expect("Failed to parse JSON");
 
-    // Extract the value of the "account_id" field
+    // Extract the value of the "account_id" field, include it in a json string and encode it as Base64
     let account_id = json["account_id"].as_str().expect("Invalid account_id value");
+    let account_idargs = "{\"account_id\":\"" .to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
 
-    // We need to extract the private key from the account file and check that it matches
-    // with the public key
-    //PENDING
+    println!("Json args encoded: {}", account_id);
+
+    // Extract the value of the "private_key" field  from the account file
+    let _private_key = json["private_key"].as_str().expect("Invalid private_key value");   
 
     // Set the account where is the ROTD smart contract
     let smart_contract = constants::SMART_CONTRACT;
 
     // NEXT: We need to retrieve the value of the token id from this call
-    nearorg_rpc_call(account_id,smart_contract,"nft_token","{}");
+    match nearorg_rpc_call(smart_contract,smart_contract,"nft_tokens_for_owner",&account_idargs){
+        Ok(cgrotd) => {
+        }
+        Err(err) => {
+            // Handle the error
+            println!("Error: {}", err);
+        }
+    }
 
     // In the following line INTERFACE_NAME is derived from the token_id ULID, with a max
-    // 15 characters, by default cg+last 13 of ULID
+    // 15 characters, by default utun+last 11 of ULID, this is compatible with: fn check_tun_name
 
     let mut tun_name = file_name;
     // The following line is the original naming of a tun interface from a command line input in boringtun
