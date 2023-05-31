@@ -14,6 +14,12 @@ use std::io::{self, ErrorKind};
 use std::io::Read;
 use serde_json::Value;
 use boringtun::device::api::nearorg_rpc_call;
+use base58::{FromBase58};
+use base64::{encode};
+use ed25519_dalek::{Keypair, PublicKey};
+use curve25519_dalek::edwards::CompressedEdwardsY;
+use curve25519_dalek::montgomery::MontgomeryPoint;
+use hex::encode as hex_encode;
 
 mod constants {
     // Define the global constant as a static item
@@ -123,7 +129,7 @@ fn main() {
     println!("Json args encoded: {}", account_id);
 
     // Extract the value of the "private_key" field  from the account file
-    let _private_key = json["private_key"].as_str().expect("Invalid private_key value");   
+    let private_key = json["private_key"].as_str().expect("Invalid private_key value");   
 
     // Set the account where is the ROTD smart contract
     let smart_contract = constants::SMART_CONTRACT;
@@ -137,6 +143,33 @@ fn main() {
             println!("Error: {}", err);
         }
     }
+
+    // Convert the Ed25519 private key into a X25519 private key
+    // Replace `private_key_base58` with your actual private key in Base58
+    let private_key_base58 = private_key;
+
+    // Decode the private key from Base58
+    let private_key_bytes = private_key_base58.from_base58().unwrap();
+
+    // Convert the private key bytes to a hex string for display purposes
+    let private_key_hex = hex_encode(&private_key_bytes);
+
+    // Generate the Ed25519 key pair from the private key
+    let keypair = Keypair::from_bytes(&private_key_bytes).unwrap();
+    let public_key_bytes: [u8; 32] = keypair.public.to_bytes();
+
+    // Convert the Ed25519 public key to Curve25519 public key
+    let mut csprng = OsRng;
+    let scalar = Scalar::from(keypair.to_bytes());
+    let curve25519_private_key = scalar * RistrettoPoint::basepoint();
+    let curve25519_public_key = curve25519_private_key.compress();
+
+    // Convert the Curve25519 public key to Base64
+    let curve25519_public_key_base64 = encode(curve25519_public_key.as_bytes());
+
+    println!("Private key (Base58): {}", private_key_base58);
+    println!("Private key (Hex): {}", private_key_hex);
+    println!("Curve25519 public key (Base64): {}", curve25519_public_key_base64);
 
     // In the following line INTERFACE_NAME is derived from the token_id ULID, with a max
     // 15 characters, by default utun+last 11 of ULID, this is compatible with: fn check_tun_name
