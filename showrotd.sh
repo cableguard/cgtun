@@ -13,4 +13,4 @@ if [ "$2" == "full" ]; then     output=$(near view "$NFTCONTRACTID" nft_tokens_f
 
 else
     echo "Use one of the accounts listed as an argument to list the available RODT for that account. Sometimes you have to append .testnet but I don't know why"
-    echo "If you want the full ROTD, not just the token_id add  'full' after the accountID"
+    echo "If you want the full rodt, not just the token_id add  'full' after the accountID"

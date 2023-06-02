@@ -14,6 +14,7 @@ use std::io::{self, ErrorKind};
 use std::io::Read;
 use serde_json::Value;
 use boringtun::device::api::nearorg_rpc_call;
+use boringtun::device::api::Cgrodt;
 use hex::FromHex;
 use base64::{encode};
 use curve25519_dalek_ng::scalar::Scalar;
@@ -24,22 +25,6 @@ use x25519_dalek::{PublicKey, StaticSecret};
 mod constants {
     // Define the global constant as a static item
     pub static SMART_CONTRACT: &str = "dev-1685354692039-21267193472211";
-}
-
-// The following function changes as tun name is not an input anymore
-fn check_tun_name(_v: String) -> Result<(), String> {
-    #[cfg(any(target_os = "macos", target_os = "ios"))]
-    {use curve25519_dalek_ng::scalar::Scalar;
-        if boringtun::device::tun::parse_utun_name(&_v).is_ok() {
-            Ok(())
-        } else {
-            Err("Tunnel name must have the format 'utun[0-9]+', use 'utun' for automatic assignment".to_owned())
-        }
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        Ok(())
-    }
 }
 
 fn main() {
@@ -108,7 +93,9 @@ fn main() {
     let background = !matches.is_present("foreground");
     #[cfg(target_os = "linux")]
     let uapi_fd: i32 = matches.value_of_t("uapi-fd").unwrap_or_else(|e| e.exit());
-    let tun_fd: isize = matches.value_of_t("tun-fd").unwrap_or_else(|e| e.exit());
+    
+    // File descriptor option MUST be removed
+    // let tun_fd: isize = matches.value_of_t("tun-fd").unwrap_or_else(|e| e.exit());
 
     // Here is where we need to extract the public key from the file with the account
     // and use to to perform a RPC call and obtain the token_id
@@ -130,18 +117,27 @@ fn main() {
     let private_key_base58 = json["private_key"].as_str().expect("Invalid private_key value");   
     let private_key_base58 = private_key_base58.trim_start_matches("ed25519:");
 
-    // Set the account where is the ROTD smart contract
+    // Set the account where is the rodt smart contract
     let smart_contract = constants::SMART_CONTRACT;
 
+    let mut cgrodt: Cgrodt = Cgrodt::default();
     // NEXT: We need to retrieve the value of the token id from this call
-    match nearorg_rpc_call(smart_contract,smart_contract,"nft_tokens_for_owner",&account_idargs){
-        Ok(..) => {
+    match nearorg_rpc_call(smart_contract, smart_contract, "nft_tokens_for_owner", &account_idargs) {
+        Ok(result) => {
+            cgrodt = result;
+            println!("token_id: {}", cgrodt.token_id);
+            println!("owner_id: {}", cgrodt.owner_id);
         }
         Err(err) => {
             // Handle the error
-            println!("Error: {}", err);
+            println!("RPC Return Error: {}", err);
         }
     }
+
+    // In the following line INTERFACE_NAME is derived from the token_id ULID, with a max
+    // 15 characters, by default utun+last 11 of ULID, this is compatible with: fn check_tun_name
+    let tun_name = format!("utun{}", &cgrodt.token_id[cgrodt.token_id.len() - 11..]);
+    println!("Tun Device name {}", tun_name);
 
     // We have a Base58 format Private Key Ed25519 of 64 bytes
     println!("Ed25519 Private Key Base58 {:?}", private_key_base58);
@@ -194,18 +190,14 @@ fn main() {
     // Print the generated keys
     println!("Curve25519 Public Key (Base64): {}", curve25519_public_key_base64);
     println!("Curve25519 Private Key (Base64): {}", curve25519_private_key_base64);
-    
-    // NOW we need to test a normal wg connection can use these keys
 
-    // In the following line INTERFACE_NAME is derived from the token_id ULID, with a max
-    // 15 characters, by default utun+last 11 of ULID, this is compatible with: fn check_tun_name
-
-    let mut tun_name = file_name;
     // The following line is the original naming of a tun interface from a command line input in boringtun
     //    let mut tun_name = matches.value_of("INTERFACE_NAME").unwrap();
-    if tun_fd >= 0 {
-        tun_name = matches.value_of("tun-fd").unwrap();
-    }
+
+    // File descriptor option MUST be removed
+    // if tun_fd >= 0 {
+    //    tun_name = matches.value_of("tun-fd").unwrap();
+    // }
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
 
@@ -277,7 +269,7 @@ fn main() {
         use_multi_queue: !matches.is_present("disable-multi-queue"),
     };
 
-    let mut device_handle: DeviceHandle = match DeviceHandle::new(tun_name, config) {
+    let mut device_handle: DeviceHandle = match DeviceHandle::new(&tun_name, config) {
         Ok(d) => d,
         Err(e) => {
             // Notify parent that tunnel initialization failed

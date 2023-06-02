@@ -22,30 +22,62 @@ use serde::{Deserialize, Serialize};
 
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CgRotd {
-        token_id: String,
-        owner_id: String,
-        metadata: CgRotdMetadata,
-        approved_account_ids: serde_json::Value,
-        royalty: serde_json::Value,
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Cgrodt {
+    pub token_id: String,
+    pub owner_id: String,
+    pub metadata: CgrodtMetadata,
+    pub approved_account_ids: serde_json::Value,
+    pub royalty: serde_json::Value,
+}
+
+impl Default for Cgrodt {
+    fn default() -> Self {
+        Cgrodt {
+            token_id: String::default(),
+            owner_id: String::default(),
+            metadata: CgrodtMetadata::default(),
+            approved_account_ids: serde_json::Value::Null,
+            royalty: serde_json::Value::Null,
+        }
     }
-    
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CgRotdMetadata {
-        title: String,
-        description: String,
-        expiresat: String,
-        startsat: String,
-        cidrblock: String,
-        dns: String,
-        postup: String,
-        postdown: String,
-        allowedips: String,
-        endpoint: String,
-        authornftcontractid: String,
-        authorsignature: String,
-        kbpersecond: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct CgrodtMetadata {
+    pub title: String,
+    pub description: String,
+    pub expiresat: String,
+    pub startsat: String,
+    pub cidrblock: String,
+    pub dns: String,
+    pub postup: String,
+    pub postdown: String,
+    pub allowedips: String,
+    pub endpoint: String,
+    pub authornftcontractid: String,
+    pub authorsignature: String,
+    pub kbpersecond: String,
+}
+
+impl Default for CgrodtMetadata {
+    fn default() -> Self {
+        CgrodtMetadata {
+            title: String::default(),
+            description: String::default(),
+            expiresat: String::default(),
+            startsat: String::default(),
+            cidrblock: String::default(),
+            dns: String::default(),
+            postup: String::default(),
+            postdown: String::default(),
+            allowedips: String::default(),
+            endpoint: String::default(),
+            authornftcontractid: String::default(),
+            authorsignature: String::default(),
+            kbpersecond: String::default(),
+        }
+    }
 }
 
 pub fn nearorg_rpc_call(
@@ -53,7 +85,7 @@ pub fn nearorg_rpc_call(
     account_id: &str,
     method_name: &str,
     args: &str,
-) -> Result<CgRotd, Box<dyn std::error::Error>> {
+) -> Result<Cgrodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     // the following line needs to take the value of the BLOCKCHAIN_ENV variable
     let url: &str = "https://rpc.testnet.near.org";
@@ -84,9 +116,8 @@ pub fn nearorg_rpc_call(
 
     let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
 
-    let result_array = parsed_json["result"]["result"].as_array().unwrap();    
+    let result_array = parsed_json["result"]["result"].as_array().ok_or("Result is not an array")?;
 
-    // Convert Vec<Value> to &[u8]
     let result_bytes: Vec<u8> = result_array
         .iter()
         .map(|v| v.as_u64().unwrap() as u8)
@@ -94,34 +125,31 @@ pub fn nearorg_rpc_call(
     let result_slice: &[u8] = &result_bytes;
 
     let result_string = core::str::from_utf8(&result_slice).unwrap();
-
-    let result_struct: Vec<CgRotd> = serde_json::from_str(result_string).unwrap();
-
-    let mut result_iter = serde_json::from_str::<Vec<CgRotd>>(result_string)?.into_iter();
-
-    if let Some(cgrotd) = result_iter.next() {
-        for cgrotd in result_struct {
-            println!("token_id: {}", cgrotd.token_id);
-            println!("owner_id: {}", cgrotd.owner_id);
-            println!("title: {}", cgrotd.metadata.title);
-            println!("description: {}", cgrotd.metadata.description);
-            println!("expiresat: {}", cgrotd.metadata.expiresat);
-            println!("startsat: {}", cgrotd.metadata.startsat);
-            println!("cidrblock: {}", cgrotd.metadata.cidrblock);
-            println!("dns: {}", cgrotd.metadata.dns);
-            println!("postup: {}", cgrotd.metadata.postup);
-            println!("postdown: {}", cgrotd.metadata.postdown);
-            println!("allowedips: {}", cgrotd.metadata.allowedips);
-            println!("endpoint: {}", cgrotd.metadata.endpoint);
-            println!("authornftcontractid: {}", cgrotd.metadata.authornftcontractid);
-            println!("authorsignature: {}", cgrotd.metadata.authorsignature);
-            println!("kbpersecond: {}", cgrotd.metadata.kbpersecond);
+    let result_struct: Vec<Cgrodt> = serde_json::from_str(result_string).unwrap();
+    let mut result_iter = serde_json::from_str::<Vec<Cgrodt>>(result_string)?.into_iter();
+    if let Some(cgrodt) = result_iter.next() {
+        for cgrodt in result_struct {
+            println!("token_id: {}", cgrodt.token_id);
+            println!("owner_id: {}", cgrodt.owner_id);
+            println!("title: {}", cgrodt.metadata.title);
+            println!("description: {}", cgrodt.metadata.description);
+            println!("expiresat: {}", cgrodt.metadata.expiresat);
+            println!("startsat: {}", cgrodt.metadata.startsat);
+            println!("cidrblock: {}", cgrodt.metadata.cidrblock);
+            println!("dns: {}", cgrodt.metadata.dns);
+            println!("postup: {}", cgrodt.metadata.postup);
+            println!("postdown: {}", cgrodt.metadata.postdown);
+            println!("allowedips: {}", cgrodt.metadata.allowedips);
+            println!("endpoint: {}", cgrodt.metadata.endpoint);
+            println!("authornftcontractid: {}", cgrodt.metadata.authornftcontractid);
+            println!("authorsignature: {}", cgrodt.metadata.authorsignature);
+            println!("kbpersecond: {}", cgrodt.metadata.kbpersecond);
         }
-        // Return the first CgRotd instance as the result
-        return Ok(cgrotd);
-    } else {
-        // If no CgRotd instance is available, return an error
-        return Err("No CgRotd instance found".into());
+     // Return the first Cgrodt instance as the result
+        return Ok(cgrodt.clone());
+     } else {
+     // If no Cgrodt instance is available, return an error
+        return Err("No Cgrodt instance found".into());
     }
 }
 
