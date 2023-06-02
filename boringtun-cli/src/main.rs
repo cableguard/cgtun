@@ -14,16 +14,12 @@ use std::io::{self, ErrorKind};
 use std::io::Read;
 use serde_json::Value;
 use boringtun::device::api::nearorg_rpc_call;
-use x25519_dalek::{PublicKey, StaticSecret};
-use curve25519_dalek::scalar::Scalar;
-use curve25519_dalek::edwards::EdwardsPoint;
-use curve25519_dalek::constants::ED25519_BASEPOINT_POINT;
-use curve25519_dalek::constants::X25519_BASEPOINT;
-use ed25519_dalek::SecretKey;
 use hex::FromHex;
 use base64::{encode};
-// use bs58::{decode};
-use sha2::{Digest, Sha512};
+use curve25519_dalek_ng::scalar::Scalar;
+use curve25519_dalek_ng::constants::ED25519_BASEPOINT_POINT;
+use curve25519_dalek_ng::edwards::EdwardsPoint;
+use x25519_dalek::{PublicKey, StaticSecret};
 
 mod constants {
     // Define the global constant as a static item
@@ -33,7 +29,7 @@ mod constants {
 // The following function changes as tun name is not an input anymore
 fn check_tun_name(_v: String) -> Result<(), String> {
     #[cfg(any(target_os = "macos", target_os = "ios"))]
-    {
+    {use curve25519_dalek_ng::scalar::Scalar;
         if boringtun::device::tun::parse_utun_name(&_v).is_ok() {
             Ok(())
         } else {
@@ -130,100 +126,77 @@ fn main() {
     let account_id = json["account_id"].as_str().expect("Invalid account_id value");
     let account_idargs = "{\"account_id\":\"" .to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
 
-    println!("Json args encoded: {}", account_id);
-
     // Extract the value of the "private_key" field  from the account file
-    let private_key = json["private_key"].as_str().expect("Invalid private_key value");   
+    let private_key_base58 = json["private_key"].as_str().expect("Invalid private_key value");   
+    let private_key_base58 = private_key_base58.trim_start_matches("ed25519:");
 
     // Set the account where is the ROTD smart contract
     let smart_contract = constants::SMART_CONTRACT;
 
     // NEXT: We need to retrieve the value of the token id from this call
     match nearorg_rpc_call(smart_contract,smart_contract,"nft_tokens_for_owner",&account_idargs){
-        Ok(cgrotd) => {
+        Ok(..) => {
         }
         Err(err) => {
             // Handle the error
             println!("Error: {}", err);
         }
     }
-    // Converting Ed x y to Curve u v
-    // (u, v) = ((1+y)/(1-y), sqrt(-486664)*u/x)
 
-    // Convert the Ed25519 private key into a X25519 private key
-    // Replace `private_key_base58` with your actual private key in Base58
-    let ed25519_private_key_base58 = private_key;
+    // We have a Base58 format Private Key Ed25519 of 64 bytes
+    println!("Ed25519 Private Key Base58 {:?}", private_key_base58);
 
-    // Decode the Base58 private key
-    let ed25519_private_key_bytes = bs58::decode(ed25519_private_key_base58)
-        .into_vec()
-        .expect("Failed to decode the private key from Base58");
+    // We decode it to Hex format Private Key Ed25519 of 64 bytes
+    let ed25519_private_key_bytes = bs58::decode(private_key_base58)
+    .into_vec()
+    .expect("Failed to decode the private key from Base58");
+    let ed25519_private_key_hex = hex::encode(&ed25519_private_key_bytes);
+
+    // Ensure the decoded Private Key Ed25519 of 64 bytes has the expected length
+    assert_eq!(ed25519_private_key_hex.len(), 128);
+
+    println!("Ed25519 Private Key Hex {:?}", ed25519_private_key_hex);
+
+    // We transform the hex Private Key Ed25519 of 64 bytes it to a [u8; 64] 
+    let private_key_vec = Vec::<u8>::from_hex(ed25519_private_key_hex).clone().expect("Invalid hexadecimal string");
+    let mut private_key_array: [u8; 64] = [0u8; 64];
+    let (left,_right) = private_key_array.split_at_mut(private_key_vec.len());
+    left.copy_from_slice(&private_key_vec);
+    let secret_key: [u8; 64] = private_key_array;
+    let secret_key_scalar = Scalar::from_bytes_mod_order_wide(&secret_key);
+
+    // Obtain the secret point from the Private Key Ed25519 of 64 bytes
+    let secret_key_point: EdwardsPoint = &secret_key_scalar * &ED25519_BASEPOINT_POINT;
+
+    // Generate the X25519 key pair from the Private Key Ed25519
+    let curve25519_private_key_montgomery = secret_key_point.to_montgomery();
+    let curve25519_private_key_bytes = curve25519_private_key_montgomery.to_bytes();
+
+    // Convert the private key bytes to a [u8; 32] array
+    let mut curve25519_private_key_array = [0u8; 32];
+    curve25519_private_key_array.copy_from_slice(&curve25519_private_key_bytes[..]);
+
+    // Create a StaticSecret from the private key bytes
+    let curve25519_private_key_ss = StaticSecret::from(curve25519_private_key_array);
     
-    // Ensure the decoded private key has the expected length
-    assert_eq!(ed25519_private_key_bytes.len(), 64);
+    // Generate the corresponding public key
+    let curve25519_public_key: PublicKey = (&curve25519_private_key_ss).into();
     
-    let private_key_bytes = Vec::from_hex(ed25519_private_key_bytes).expect("Invalid hex string");
-    let secret_key = SecretKey::from_bytes(&private_key_bytes).expect("Invalid private key");
-            
-    let seed = &ed25519_private_key_bytes[..32];
-    let public_key = &ed25519_private_key_bytes[32..];
+    // Convert the public key to bytes
+    let curve25519_public_key_bytes = curve25519_public_key.as_bytes();    
 
-    let mut hasher = Sha512::new();
-    hasher.update(seed);
-    let scalarfromseed = hasher.finalize();
-
-    let scalar_bytes: Result<[u8; 32], _> = scalarfromseed.as_slice().try_into();
-
-    struct MontgomeryPoint {
-        x: [u8; 32],
-        y: [u8; 32],
-    }
-
-    let montgomery_x: [u8; 32] = [0; 32];
-    let montgomery_y: [u8; 32] = [0; 32];
+    // Generate the Curve25519 base64 private key for display purposes
+    let curve25519_private_key_base64 = encode(curve25519_private_key_bytes);
     
-    // Check if the conversion was successful
-    match scalar_bytes {
-        Ok(scalarfromseed) => {
-            // The conversion succeeded
-            let reduced_scalar = Scalar::from_bytes_mod_order(scalarfromseed);
-//            let base_point: EdwardsPoint = EdwardsPoint::identity();
-            let base_point: EdwardsPoint = ED25519_BASEPOINT_POINT;
-            let edwards_point = reduced_scalar * &base_point;
-//           let edwards_point = reduced_scalar * base_point;
-            let edwards_x = edwards_point.compress().to_bytes();
-            let edwards_z = edwards_point.z.compress().to_bytes();
-            let edwards_z_inv = edwards_z.invert().unwrap();
-            let montgomery_x = (edwards_x + &edwards_z) * &edwards_z_inv % &curve25519_dalek::constants::X25519_BASEPOINT;
-            let montgomery_y = (montgomery_x - 1) / (montgomery_x + 1);
-        },
-        Err(_) => {
-            // The slice was not exactly 32 bytes long
-            println!("Slice length is not 32 bytes");
-        }
-    }
-    
-    let montgomery_point = MontgomeryPoint {
-        x: montgomery_x,
-        y: montgomery_y,
-    };
+    // Generate the Curve25519 base64 public key for display purpose
+    let curve25519_public_key_base64 = encode(curve25519_public_key_bytes);
 
-    // Generate the X25519 private key from the Montgomery point
-    let ed25519_private_key_bytes = StaticSecret::from(montgomery_point);
-
-    // Obtain the corresponding public key from the private key
-    let ed25519_public_key_bytes: PublicKey = (&private_key).into();
-    
-    // Generate the Curve25519 public key
-    let curve25519_public_key_base64 = encode(ed25519_public_key_bytes.to_bytes());
-    
-    // Generate the Curve25519 private key
-    let curve25519_private_key_base64 = encode(ed25519_private_key_bytes);
-    
     // Print the generated keys
     println!("Curve25519 Public Key (Base64): {}", curve25519_public_key_base64);
     println!("Curve25519 Private Key (Base64): {}", curve25519_private_key_base64);
     
+    // NOW we need to test a normal wg connection can use these keys
+
     // In the following line INTERFACE_NAME is derived from the token_id ULID, with a max
     // 15 characters, by default utun+last 11 of ULID, this is compatible with: fn check_tun_name
 
