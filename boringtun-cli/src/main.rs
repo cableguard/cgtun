@@ -121,6 +121,7 @@ fn main() {
     let smart_contract = constants::SMART_CONTRACT;
 
     let mut cgrodt: Cgrodt = Cgrodt::default();
+    
     // NEXT: We need to retrieve the value of the token id from this call
     match nearorg_rpc_call(smart_contract, smart_contract, "nft_tokens_for_owner", &account_idargs) {
         Ok(result) => {
@@ -200,16 +201,19 @@ fn main() {
     // }
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
-
+    
     // Create a socketpair to communicate between forked processes
     let (sock1, sock2) = UnixDatagram::pair().unwrap();
     let _ = sock1.set_nonblocking(true);
-
+    
     let _guard;
-
+    
     if background {
+        // Running in background mode
         let log = matches.value_of("log").unwrap();
-
+    
+        // Check if the log file exists, open it in append mode if it does
+        // Otherwise, create a new log file
         let log_file = if let Ok(metadata) = std::fs::metadata(&log) {
             if metadata.is_file() {
                 OpenOptions::new().append(true).open(&log)
@@ -223,29 +227,33 @@ fn main() {
             File::create(&log)
         }
         .unwrap_or_else(|err| panic!("Could not open log file {}: {}", log, err));
-
+    
+        // Create a non-blocking log writer and get a guard to prevent dropping it
         let (non_blocking, guard) = tracing_appender::non_blocking(log_file);
-
         _guard = guard;
-
+    
+        // Initialize the logging system with the configured log level and writer
         tracing_subscriber::fmt()
             .with_max_level(log_level)
             .with_writer(non_blocking)
             .with_ansi(false)
             .init();
-
+    
+        // Create a daemon process and configure it
         let daemonize = Daemonize::new()
             .working_directory("/tmp")
             .exit_action(move || {
+                // Perform an action when the daemon process exits
                 let mut b = [0u8; 1];
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
                     println!("CableGuard started successfully");
                 } else {
-                    eprintln!("CableGuard failed to start. Check if the capabilites are set and you are running with enough privileges.");
+                    eprintln!("CableGuard failed to start. Check if the capabilities are set and you are running with enough privileges.");
                     exit(1);
                 };
             });
-
+    
+        // Start the daemon process
         match daemonize.start() {
             Ok(_) => tracing::info!("CableGuard started successfully"),
             Err(e) => {
@@ -254,12 +262,14 @@ fn main() {
             }
         }
     } else {
+        // Running in foreground mode
         tracing_subscriber::fmt()
             .pretty()
             .with_max_level(log_level)
             .init();
     }
-
+    
+    // Configure the device with the provided settings
     let config = DeviceConfig {
         n_threads,
         #[cfg(target_os = "linux")]
@@ -268,7 +278,8 @@ fn main() {
         #[cfg(target_os = "linux")]
         use_multi_queue: !matches.is_present("disable-multi-queue"),
     };
-
+    
+    // Initialize the device handle with the specified tunnel name and configuration
     let mut device_handle: DeviceHandle = match DeviceHandle::new(&tun_name, config) {
         Ok(d) => d,
         Err(e) => {
@@ -278,20 +289,22 @@ fn main() {
             exit(1);
         }
     };
-
+    
     if !matches.is_present("disable-drop-privileges") {
+        // Drop privileges if not disabled
         if let Err(e) = drop_privileges() {
             tracing::error!(message = "Failed to drop privileges", error = ?e);
             sock1.send(&[0]).unwrap();
             exit(1);
         }
     }
-
+    
     // Notify parent that tunnel initialization succeeded
     sock1.send(&[1]).unwrap();
     drop(sock1);
-
+    
     tracing::info!("CableGuard started successfully");
-
-    device_handle.wait();
+    
+    // Wait for the device handle to finish processing
+    device_handle.wait();    
 }

@@ -253,6 +253,7 @@ mod tests {
         }
     }
 
+    // The object to configure initially from the RODT is of type WGHandle
     impl WGHandle {
         /// Create a new interface for the tunnel with the given address
         fn init(addr_v4: IpAddr, addr_v6: IpAddr) -> WGHandle {
@@ -419,6 +420,8 @@ mod tests {
 
         /// Assign a listen_port to the interface
         fn wg_set_port(&self, port: u16) -> String {
+            // This is the internal way to set parameters for each interface
+            // So we can input the whole RODT parameters with a series of self.wg_set commands
             self.wg_set(&format!("listen_port={}", port))
         }
 
