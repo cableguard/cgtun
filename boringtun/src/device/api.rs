@@ -367,6 +367,7 @@ fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -
                                 tracing::error!(message = "TEN:Private_key FN api_set: {}", string);
                                 // This call was here for testing purposes and can be removed
                                 // nearorg_rpc_call("dev-1683885679276-68487861563203","dev-1683885679276-68487861563203","nft_token","{}");
+                                // This call needs to read the key from the cgrodt instead of key_bytes
                                 device.set_key(x25519::StaticSecret::from(key_bytes.0))
                             }
                             Err(_) => return EINVAL,

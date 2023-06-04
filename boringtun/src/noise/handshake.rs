@@ -231,6 +231,7 @@ impl Tai64N {
 }
 
 /// Parameters used by the noise protocol
+// THIS IS WHERE WE NEED TO PLUG THE TOKEN ID FOR BLOCKCHAIN CHECKS
 struct NoiseParams {
     /// Our static public key
     static_public: x25519::PublicKey,
@@ -508,6 +509,19 @@ impl Handshake {
     ) -> Result<(), WireGuardError> {
     self.params.set_static_private(private_key, public_key)
     }
+
+    // This is where we receive the token_id, so
+    // we can cross check with the blockchain that there is a match
+    // between token_id declared and controlling peer public key
+    // also we need to check one of:
+    // token_id matches our authornftcontractid (for clients that receive a server connection)
+    // or token_id signature found in the blockchain is true as matches what 
+    // would be generated with the server owns private key
+    // Additional checks include: not accepting notafter and notbefore dates for RODT
+    // Self configuring the DNS
+    // Running postup and postdown commands
+    // Usin   allowedips: 0.0.0.0/0 and endpoint: 127.0.0.1
+    // Not taking connections out of the bandwith, network or location limits
 
     pub(super) fn receive_handshake_initialization<'a>(
         &mut self,

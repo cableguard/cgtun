@@ -10,6 +10,8 @@ pub mod drop_privileges;
 #[cfg(test)]
 mod integration_tests;
 pub mod peer;
+use std::process::Command;
+use byteorder::{ByteOrder, BigEndian};
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 #[path = "kqueue.rs"]
@@ -51,6 +53,9 @@ use socket2::{Domain, Protocol, Type};
 use tun::TunSocket;
 
 use dev_lock::{Lock, LockReadGuard};
+
+// Adding Cgrodt object as part of DeviceConfig
+use crate::device::api::Cgrodt;
 
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 
@@ -108,8 +113,12 @@ pub struct DeviceHandle {
     threads: Vec<JoinHandle<()>>,
 }
 
-#[derive(Debug, Clone, Copy)]
+//#[derive(Debug, Clone, Copy)] 
+#[derive(Clone)]
 pub struct DeviceConfig {
+    pub cgrodt: Cgrodt,
+    pub cgrodt_private_key:[u8;32],
+    pub cgrodt_public_key:[u8;32],
     pub n_threads: usize,
     pub use_connected_socket: bool,
     #[cfg(target_os = "linux")]
@@ -121,6 +130,9 @@ pub struct DeviceConfig {
 impl Default for DeviceConfig {
     fn default() -> Self {
         DeviceConfig {
+            cgrodt: Cgrodt::default(),
+            cgrodt_private_key:[0;32],
+            cgrodt_public_key:[0;32],
             n_threads: 4,
             use_connected_socket: true,
             #[cfg(target_os = "linux")]
@@ -172,7 +184,8 @@ impl DeviceHandle {
     pub fn new(name: &str, config: DeviceConfig) -> Result<DeviceHandle, Error> {
         let n_threads = config.n_threads;
         let mut wg_interface = Device::new(name, config)?;
-        wg_interface.open_listen_socket(0)?; // Start listening on a random port
+        let port = 0; // 0 is the correct value if we want to listen on a random port
+        wg_interface.open_listen_socket(port)?;
 
         let interface_lock = Arc::new(Lock::new(wg_interface));
 
@@ -353,6 +366,7 @@ impl Device {
         )
         .unwrap();
         
+        // This is where a new peer is updated, apparently
         let peer = Peer::new(tunn, next_index, endpoint, allowed_ips, preshared_key);
 
         let peer = Arc::new(Mutex::new(peer));
@@ -382,6 +396,7 @@ impl Device {
         let mut device = Device {
             queue: Arc::new(poll),
             iface,
+            // I think that config contains a Cgrodt
             config,
             exit_notice: Default::default(),
             yield_notice: Default::default(),
@@ -420,6 +435,32 @@ impl Device {
                 }
             }
         }
+
+        // Normally the tunnel waits to receive the command to set the private key
+        // Instead we are proactively setting it
+//        let mut device_private_key_be:[u8;32];
+ //       BigEndian::write_u32_into(&device.config.cgrodt_private_key, &mut device_private_key_be);
+        device.set_key(x25519::StaticSecret::from(device.config.cgrodt_private_key));
+
+        // BEGIN running "sudo ip addr add cidrblock dev tun_name"
+
+        let command = "ip addr add ".to_owned()+&device.config.cgrodt.metadata.cidrblock +" dev "+ name;
+    
+        let output = Command::new("bash")
+            .arg("-c")
+            .arg(command)
+            .output()
+            .expect("Failed to execute command");
+        
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            println!("Command executed successfully. Output:\n{}", stdout);
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            eprintln!("Command failed. Error:\n{}", stderr);
+        }
+
+        // END of running postup
 
         Ok(device)
     }
@@ -468,20 +509,29 @@ impl Device {
         Ok(())
     }
 
-    fn set_key(&mut self, private_key: x25519::StaticSecret) {
+    fn set_key(&mut self, mut private_key: x25519::StaticSecret) {
         let mut bad_peers = vec![];
 
-        let public_key = x25519::PublicKey::from(&private_key);
+        // This was the original assignment of the public key
+        // let public_key = x25519::PublicKey::from(&private_key);
+        // Now we are going to set public_key to the cgrodt value
+        let public_key = x25519_dalek::PublicKey::from(self.config.cgrodt_public_key);
 
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
         tracing::error!(message = "TEN:Public_key FN set_key: {}", string);
         
+        // Now we are going to set public_key to the cgrodt value, discarding the passed parameter
+        private_key = x25519_dalek::StaticSecret::from(self.config.cgrodt_private_key);
+
         let key_pair = Some((private_key.clone(), public_key));
         
         let tenpbytes = private_key.to_bytes();
         let stringp = encode(&tenpbytes);
         tracing::error!(message = "TEN:Private_key FN set_key: {}", stringp);
+
+        let stringp2 = encode(&self.config.cgrodt_private_key);
+        tracing::error!(message = "TEN:Private_key (self) FN set_key: {}", stringp2);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.

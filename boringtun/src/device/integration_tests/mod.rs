@@ -430,7 +430,7 @@ mod tests {
             let bytesk = key.to_bytes();
             let encoded_key = encode(&bytesk);
             tracing::error!(message = "TEN:Private_key FN wg_set_key: {}", encoded_key);
-            self.wg_set(&format!("private_key={}", encode(key.to_bytes())))
+            self.wg_set(&format!("private_key={}", encode(key.to_bytes()));
         }
 
         /// Assign a peer to the interface (with public_key, endpoint and a series of nallowed_ip)

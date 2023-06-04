@@ -21,6 +21,7 @@ use curve25519_dalek_ng::scalar::Scalar;
 use curve25519_dalek_ng::constants::ED25519_BASEPOINT_POINT;
 use curve25519_dalek_ng::edwards::EdwardsPoint;
 use x25519_dalek::{PublicKey, StaticSecret};
+use byteorder::{ByteOrder, BigEndian};
 
 mod constants {
     // Define the global constant as a static item
@@ -174,7 +175,8 @@ fn main() {
     curve25519_private_key_array.copy_from_slice(&curve25519_private_key_bytes[..]);
 
     // Create a StaticSecret from the private key bytes
-    let curve25519_private_key_ss = StaticSecret::from(curve25519_private_key_array);
+//    BigEndian::write_u32_into(&curve25519_private_key_array, &mut curve25519_private_key_be);
+    let curve25519_private_key_ss = x25519_dalek::StaticSecret::from(curve25519_private_key_array);
     
     // Generate the corresponding public key
     let curve25519_public_key: PublicKey = (&curve25519_private_key_ss).into();
@@ -270,7 +272,11 @@ fn main() {
     }
     
     // Configure the device with the provided settings
+    // Here we can add a CGRodt object
     let config = DeviceConfig {
+        cgrodt,
+        cgrodt_private_key:curve25519_private_key_bytes,
+        cgrodt_public_key:*curve25519_public_key_bytes,
         n_threads,
         #[cfg(target_os = "linux")]
         uapi_fd,
