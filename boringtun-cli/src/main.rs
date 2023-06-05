@@ -7,6 +7,7 @@ use clap::{Arg, Command};
 use daemonize::Daemonize;
 use std::os::unix::net::UnixDatagram;
 use std::process::exit;
+use std::env;
 use tracing::Level;
 use std::fs::{File, OpenOptions};
 // use std::io::prelude::*;
@@ -17,15 +18,18 @@ use boringtun::device::api::nearorg_rpc_call;
 use boringtun::device::api::Cgrodt;
 use hex::FromHex;
 use base64::{encode};
-use curve25519_dalek_ng::scalar::Scalar;
-use curve25519_dalek_ng::constants::ED25519_BASEPOINT_POINT;
-use curve25519_dalek_ng::edwards::EdwardsPoint;
-use x25519_dalek::{PublicKey, StaticSecret};
-use byteorder::{ByteOrder, BigEndian};
+use curve25519_dalek::scalar::Scalar;
+use curve25519_dalek::constants::ED25519_BASEPOINT_POINT;
+use curve25519_dalek::edwards::EdwardsPoint;
+use boringtun::x25519::PublicKey;
+use boringtun::x25519::StaticSecret;
+use crate::constants::SMART_CONTRACT;
+use crate::constants::BLOCKCHAIN_ENV;
 
 mod constants {
     // Define the global constant as a static item
-    pub static SMART_CONTRACT: &str = "dev-1685354692039-21267193472211";
+    pub static SMART_CONTRACT: &str = "dev-1685978221528-95159102710367";
+    pub static BLOCKCHAIN_ENV: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
 }
 
 fn main() {
@@ -33,13 +37,11 @@ fn main() {
         .version(env!("CARGO_PKG_VERSION"))
         .author("Vicente Aceituno Canal <vicente@cableguard.org> and Vlad Krasnov <vlad@cloudflare.com>")
         .args(&[
-            // We replace the input of an interface name with the file that has the private key
-            // of the blockchain account, the interface name will be derived from the token_id
+            // We input a file path and name that has the private key
+            // of the blockchain account, the interface name will be derived from the token_id of the RODT
             Arg::new("FILE_WITH_ACCOUNT")
                 .required(true)
                 .takes_value(true)
-            // The following validator is muted as the entry here is not an INTERFACE_NAME any more
-            //  .validator(|tunname| check_tun_name(tunname.to_string()))
                 .help("The full filename of the file with the blockchain account"),
             Arg::new("foreground")
                 .long("foreground")
@@ -94,21 +96,34 @@ fn main() {
     let background = !matches.is_present("foreground");
     #[cfg(target_os = "linux")]
     let uapi_fd: i32 = matches.value_of_t("uapi-fd").unwrap_or_else(|e| e.exit());
-    
-    // File descriptor option MUST be removed
-    // let tun_fd: isize = matches.value_of_t("tun-fd").unwrap_or_else(|e| e.exit());
 
     // Here is where we need to extract the public key from the file with the account
     // and use to to perform a RPC call and obtain the token_id
     let file_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
 
     let file_path = file_name;
-    let mut file = File::open(file_path).expect("Failed to open the file");
+    let mut file = match File::open(&file_path) {
+        Ok(file) => file,
+        Err(err) => {
+            tracing::error!("Failed to open the file: {}", err);
+            return; // Terminate the program or handle the error accordingly
+        }
+    };
 
     let mut file_contents = String::new();
-    file.read_to_string(&mut file_contents).expect("Failed to read the file");
+    if let Err(err) = file.read_to_string(&mut file_contents) {
+        tracing::error!("Failed to read the file: {}", err);
+        return; // Terminate the program or handle the error accordingly
+    }
 
-    let json: Value = serde_json::from_str(&file_contents).expect("Failed to parse JSON");
+    let json: Value = match serde_json::from_str(&file_contents) {
+        Ok(value) => value,
+        Err(err) => {
+            tracing::error!("Failed to parse JSON: {}", err);
+            // Add any additional error handling logic if needed
+            return; // Terminate the program
+        }
+    };
 
     // Extract the value of the "account_id" field, include it in a json string and encode it as Base64
     let account_id = json["account_id"].as_str().expect("Invalid account_id value");
@@ -121,28 +136,33 @@ fn main() {
     // Set the account where is the rodt smart contract
     let smart_contract = constants::SMART_CONTRACT;
 
+    // Set the environment to testnet or mainnet
+    let xnet = BLOCKCHAIN_ENV;
+
     let mut cgrodt: Cgrodt = Cgrodt::default();
     
-    // NEXT: We need to retrieve the value of the token id from this call
-    match nearorg_rpc_call(smart_contract, smart_contract, "nft_tokens_for_owner", &account_idargs) {
+    tracing::error!("ROTD Directory is NEAR.ORG: {}", SMART_CONTRACT);
+    tracing::error!("Owner Account ID: {}", account_id);
+
+    // WARNING if the account is not primed    
+
+    match nearorg_rpc_call(xnet, smart_contract, smart_contract, "nft_tokens_for_owner", &account_idargs) {
         Ok(result) => {
             cgrodt = result;
-            println!("token_id: {}", cgrodt.token_id);
-            println!("owner_id: {}", cgrodt.owner_id);
         }
         Err(err) => {
             // Handle the error
-            println!("RPC Return Error: {}", err);
+            tracing::error!("RPC Return Error: {}", err);
         }
     }
 
     // In the following line INTERFACE_NAME is derived from the token_id ULID, with a max
     // 15 characters, by default utun+last 11 of ULID, this is compatible with: fn check_tun_name
     let tun_name = format!("utun{}", &cgrodt.token_id[cgrodt.token_id.len() - 11..]);
-    println!("Tun Device name {}", tun_name);
+    tracing::error!("Name of the tun device is: {}", tun_name);
 
     // We have a Base58 format Private Key Ed25519 of 64 bytes
-    println!("Ed25519 Private Key Base58 {:?}", private_key_base58);
+    tracing::error!("Ed25519 Private Key Base58 {:?}",private_key_base58);
 
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
     let ed25519_private_key_bytes = bs58::decode(private_key_base58)
@@ -153,7 +173,7 @@ fn main() {
     // Ensure the decoded Private Key Ed25519 of 64 bytes has the expected length
     assert_eq!(ed25519_private_key_hex.len(), 128);
 
-    println!("Ed25519 Private Key Hex {:?}", ed25519_private_key_hex);
+    tracing::error!("Ed25519 Private Key Hex {:?}",ed25519_private_key_hex);
 
     // We transform the hex Private Key Ed25519 of 64 bytes it to a [u8; 64] 
     let private_key_vec = Vec::<u8>::from_hex(ed25519_private_key_hex).clone().expect("Invalid hexadecimal string");
@@ -175,32 +195,22 @@ fn main() {
     curve25519_private_key_array.copy_from_slice(&curve25519_private_key_bytes[..]);
 
     // Create a StaticSecret from the private key bytes
-//    BigEndian::write_u32_into(&curve25519_private_key_array, &mut curve25519_private_key_be);
-    let curve25519_private_key_ss = x25519_dalek::StaticSecret::from(curve25519_private_key_array);
-    
+    let curve25519_private_key_ss = StaticSecret::from(curve25519_private_key_array);
+
     // Generate the corresponding public key
     let curve25519_public_key: PublicKey = (&curve25519_private_key_ss).into();
-    
+
     // Convert the public key to bytes
     let curve25519_public_key_bytes = curve25519_public_key.as_bytes();    
 
     // Generate the Curve25519 base64 private key for display purposes
     let curve25519_private_key_base64 = encode(curve25519_private_key_bytes);
+    tracing::error!("Curve25519 Private Key (Base64): {}",curve25519_private_key_base64);
     
     // Generate the Curve25519 base64 public key for display purpose
     let curve25519_public_key_base64 = encode(curve25519_public_key_bytes);
+    tracing::error!("Curve25519 Public Key (Base64): {}",curve25519_public_key_base64);
 
-    // Print the generated keys
-    println!("Curve25519 Public Key (Base64): {}", curve25519_public_key_base64);
-    println!("Curve25519 Private Key (Base64): {}", curve25519_private_key_base64);
-
-    // The following line is the original naming of a tun interface from a command line input in boringtun
-    //    let mut tun_name = matches.value_of("INTERFACE_NAME").unwrap();
-
-    // File descriptor option MUST be removed
-    // if tun_fd >= 0 {
-    //    tun_name = matches.value_of("tun-fd").unwrap();
-    // }
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
     
@@ -210,6 +220,10 @@ fn main() {
     
     let _guard;
     
+    tracing::error!("To display current configuration of the tunnel use \"sudo wg show\"");
+    tracing::error!("To display available NEAR.ORG accounts use \"showrotd.sh\"");
+    tracing::error!("To create a NEAR.ORG account use \"wg genaccount\"");
+
     if background {
         // Running in background mode
         let log = matches.value_of("log").unwrap();
@@ -248,7 +262,7 @@ fn main() {
                 // Perform an action when the daemon process exits
                 let mut b = [0u8; 1];
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
-                    println!("CableGuard started successfully");
+                    tracing::error!("CableGuard started successfully");
                 } else {
                     eprintln!("CableGuard failed to start. Check if the capabilities are set and you are running with enough privileges.");
                     exit(1);

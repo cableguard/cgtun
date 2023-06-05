@@ -81,15 +81,15 @@ impl Default for CgrodtMetadata {
 }
 
 pub fn nearorg_rpc_call(
+    xnet: &str,
     id: &str,
     account_id: &str,
     method_name: &str,
     args: &str,
 ) -> Result<Cgrodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
-    // the following line needs to take the value of the BLOCKCHAIN_ENV variable
-    let url: &str = "https://rpc.testnet.near.org";
-    println!("{}",url);
+    let url: String = "https://rpc.".to_string() + &xnet + "near.org";
+    tracing::error!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -107,7 +107,7 @@ pub fn nearorg_rpc_call(
     );
 
     let response: reqwest::blocking::Response = client
-        .post(url)
+        .post(&url)
         .body(json_data)
         .header("Content-Type", "application/json")
         .send()?;
@@ -129,21 +129,21 @@ pub fn nearorg_rpc_call(
     let mut result_iter = serde_json::from_str::<Vec<Cgrodt>>(result_string)?.into_iter();
     if let Some(cgrodt) = result_iter.next() {
         for cgrodt in result_struct {
-            println!("token_id: {}", cgrodt.token_id);
-            println!("owner_id: {}", cgrodt.owner_id);
-            println!("title: {}", cgrodt.metadata.title);
-            println!("description: {}", cgrodt.metadata.description);
-            println!("expiresat: {}", cgrodt.metadata.expiresat);
-            println!("startsat: {}", cgrodt.metadata.startsat);
-            println!("cidrblock: {}", cgrodt.metadata.cidrblock);
-            println!("dns: {}", cgrodt.metadata.dns);
-            println!("postup: {}", cgrodt.metadata.postup);
-            println!("postdown: {}", cgrodt.metadata.postdown);
-            println!("allowedips: {}", cgrodt.metadata.allowedips);
-            println!("endpoint: {}", cgrodt.metadata.endpoint);
-            println!("authornftcontractid: {}", cgrodt.metadata.authornftcontractid);
-            println!("authorsignature: {}", cgrodt.metadata.authorsignature);
-            println!("kbpersecond: {}", cgrodt.metadata.kbpersecond);
+            tracing::error!("token_id: {}", cgrodt.token_id);
+            tracing::error!("owner_id: {}", cgrodt.owner_id);
+            tracing::error!("title: {}", cgrodt.metadata.title);
+            tracing::error!("description: {}", cgrodt.metadata.description);
+            tracing::error!("expiresat: {}", cgrodt.metadata.expiresat);
+            tracing::error!("startsat: {}", cgrodt.metadata.startsat);
+            tracing::error!("cidrblock: {}", cgrodt.metadata.cidrblock);
+            tracing::error!("dns: {}", cgrodt.metadata.dns);
+            tracing::error!("postup: {}", cgrodt.metadata.postup);
+            tracing::error!("postdown: {}", cgrodt.metadata.postdown);
+            tracing::error!("allowedips: {}", cgrodt.metadata.allowedips);
+            tracing::error!("endpoint: {}", cgrodt.metadata.endpoint);
+            tracing::error!("authornftcontractid: {}", cgrodt.metadata.authornftcontractid);
+            tracing::error!("authorsignature: {}", cgrodt.metadata.authorsignature);
+            tracing::error!("kbpersecond: {}", cgrodt.metadata.kbpersecond);
         }
      // Return the first Cgrodt instance as the result
         return Ok(cgrodt.clone());

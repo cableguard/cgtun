@@ -11,7 +11,6 @@ pub mod drop_privileges;
 mod integration_tests;
 pub mod peer;
 use std::process::Command;
-use byteorder::{ByteOrder, BigEndian};
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 #[path = "kqueue.rs"]
@@ -439,11 +438,9 @@ impl Device {
         // Normally the tunnel waits to receive the command to set the private key
         // Instead we are proactively setting it
 //        let mut device_private_key_be:[u8;32];
- //       BigEndian::write_u32_into(&device.config.cgrodt_private_key, &mut device_private_key_be);
         device.set_key(x25519::StaticSecret::from(device.config.cgrodt_private_key));
 
         // BEGIN running "sudo ip addr add cidrblock dev tun_name"
-
         let command = "ip addr add ".to_owned()+&device.config.cgrodt.metadata.cidrblock +" dev "+ name;
     
         let output = Command::new("bash")
@@ -454,12 +451,11 @@ impl Device {
         
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            println!("Command executed successfully. Output:\n{}", stdout);
+            tracing::error!("Command executed successfully. Output:\n{}", stdout);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
             eprintln!("Command failed. Error:\n{}", stderr);
         }
-
         // END of running postup
 
         Ok(device)
@@ -515,23 +511,25 @@ impl Device {
         // This was the original assignment of the public key
         // let public_key = x25519::PublicKey::from(&private_key);
         // Now we are going to set public_key to the cgrodt value
-        let public_key = x25519_dalek::PublicKey::from(self.config.cgrodt_public_key);
-
+        let public_key = x25519::PublicKey::from(self.config.cgrodt_public_key);
+ 
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
-        tracing::error!(message = "TEN:Public_key FN set_key: {}", string);
+        tracing::error!(message = "TEN: Curve25519 Public Key (PublicKey) FN set_key Base64: {}", string);
         
-        // Now we are going to set public_key to the cgrodt value, discarding the passed parameter
-        private_key = x25519_dalek::StaticSecret::from(self.config.cgrodt_private_key);
+        // There is a quirk wheras the private key generated is alternates with 
+        // a given input so I am invoking and dumping so the next time I call it 
+        // I get the same output as the previous one
+//         let _dump = x25519::StaticSecret::from(self.config.cgrodt_private_key);
 
+        // Now we are going to set public_key to the cgrodt value, discarding the passed parameter
+        private_key = x25519::StaticSecret::from(self.config.cgrodt_private_key);
+        
         let key_pair = Some((private_key.clone(), public_key));
         
         let tenpbytes = private_key.to_bytes();
         let stringp = encode(&tenpbytes);
-        tracing::error!(message = "TEN:Private_key FN set_key: {}", stringp);
-
-        let stringp2 = encode(&self.config.cgrodt_private_key);
-        tracing::error!(message = "TEN:Private_key (self) FN set_key: {}", stringp2);
+        tracing::error!(message = "TEN: Curve25519 Private Key (after StaticSecret) FN set_key Base64: {}", stringp);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.

@@ -180,7 +180,7 @@ mod tests {
             for _i in 0..5 {
                 let res = std::net::TcpStream::connect(http_addr);
                 if let Err(err) = res {
-                    println!("failed to connect: {:?}", err);
+                    tracing::error!("failed to connect: {:?}", err);
                     std::thread::sleep(std::time::Duration::from_millis(100));
                     continue;
                 }
