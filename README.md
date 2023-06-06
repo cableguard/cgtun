@@ -2,16 +2,7 @@
 
 # CableGuardd
 
-## Warning
-Boringtun is currently undergoing a restructuring. You should probably not rely on or link to
-the master branch right now. Instead you should use the crates.io page.
-
-- cableguard: [![crates.io](https://img.shields.io/crates/v/cableguard.svg)](https://crates.io/crates/cableguard)
-- cableguard-cli [![crates.io](https://img.shields.io/crates/v/cableguard-cli.svg)](https://crates.io/crates/cableguard-cli)
-
 **CableGuard** is an implementation of the [WireGuard<sup>®</sup>](https://www.wireguard.com/) protocol designed for portability and speed.
-
-**CableGuard** is successfully deployed on millions of [iOS](https://apps.apple.com/us/app/1-1-1-1-faster-internet/id1423538627) and [Android](https://play.google.com/store/apps/details?id=com.cableguard.onedotonedotonedotone&hl=en_US) consumer devices as well as thousands of Cableguard Linux servers.
 
 The project consists of two parts:
 
@@ -38,11 +29,9 @@ By default the executable is placed in the `./target/release` folder. You can co
 
 As per the specification, to start a tunnel use:
 
-`cableguard-cli [-f/--foreground] INTERFACE-NAME`
+`cableguard-cli [-f/--foreground] <filewithaccount.json>`
 
-The tunnel can then be configured using [wg](https://git.zx2c4.com/WireGuard/about/src/tools/man/wg.8), as a regular WireGuard tunnel, or any other tool.
-
-It is also possible to use with [wg-quick](https://git.zx2c4.com/WireGuard/about/src/tools/man/wg-quick.8) by setting the environment variable `WG_QUICK_USERSPACE_IMPLEMENTATION` to `cableguard`. For example:
+It may be possible to use with [wg-quick](https://git.zx2c4.com/WireGuard/about/src/tools/man/wg-quick.8) by setting the environment variable `WG_QUICK_USERSPACE_IMPLEMENTATION` to `cableguard`. For example:
 
 `sudo WG_QUICK_USERSPACE_IMPLEMENTATION=cableguard-cli WG_SUDO=1 wg-quick up CONFIGURATION`
 
@@ -78,11 +67,6 @@ arm-linux-androideabi         |      | ✓    |
 
 You will need to give the executable the `CAP_NET_ADMIN` capability using: `sudo setcap cap_net_admin+epi cableguard`. sudo is not needed.
 
-#### macOS
-
-The behaviour is similar to that of [wireguard-go](https://git.zx2c4.com/wireguard-go/about/). Specifically the interface name must be `utun[0-9]+` for an explicit interface name or `utun` to have the kernel select the lowest available. If you choose `utun` as the interface name, and the environment variable `WG_TUN_NAME_FILE` is defined, then the actual name of the interface chosen by the kernel is written to the file specified by that variable.
-
----
 
 #### FFI bindings
 
@@ -101,8 +85,6 @@ The project is licensed under the [3-Clause BSD License](https://opensource.org/
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the 3-Clause BSD License, shall be licensed as above, without any additional terms or conditions.
 
 If you want to contribute to this project, please read our [`CONTRIBUTING.md`].
-
-[`CONTRIBUTING.md`]: https://github.com/cableguard/.github/blob/master/CONTRIBUTING.md
 
 ---
 <sub><sub><sub><sub>WireGuard is a registered trademark of Jason A. Donenfeld. CableGuard is not sponsored or endorsed by Jason A. Donenfeld.</sub></sub></sub></sub>
