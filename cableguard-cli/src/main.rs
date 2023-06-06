@@ -1,8 +1,8 @@
 // Copyright (c) 2019 Cloudflare, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use boringtun::device::drop_privileges::drop_privileges;
-use boringtun::device::{DeviceConfig, DeviceHandle};
+use cableguard::device::drop_privileges::drop_privileges;
+use cableguard::device::{DeviceConfig, DeviceHandle};
 use clap::{Arg, Command};
 use daemonize::Daemonize;
 use std::os::unix::net::UnixDatagram;
@@ -14,16 +14,16 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, ErrorKind};
 use std::io::Read;
 use serde_json::Value;
-use boringtun::device::api::nearorg_rpc_tokens_for_owner;
-use boringtun::device::api::nearorg_rpc_state;
-use boringtun::device::api::Cgrodt;
+use cableguard::device::api::nearorg_rpc_tokens_for_owner;
+use cableguard::device::api::nearorg_rpc_state;
+use cableguard::device::api::Cgrodt;
 use hex::FromHex;
 use base64::{encode};
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::constants::ED25519_BASEPOINT_POINT;
 use curve25519_dalek::edwards::EdwardsPoint;
-use boringtun::x25519::PublicKey;
-use boringtun::x25519::StaticSecret;
+use cableguard::x25519::PublicKey;
+use cableguard::x25519::StaticSecret;
 use crate::constants::SMART_CONTRACT;
 use crate::constants::BLOCKCHAIN_ENV;
 

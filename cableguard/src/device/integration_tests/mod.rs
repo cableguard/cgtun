@@ -1,7 +1,7 @@
-// Copyright (c) 2023 boringtun, Inc. All rights reserved.
+// Copyright (c) 2023 cableguard, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
-// This module contains some integration tests for boringtun
+// This module contains some integration tests for cableguard
 // Those tests require docker and sudo privileges to run
 #[cfg(all(test, not(target_os = "macos")))]
 mod tests {

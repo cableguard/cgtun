@@ -1,9 +1,9 @@
-// Copyright (c) 2023 boringtun, Inc. All rights reserved.
+// Copyright (c) 2023 cableguard, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Simple implementation of the client-side of the WireGuard protocol.
 //!
-//! <code>git clone https://github.com/cloudflare/boringtun.git</code>
+//! <code>git clone https://github.com/cloudflare/cableguard.git</code>
 #[cfg(feature = "device")]
 pub mod device;
 

@@ -1,4 +1,4 @@
-![boringtun logo banner](./banner.png)
+![cableguard logo banner](./banner.png)
 
 # CableGuardd
 
@@ -6,8 +6,8 @@
 Boringtun is currently undergoing a restructuring. You should probably not rely on or link to
 the master branch right now. Instead you should use the crates.io page.
 
-- boringtun: [![crates.io](https://img.shields.io/crates/v/boringtun.svg)](https://crates.io/crates/boringtun)
-- boringtun-cli [![crates.io](https://img.shields.io/crates/v/boringtun-cli.svg)](https://crates.io/crates/boringtun-cli)
+- cableguard: [![crates.io](https://img.shields.io/crates/v/cableguard.svg)](https://crates.io/crates/cableguard)
+- cableguard-cli [![crates.io](https://img.shields.io/crates/v/cableguard-cli.svg)](https://crates.io/crates/cableguard-cli)
 
 **CableGuard** is an implementation of the [WireGuard<sup>®</sup>](https://www.wireguard.com/) protocol designed for portability and speed.
 
@@ -15,36 +15,36 @@ the master branch right now. Instead you should use the crates.io page.
 
 The project consists of two parts:
 
-* The executable `boringtun-cli`, a [userspace WireGuard](https://www.wireguard.com/xplatform/)
+* The executable `cableguard-cli`, a [userspace WireGuard](https://www.wireguard.com/xplatform/)
   implementation for Linux and macOS.
-* The library `boringtun` that can be used to implement fast and efficient WireGuard client apps on various platforms, including iOS and Android. It implements the underlying WireGuard protocol, without the network or tunnel stacks, those can be implemented in a platform idiomatic way.
+* The library `cableguard` that can be used to implement fast and efficient WireGuard client apps on various platforms, including iOS and Android. It implements the underlying WireGuard protocol, without the network or tunnel stacks, those can be implemented in a platform idiomatic way.
 
 ### Installation
 
 You can install this project using `cargo`:
 
 ```
-cargo install boringtun-cli
+cargo install cableguard-cli
 ```
 
 ### Building
 
 - Library only: `cargo build --lib --no-default-features --release [--target $(TARGET_TRIPLE)]`
-- Executable: `cargo build --bin boringtun-cli --release [--target $(TARGET_TRIPLE)]`
+- Executable: `cargo build --bin cableguard-cli --release [--target $(TARGET_TRIPLE)]`
 
-By default the executable is placed in the `./target/release` folder. You can copy it to a desired location manually, or install it using `cargo install --bin boringtun --path .`.
+By default the executable is placed in the `./target/release` folder. You can copy it to a desired location manually, or install it using `cargo install --bin cableguard --path .`.
 
 ### Running
 
 As per the specification, to start a tunnel use:
 
-`boringtun-cli [-f/--foreground] INTERFACE-NAME`
+`cableguard-cli [-f/--foreground] INTERFACE-NAME`
 
 The tunnel can then be configured using [wg](https://git.zx2c4.com/WireGuard/about/src/tools/man/wg.8), as a regular WireGuard tunnel, or any other tool.
 
-It is also possible to use with [wg-quick](https://git.zx2c4.com/WireGuard/about/src/tools/man/wg-quick.8) by setting the environment variable `WG_QUICK_USERSPACE_IMPLEMENTATION` to `boringtun`. For example:
+It is also possible to use with [wg-quick](https://git.zx2c4.com/WireGuard/about/src/tools/man/wg-quick.8) by setting the environment variable `WG_QUICK_USERSPACE_IMPLEMENTATION` to `cableguard`. For example:
 
-`sudo WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun-cli WG_SUDO=1 wg-quick up CONFIGURATION`
+`sudo WG_QUICK_USERSPACE_IMPLEMENTATION=cableguard-cli WG_SUDO=1 wg-quick up CONFIGURATION`
 
 ### Testing
 
@@ -74,9 +74,9 @@ arm-linux-androideabi         |      | ✓    |
 
 `x86-64`, `aarch64` and `armv7` architectures are supported. The behaviour should be identical to that of [wireguard-go](https://git.zx2c4.com/wireguard-go/about/), with the following difference:
 
-`boringtun` will drop privileges when started. When privileges are dropped it is not possible to set `fwmark`. If `fwmark` is required, such as when using `wg-quick`, run with `--disable-drop-privileges` or set the environment variable `WG_SUDO=1`.
+`cableguard` will drop privileges when started. When privileges are dropped it is not possible to set `fwmark`. If `fwmark` is required, such as when using `wg-quick`, run with `--disable-drop-privileges` or set the environment variable `WG_SUDO=1`.
 
-You will need to give the executable the `CAP_NET_ADMIN` capability using: `sudo setcap cap_net_admin+epi boringtun`. sudo is not needed.
+You will need to give the executable the `CAP_NET_ADMIN` capability using: `sudo setcap cap_net_admin+epi cableguard`. sudo is not needed.
 
 #### macOS
 
