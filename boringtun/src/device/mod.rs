@@ -10,7 +10,8 @@ pub mod drop_privileges;
 #[cfg(test)]
 mod integration_tests;
 pub mod peer;
-use std::process::Command;
+use 
+std::process::Command;
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 #[path = "kqueue.rs"]
@@ -437,7 +438,7 @@ impl Device {
 
         // Normally the tunnel waits to receive the command to set the private key
         // Instead we are proactively setting it
-//        let mut device_private_key_be:[u8;32];
+        // Derive the seed from the private key using a KDF (SHA-256 in this example)
         device.set_key(x25519::StaticSecret::from(device.config.cgrodt_private_key));
 
         // BEGIN running "sudo ip addr add cidrblock dev tun_name"

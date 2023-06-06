@@ -14,7 +14,8 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, ErrorKind};
 use std::io::Read;
 use serde_json::Value;
-use boringtun::device::api::nearorg_rpc_call;
+use boringtun::device::api::nearorg_rpc_tokens_for_owner;
+use boringtun::device::api::nearorg_rpc_state;
 use boringtun::device::api::Cgrodt;
 use hex::FromHex;
 use base64::{encode};
@@ -127,7 +128,6 @@ fn main() {
 
     // Extract the value of the "account_id" field, include it in a json string and encode it as Base64
     let account_id = json["account_id"].as_str().expect("Invalid account_id value");
-    let account_idargs = "{\"account_id\":\"" .to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
 
     // Extract the value of the "private_key" field  from the account file
     let private_key_base58 = json["private_key"].as_str().expect("Invalid private_key value");   
@@ -141,12 +141,22 @@ fn main() {
 
     let mut cgrodt: Cgrodt = Cgrodt::default();
     
-    tracing::error!("ROTD Directory is NEAR.ORG: {}", SMART_CONTRACT);
-    tracing::error!("Owner Account ID: {}", account_id);
+    println!("ROTD Directory is NEAR.ORG: {}", SMART_CONTRACT);
+    println!("Owner Account ID: {}", account_id);
 
     // WARNING if the account is not primed    
+    match nearorg_rpc_state(xnet, smart_contract, account_id) {
+        Ok(result) => { println!("Result {:?}",result)
+        }
+        Err(err) => {
+            // Handle the error
+            tracing::error!("RPC Return Error: {}", err);
+            std::process::exit(1);
+        }
+    }
 
-    match nearorg_rpc_call(xnet, smart_contract, smart_contract, "nft_tokens_for_owner", &account_idargs) {
+    let account_idargs = "{\"account_id\":\"" .to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
+    match nearorg_rpc_tokens_for_owner(xnet, smart_contract, smart_contract, "nft_tokens_for_owner", &account_idargs) {
         Ok(result) => {
             cgrodt = result;
         }

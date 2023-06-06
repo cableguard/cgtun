@@ -80,7 +80,7 @@ impl Default for CgrodtMetadata {
     }
 }
 
-pub fn nearorg_rpc_call(
+pub fn nearorg_rpc_tokens_for_owner(
     xnet: &str,
     id: &str,
     account_id: &str,
@@ -151,6 +151,46 @@ pub fn nearorg_rpc_call(
      // If no Cgrodt instance is available, return an error
         return Err("No Cgrodt instance found".into());
     }
+}
+
+pub fn nearorg_rpc_state(
+    xnet: &str,
+    id: &str,
+    account_id: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client: Client = Client::new();
+    let url: String = "https://rpc.".to_string() + &xnet + "near.org";
+    tracing::error!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
+    let json_data: String = format!(
+        r#"{{
+            "jsonrpc": "2.0",
+            "id": "{}",
+            "method": "query",
+            "params": {{
+                "request_type": "view_account",
+                "finality": "final",
+                "account_id": "{}"
+            }}
+        }}"#,
+        id, account_id
+    );
+
+    let response: reqwest::blocking::Response = client
+        .post(&url)
+        .body(json_data)
+        .header("Content-Type", "application/json")
+        .send()?;
+
+    println!("Response {:?}",response);
+    let response_text: String = response.text()?;
+    println!("Response text {:?}",response_text);
+    let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
+    println!("Result {:?}",parsed_json);
+    if parsed_json.to_string().contains("does not exist while viewing") {
+        println!("{}","The account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR");
+        return Err("The account does not exist in the blockchain".into());
+    }
+    Ok(())
 }
 
 fn create_sock_dir() {
@@ -365,8 +405,6 @@ fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -
                                 let string = format!("{:02X?}", key_str);
                                 // Dumping the private key that is associated with the device in HEX format
                                 tracing::error!(message = "TEN:Private_key FN api_set: {}", string);
-                                // This call was here for testing purposes and can be removed
-                                // nearorg_rpc_call("dev-1683885679276-68487861563203","dev-1683885679276-68487861563203","nft_token","{}");
                                 // This call needs to read the key from the cgrodt instead of key_bytes
                                 device.set_key(x25519::StaticSecret::from(key_bytes.0))
                             }
