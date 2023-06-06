@@ -106,21 +106,21 @@ fn main() {
     let mut file = match File::open(&file_path) {
         Ok(file) => file,
         Err(err) => {
-            tracing::error!("Failed to open the file: {}", err);
+            eprintln!("Failed to open the file: {}", err);
             return; // Terminate the program or handle the error accordingly
         }
     };
 
     let mut file_contents = String::new();
     if let Err(err) = file.read_to_string(&mut file_contents) {
-        tracing::error!("Failed to read the file: {}", err);
+        eprintln!("Failed to read the file: {}", err);
         return; // Terminate the program or handle the error accordingly
     }
 
     let json: Value = match serde_json::from_str(&file_contents) {
         Ok(value) => value,
         Err(err) => {
-            tracing::error!("Failed to parse JSON: {}", err);
+            eprintln!("Failed to parse JSON: {}", err);
             // Add any additional error handling logic if needed
             return; // Terminate the program
         }

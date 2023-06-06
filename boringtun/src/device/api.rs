@@ -181,11 +181,9 @@ pub fn nearorg_rpc_state(
         .header("Content-Type", "application/json")
         .send()?;
 
-    println!("Response {:?}",response);
     let response_text: String = response.text()?;
-    println!("Response text {:?}",response_text);
     let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
-    println!("Result {:?}",parsed_json);
+    println!("{:?}",parsed_json);
     if parsed_json.to_string().contains("does not exist while viewing") {
         println!("{}","The account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR");
         return Err("The account does not exist in the blockchain".into());
