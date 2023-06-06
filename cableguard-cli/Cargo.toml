@@ -1,12 +1,12 @@
 [package]
 name = "cableguard-cli"
 description = "an implementation of the WireGuard® protocol designed for portability and speed"
-version = "0.5.2"
+version = "0.6.0"
 authors = ["Vicente Aceituno Canal <vaceituno@cableguard.org>,"Noah Kennedy <nkennedy@cloudflare.com>", "Andy Grover <agrover@cloudflare.com>", "Jeff Hiner <jhiner@cloudflare.com>"]
 license = "BSD-3-Clause"
 repository = "https://github.com/cableguard/cableguard"
-documentation = "https://docs.rs/cableguard/0.5.2/cableguard/"
-edition = "2021"
+documentation = "https://docs.rs/cableguard/0.6.0/cableguard/"
+edition = "2023"
 
 [dependencies]
 daemonize = "0.4.1"
@@ -25,6 +25,6 @@ sha2 = "0.9.2"
 zeroize= "1.5.0"
 
 [dependencies.cableguard]
-version = "0.5.2"
+version = "0.6.0"
 path = "../cableguard"
 features = ["device"]
