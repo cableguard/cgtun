@@ -11,7 +11,7 @@ the master branch right now. Instead you should use the crates.io page.
 
 **CableGuard** is an implementation of the [WireGuard<sup>®</sup>](https://www.wireguard.com/) protocol designed for portability and speed.
 
-**CableGuard** is successfully deployed on millions of [iOS](https://apps.apple.com/us/app/1-1-1-1-faster-internet/id1423538627) and [Android](https://play.google.com/store/apps/details?id=com.cloudflare.onedotonedotonedotone&hl=en_US) consumer devices as well as thousands of Cloudflare Linux servers.
+**CableGuard** is successfully deployed on millions of [iOS](https://apps.apple.com/us/app/1-1-1-1-faster-internet/id1423538627) and [Android](https://play.google.com/store/apps/details?id=com.cableguard.onedotonedotonedotone&hl=en_US) consumer devices as well as thousands of Cableguard Linux servers.
 
 The project consists of two parts:
 
@@ -102,7 +102,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 If you want to contribute to this project, please read our [`CONTRIBUTING.md`].
 
-[`CONTRIBUTING.md`]: https://github.com/cloudflare/.github/blob/master/CONTRIBUTING.md
+[`CONTRIBUTING.md`]: https://github.com/cableguard/.github/blob/master/CONTRIBUTING.md
 
 ---
 <sub><sub><sub><sub>WireGuard is a registered trademark of Jason A. Donenfeld. CableGuard is not sponsored or endorsed by Jason A. Donenfeld.</sub></sub></sub></sub>

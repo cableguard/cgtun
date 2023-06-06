@@ -1,68 +1,30 @@
 [package]
-name = "cableguard"
+name = "cableguard-cli"
 description = "an implementation of the WireGuard® protocol designed for portability and speed"
 version = "0.5.2"
-authors = [
-    "Noah Kennedy <nkennedy@cloudflare.com>",
-    "Andy Grover <agrover@cloudflare.com>",
-    "Jeff Hiner <jhiner@cloudflare.com>",
-]
+authors = ["Vicente Aceituno Canal <vaceituno@cableguard.org>,"Noah Kennedy <nkennedy@cableguard.com>", "Andy Grover <agrover@cableguard.com>", "Jeff Hiner <jhiner@cableguard.com>"]
 license = "BSD-3-Clause"
-repository = "https://github.com/cloudflare/cableguard"
+repository = "https://github.com/cableguard/cableguard"
 documentation = "https://docs.rs/cableguard/0.5.2/cableguard/"
-edition = "2018"
-
-[features]
-default = []
-device = ["socket2", "thiserror"]
-jni-bindings = ["ffi-bindings", "jni"]
-ffi-bindings = ["tracing-subscriber"]
-# mocks std::time::Instant with mock_instant
-mock-instant = ["mock_instant"]
+edition = "2021"
 
 [dependencies]
+daemonize = "0.4.1"
+clap = { version = "3.1.6", features = ["env"] }
+tracing = "0.1.31"
+tracing-subscriber = "0.3.9"
+tracing-appender = "0.2.1"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde = "1.0.163"
-base64 = "0.13"
-hex = "0.4"
-untrusted = "0.9.0"
-libc = "0.2"
-parking_lot = "0.12"
-tracing = "0.1.29"
-tracing-subscriber = { version = "0.3", features = ["fmt"], optional = true }
-ip_network = "0.4.1"
-ip_network_table = "0.2.0"
-ring = "0.16"
-x25519-dalek = { version = "=2.0.0-rc.2", features = [
-    "reusable_secrets",
-    "static_secrets",
-] }
+bs58 = "0.5.0"
+base64 = "0.13.0"
 curve25519-dalek = "3"
-rand_core = { version = "0.6.3", features = ["getrandom"] }
-chacha20poly1305 = "^0.10.1"
-aead = "0.5.0-pre.2"
-blake2 = "0.10"
-hmac = "0.12"
-jni = { version = "0.19.0", optional = true }
-mock_instant = { version = "0.2", optional = true }
-socket2 = { version = "0.4.7", features = ["all"], optional = true }
-thiserror = { version = "1", optional = true }
-reqwest = { version = "0.10.0-alpha.2", features = ["blocking"] }
+x25519-dalek = "1.1.0"
+hex = "0.4.3"
+sha2 = "0.9.2"
+zeroize= "1.5.0"
 
-[target.'cfg(unix)'.dependencies]
-nix = { version = "0.25", default-features = false, features = [
-    "time",
-    "user",
-] }
-
-[dev-dependencies]
-etherparse = "0.12"
-tracing-subscriber = "0.3"
-criterion = { version = "0.3.5", features = ["html_reports"] }
-
-[lib]
-crate-type = ["staticlib", "cdylib", "rlib"]
-
-[[bench]]
-name = "crypto_benches"
-harness = false
+[dependencies.cableguard]
+version = "0.5.2"
+path = "../cableguard"
+features = ["device"]
