@@ -162,7 +162,8 @@ fn main() {
         }
         Err(err) => {
             // Handle the error
-            tracing::error!("RPC Return Error: {}", err);
+            eprintln!("There is no associated RODT: {}", err);
+            std::process::exit(1);
         }
     }
 

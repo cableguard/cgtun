@@ -641,8 +641,8 @@ mod tests {
 
         (my_tun, their_tun)
     }
-
-
+    // token_id we need to modify how tn he handshake initiation is created
+    // and match it on the receiving end
     fn create_handshake_init(tun: &mut Tunn) -> Vec<u8> {
         let mut dst = vec![0u8; 2048];
         let handshake_init = tun.format_handshake_initiation(&mut dst, false);
