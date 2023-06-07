@@ -676,14 +676,12 @@ impl Handshake {
 
         // Derive keys
         // temp1 = HMAC(initiator.chaining_key, [empty])
-        // temp2 = HMAC(temp1, 0x1)
-        // temp3 = HMAC(temp1, temp2 || 0x2)
-        // initiator.sending_key = temp2
-        // initiator.receiving_key = temp3
-        // initiator.sending_key_counter = 0
-        // initiator.receiving_key_counter = 0
         let temp1 = b2s_hmac(&chaining_key, &[]);
+
+        // temp2 = HMAC(temp1, 0x1)
         let temp2 = b2s_hmac(&temp1, &[0x01]);
+
+        // temp3 = HMAC(temp1, temp2 || 0x2)
         let temp3 = b2s_hmac2(&temp1, &temp2, &[0x02]);
 
         let rtt_time = Instant::now().duration_since(state.time_sent);
@@ -694,6 +692,11 @@ impl Handshake {
         } else {
             self.state = HandshakeState::None;
         }
+
+        // initiator.sending_key = temp2
+        // initiator.receiving_key = temp3
+        // initiator.sending_key_counter = 0
+        // initiator.receiving_key_counter = 0
         Ok(Session::new(local_index, peer_index, temp3, temp2))
     }
 
