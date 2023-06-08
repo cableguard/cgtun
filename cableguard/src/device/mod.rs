@@ -314,6 +314,7 @@ impl Device {
         }
     }
 
+    // This is the single place where new peer is added, apparently
     #[allow(clippy::too_many_arguments)]
     fn update_peer(
         &mut self,

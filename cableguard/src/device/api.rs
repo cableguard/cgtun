@@ -519,7 +519,8 @@ fn api_set_peer(
                     Err(_) => return EINVAL,
                 },
                 "public_key" => {
-                    // Indicates a new peer section. Commit changes for current peer, and continue to next peer
+                    // Indicates a new peer section.
+                    // Commit changes for current peer, and continue to next peer
                     d.update_peer(
                         public_key,
                         remove,
