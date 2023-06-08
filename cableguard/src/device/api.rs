@@ -225,6 +225,7 @@ impl Device {
             api_listener.as_raw_fd(),
             Box::new(move |d, _| {
                 // This is the closure that listens on the api unix socket
+
                 let (api_conn, _) = match api_listener.accept() {
                     Ok(conn) => conn,
                     _ => return Action::Continue,
@@ -434,8 +435,9 @@ fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -
                         "public_key" => match val.parse::<KeyBytes>() {
                             // Indicates a new peer section
                             Ok(key_bytes) => {
-                                // Testing if I can write some traces
-                 //               tracing::error!(message = "Poll error", error = ?e);
+                                // So here a peer is set
+                                // As we don't know our peers (if we are a server)
+                                // We need to set a fictional peer that we may never see
                                 return api_set_peer(
                                     reader,
                                     device,
@@ -449,7 +451,6 @@ fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -
                 }
                 cmd.clear();
             }
-
             0
         },
     )

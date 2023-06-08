@@ -460,6 +460,26 @@ impl Device {
         }
         // END of running postup
 
+        // BEGIN determine if we are server or client
+        if device.config.cgrodt.token_id == device.config.cgrodt.metadata.authornftcontractid{
+            println!("This is a server");
+        }
+        // END determine if we are server or client
+
+        // BEGIN If we are client, find the server and check if it is trusted
+        
+        // END If we are client, find the server and check if it is trusted
+
+        // BEGIN If we are client, add the server as a peer
+        
+        // END If we are client, add the server as a peer
+
+        // BEGIN If we are client, add a fictional client as a peer?
+        
+        // END If we are client, add a fictional client as a peer?
+
+        // SEND HANDSHAKE
+
         Ok(device)
     }
 

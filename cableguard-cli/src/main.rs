@@ -297,7 +297,6 @@ fn main() {
     }
     
     // Configure the device with the provided settings
-    // Here we can add a CGRodt object
     let config = DeviceConfig {
         cgrodt,
         cgrodt_private_key:curve25519_private_key_bytes,
