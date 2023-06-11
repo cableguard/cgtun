@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.0.0"
+VERSION="1.0.1"
 echo Version $VERSION "Help: "$0" help"
 export BLOCKCHAIN_ENV="testnet"
 export NFTCONTRACTID=$(cat ./dev-account 2>/dev/null) || { echo "Error: dev-account file with the Smart Contract account ID not found."; exit 1; }
@@ -57,7 +57,7 @@ if [ -n "$1" ]; then
         echo "The following is a list of token_ids belonging to the input account:"
 
         output=$(near view "$NFTCONTRACTID" nft_tokens_for_owner "{\"account_id\": \"$1\"}")
-        filtered_output=$(echo "$output" | grep -o "token_id: '[^']*'" | sed "s/token_id: '//")
+        filtered_output=$(echo "$output" | grep -o "token_id: '[^']*'" | sed "s/token_id: //")
         echo "$filtered_output"
 
         if [ "$2" == "full" ]; then
