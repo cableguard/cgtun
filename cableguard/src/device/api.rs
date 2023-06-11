@@ -47,8 +47,8 @@ impl Default for Cgrodt {
 pub struct CgrodtMetadata {
     pub title: String,
     pub description: String,
-    pub expiresat: String,
-    pub startsat: String,
+    pub notafter: String,
+    pub notbefore: String,
     pub cidrblock: String,
     pub dns: String,
     pub postup: String,
@@ -65,8 +65,8 @@ impl Default for CgrodtMetadata {
         CgrodtMetadata {
             title: String::default(),
             description: String::default(),
-            expiresat: String::default(),
-            startsat: String::default(),
+            notafter: String::default(),
+            notbefore: String::default(),
             cidrblock: String::default(),
             dns: String::default(),
             postup: String::default(),
@@ -133,8 +133,8 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::error!("owner_id: {}", cgrodt.owner_id);
             tracing::error!("title: {}", cgrodt.metadata.title);
             tracing::error!("description: {}", cgrodt.metadata.description);
-            tracing::error!("expiresat: {}", cgrodt.metadata.expiresat);
-            tracing::error!("startsat: {}", cgrodt.metadata.startsat);
+            tracing::error!("notafter: {}", cgrodt.metadata.notafter);
+            tracing::error!("notbefore: {}", cgrodt.metadata.notbefore);
             tracing::error!("cidrblock: {}", cgrodt.metadata.cidrblock);
             tracing::error!("dns: {}", cgrodt.metadata.dns);
             tracing::error!("postup: {}", cgrodt.metadata.postup);
