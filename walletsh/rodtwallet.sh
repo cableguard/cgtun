@@ -1,9 +1,9 @@
 #!/bin/bash
 
 export BLOCKCHAIN_ENV="testnet"
-VERSION="1.2.0"
-echo Version $VERSION "running on " $BLOCKCHAIN_ENV " Get help with: "$0" help"
-export NFTCONTRACTID=$(cat ./dev-account 2>/dev/null) || { echo "Error: dev-account file with the Smart Contract account ID not found."; exit 1; }
+VERSION="1.3.0"
+export NFTCONTRACTID=$(cat ./walletsh/dev-account)
+echo Version $VERSION "running on " $BLOCKCHAIN_ENV at Smart Contract $NFTCONTRACTID " Get help with: "$0" help"
 
 if [ "$1" == "help" ]; then
     echo "Usage: "$0" [account_id] [Options]"
@@ -49,26 +49,22 @@ if [ -n "$2" ]; then
     if [ "$2" == "keys" ]; then
         key_file="$HOME/.near-credentials/$BLOCKCHAIN_ENV/$1.json"
         echo "The contents of the key file (accountID in Hex and PrivateKey in Base58) are:"
-	cat "$key_file" | jq -r '"\(.account_id)\n\(.private_key)"' | sed '2s/ed25519://'
-	exit 0
+        cat "$key_file" | jq -r '"\(.account_id)\n\(.private_key)"' | sed '2s/ed25519://'
+        exit 0
     else
-	echo "RODT Contents"
+        echo "RODT Contents"
         near view $NFTCONTRACTID nft_token "{\"token_id\": \"$2\"}"
-	exit 0
+        exit 0
     fi
 fi
 
 if [ -n "$1" ]; then
     echo "There is a lag while collecting information from the blockchain"
     echo "The following is a list of token_ids belonging to the input account:"
-    output=$(near view "$NFTCONTRACTID" nft_tokens_for_owner "{\"account_id\": \"$1\"}")
-    filtered_output=$(echo "$output" | grep -o "token_id: '[^']*'" | sed "s/token_id: //")
-    echo "$filtered_output"
-fi
-
-if [ -n "$1" ]; then
+    output2=$(near view "$NFTCONTRACTID" nft_tokens_for_owner "{\"account_id\": \"$1\"}")
+    filtered_output2=$(echo "$output2" | grep -o "token_id: '[^']*'" | sed "s/token_id: //")
+    echo "$filtered_output2"
     echo "The balance of the account is:"
-
     near_state=$(near state "$1")
     balance=$(echo "$near_state" | awk -F ': ' '/formattedAmount/ {print $2}')
     if [ -z "$balance" ]; then

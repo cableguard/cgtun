@@ -29,7 +29,7 @@ use crate::constants::BLOCKCHAIN_ENV;
 
 mod constants {
     // Define the global constant as a static item
-    pub static SMART_CONTRACT: &str = "dev-1685978221528-95159102710367";
+    pub static SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
     pub static BLOCKCHAIN_ENV: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
 }
 
