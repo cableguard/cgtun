@@ -12,6 +12,15 @@ mod integration_tests;
 pub mod peer;
 use 
 std::process::Command;
+use hex::FromHex;
+use curve25519_dalek::scalar::Scalar;
+use api::nearorg_rpc_tokens_for_owner;
+use api::api_set_internal;
+
+// This is an embarrasing bit: I am reimplementing this because I don't know how to import it
+static SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
+static BLOCKCHAIN_ENV: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
+// This exist in main.rs
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 #[path = "kqueue.rs"]
@@ -295,6 +304,10 @@ impl Drop for DeviceHandle {
 }
 
 impl Device {
+    
+    const xnet:&str= BLOCKCHAIN_ENV;
+    const smart_contract:&str = SMART_CONTRACT;
+
     fn next_index(&mut self) -> u32 {
         self.next_index.next()
     }
@@ -477,19 +490,23 @@ impl Device {
         // END If we are a client, find the server and check if it is trusted
 
         // BEGIN adding peers
-        if device.config.cgrodt.token_id != device.config.cgrodt.metadata.authornftcontractid{
+        if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
             // If we are client, add the server as a peer
-            // key_bytes is
-            // public_key is
-            // reader is
-            // device is
-/*            api_set_peer_internal(
-                reader,
-                device,
-                x25519::PublicKey::from(key_bytes.0),
-                "public_key",
-                public_key 
-            ) */
+            // reader is Buffer of instructions
+            let account_idargs = "{\"account_id\":\"".to_owned() + &device.config.cgrodt.metadata.authornftcontractid + "\",\"from_index\":0,\"limit\":1}";
+            let server_cgrodt = nearorg_rpc_tokens_for_owner(Self::xnet, Self::smart_contract, Self::smart_contract,
+                "nft_tokens_for_owner", &account_idargs);
+                match nearorg_rpc_tokens_for_owner(Self::xnet, Self::smart_contract, Self::smart_contract, "nft_tokens_for_owner", &account_idargs) {
+                    Ok(server_cgrodt) => {
+                        let serverpeer_Xpublic_key = ed2Xkey(&server_cgrodt.owner_id);
+                        api_set_internal("set_peer_public_key", &serverpeer_Xpublic_key, device);
+                        // api_set_peer_internal(device,x25519::PublicKey::from(servercgrodt_publickey.0),
+                        //    "list_port", device.config.metadata.listen_port)
+                    }
+                    Err(err) => {
+                        eprintln!("Error: {}", err);
+                    }
+                }
         }
         else{
             // If we are a server we set a fictional peer to be ready for handshakes
@@ -497,7 +514,7 @@ impl Device {
                 reader,
                 device,
                 x25519::PublicKey::from(key_bytes.0),
-                "public_key",
+                "set_peer_public_key",
                 public_key 
             ) */
         }
@@ -1044,4 +1061,32 @@ impl Default for IndexLfsr {
             mask: Self::random_index(),
         }
     }
+}
+
+pub fn ed2Xkey(ed25519_private_key_hex: &str) -> String {
+    // Ensure the decoded Private Key Ed25519 of 64 bytes has the expected length
+    assert_eq!(ed25519_private_key_hex.len(), 128);
+
+    tracing::error!("Ed25519 Private Key Hex {:?}", ed25519_private_key_hex);
+
+    // We transform the hex Private Key Ed25519 of 64 bytes to a [u8; 64]
+    let private_key_vec = Vec::<u8>::from_hex(ed25519_private_key_hex)
+        .expect("Invalid hexadecimal string");
+    let mut private_key_array: [u8; 64] = [0u8; 64];
+    let (left, _right) = private_key_array.split_at_mut(private_key_vec.len());
+    left.copy_from_slice(&private_key_vec);
+    let secret_key: [u8; 64] = private_key_array;
+    let secret_key_scalar = Scalar::from_bytes_mod_order_wide(&secret_key);
+
+    // Obtain the secret point from the Private Key Ed25519 of 64 bytes
+    let secret_key_point = &secret_key_scalar * &curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
+
+    // Generate the X25519 key pair from the Private Key Ed25519
+    let curve25519_private_key_montgomery = secret_key_point.to_montgomery();
+    let curve25519_private_key_bytes = curve25519_private_key_montgomery.to_bytes();
+
+    // Convert the private key bytes to a hexadecimal string
+    let curve25519_private_key_hex = hex::encode(&curve25519_private_key_bytes);
+
+    curve25519_private_key_hex
 }

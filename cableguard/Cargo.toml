@@ -3,13 +3,14 @@ name = "cableguard"
 description = "an implementation of the WireGuard® protocol designed for portability and speed"
 version = "0.5.2"
 authors = [
+    "Vicente Aceituno Canal <vpn@cableguard.org>",
     "Noah Kennedy <nkennedy@cloudflare.com>",
     "Andy Grover <agrover@cloudflare.com>",
     "Jeff Hiner <jhiner@cloudflare.com>",
 ]
 license = "BSD-3-Clause"
-repository = "https://github.com/cloudflare/boringtun"
-documentation = "https://docs.rs/boringtun/0.5.2/boringtun/"
+repository = "https://github.com/alanesmizi/cgtun"
+documentation = "https://docs.rs/cgtun/0.5.2/cgtun/"
 edition = "2018"
 
 [features]

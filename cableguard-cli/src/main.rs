@@ -155,7 +155,7 @@ fn main() {
         }
     }
 
-    let account_idargs = "{\"account_id\":\"" .to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
+    let account_idargs = "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
     match nearorg_rpc_tokens_for_owner(xnet, smart_contract, smart_contract, "nft_tokens_for_owner", &account_idargs) {
         Ok(result) => {
             cgrodt = result;
