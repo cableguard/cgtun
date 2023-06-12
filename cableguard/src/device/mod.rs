@@ -452,33 +452,56 @@ impl Device {
             .expect("Failed to execute command");
         
         if output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            tracing::error!("Command executed successfully. Output:\n{}", stdout);
+            let _stdout = String::from_utf8_lossy(&output.stdout);
+            tracing::error!("Ip addr add command executed successfully:\n{}",device.config.cgrodt.metadata.cidrblock);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            eprintln!("Command failed. Error:\n{}", stderr);
+            tracing::error!("Ip addr add command failed to execute:\n{}", stderr);
         }
         // END of running postup
 
         // BEGIN determine if we are server or client
-        if device.config.cgrodt.token_id == device.config.cgrodt.metadata.authornftcontractid{
-            println!("This is a server");
+        if device.config.cgrodt.token_id != device.config.cgrodt.metadata.authornftcontractid{
+            tracing::error!("This is a client");
+        }
+        else{
+            tracing::error!("This is a server");
         }
         // END determine if we are server or client
 
-        // BEGIN If we are client, find the server and check if it is trusted
-        
-        // END If we are client, find the server and check if it is trusted
+        // BEGIN If we are a client, find the server and check if it is trusted
+        // This can be performed with a IsTrusted() call with 
+        // cgrodt.metadata.authornftcontractid as a parameter
+        // Checking if the Issuer smart contract has published a TXT 
+        // entry with the token_id of the server
+        // END If we are a client, find the server and check if it is trusted
 
-        // BEGIN If we are client, add the server as a peer
-        
-        // END If we are client, add the server as a peer
-
-        // BEGIN If we are client, add a fictional client as a peer?
-        
-        // END If we are client, add a fictional client as a peer?
-
-        // SEND HANDSHAKE
+        // BEGIN adding peers
+        if device.config.cgrodt.token_id != device.config.cgrodt.metadata.authornftcontractid{
+            // If we are client, add the server as a peer
+            // key_bytes is
+            // public_key is
+            // reader is
+            // device is
+/*            api_set_peer_internal(
+                reader,
+                device,
+                x25519::PublicKey::from(key_bytes.0),
+                "public_key",
+                public_key 
+            ) */
+        }
+        else{
+            // If we are a server we set a fictional peer to be ready for handshakes
+/*            api_set_peer_internal(
+                reader,
+                device,
+                x25519::PublicKey::from(key_bytes.0),
+                "public_key",
+                public_key 
+            ) */
+        }
+        // END adding peers
 
         Ok(device)
     }
