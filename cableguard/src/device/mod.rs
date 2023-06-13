@@ -15,11 +15,11 @@ std::process::Command;
 use hex::FromHex;
 use curve25519_dalek::scalar::Scalar;
 use api::nearorg_rpc_tokens_for_owner;
-use api::api_set_internal;
+use crate::serialization::{KeyBytes, self};
 
 // This is an embarrasing bit: I am reimplementing this because I don't know how to import it
-static SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
-static BLOCKCHAIN_ENV: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
+const SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
+const BLOCKCHAIN_ENV: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
 // This exist in main.rs
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -492,14 +492,19 @@ impl Device {
         // BEGIN adding peers
         if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
             // If we are client, add the server as a peer
-            // reader is Buffer of instructions
-            let account_idargs = "{\"account_id\":\"".to_owned() + &device.config.cgrodt.metadata.authornftcontractid + "\",\"from_index\":0,\"limit\":1}";
-            let server_cgrodt = nearorg_rpc_tokens_for_owner(Self::xnet, Self::smart_contract, Self::smart_contract,
-                "nft_tokens_for_owner", &account_idargs);
-                match nearorg_rpc_tokens_for_owner(Self::xnet, Self::smart_contract, Self::smart_contract, "nft_tokens_for_owner", &account_idargs) {
+            // readerbufferdevice is Buffer of instructions
+            let account_idargs = "{\"account_id\":\"".to_owned() 
+                + &device.config.cgrodt.metadata.authornftcontractid 
+                + "\",\"from_index\":0,\"limit\":1}";
+                match nearorg_rpc_tokens_for_owner(Self::xnet,
+                    Self::smart_contract,
+                    Self::smart_contract,
+                    "nft_tokens_for_owner",
+                    &account_idargs) {
                     Ok(server_cgrodt) => {
-                        let serverpeer_Xpublic_key = ed2Xkey(&server_cgrodt.owner_id);
-                        api_set_internal("set_peer_public_key", &serverpeer_Xpublic_key, device);
+                        let serverpeer_xpublic_key = ed2xkey(&server_cgrodt.owner_id);
+                        device.api_set_internal("set_peer_public_key",
+                            &serverpeer_xpublic_key);
                         // api_set_peer_internal(device,x25519::PublicKey::from(servercgrodt_publickey.0),
                         //    "list_port", device.config.metadata.listen_port)
                     }
@@ -511,7 +516,7 @@ impl Device {
         else{
             // If we are a server we set a fictional peer to be ready for handshakes
 /*            api_set_peer_internal(
-                reader,
+                readerbufferdevice,
                 device,
                 x25519::PublicKey::from(key_bytes.0),
                 "set_peer_public_key",
@@ -1012,6 +1017,119 @@ impl Device {
         )?;
         Ok(())
     }
+
+    // This version of api_set operates internally, not talking to wg
+    pub fn api_set_internal(&mut self, key: &str, val: &str) {
+    // Usage: wg set <interface>
+    // [private-key <file path>]
+    // [listen-port <port>]
+    // [fwmark <mark>] 
+    // [peer <base64 public key> [remove] 
+    // [preshared-key <file path>] 
+    // [endpoint <ip>:<port>] 
+    // [persistent-keepalive <interval seconds>] 
+    // [allowed-ips <ip1>/<cidr1>[,<ip2>/<cidr2>]...] ]...
+
+        match key {
+            // We can self-server the private key from the input json wallet file
+            // Once transformed to Montgomery form
+            // I think I can call set_key with device.config.cgrodt_private_key
+            "private_key" => match val.parse::<KeyBytes>() {
+                Ok(key_bytes) => {
+                let key_str = serialization::keybytes_to_hex_string(&key_bytes);
+                let string = format!("{:02X?}", key_str);
+                    // Dumping the private key that is associated with the device in HEX format
+                    tracing::error!(message = "TEN:Private_key FN api_set: {}", string);
+                    // This call needs to read the key from the cgrodt instead of key_bytes
+                    self.set_key(x25519::StaticSecret::from(key_bytes.0))
+                    }
+                Err(_) => return,
+                },
+            // We can self-server the listen_port from the Cgrodt
+            // I think I can call set_key with device.config.metadata.listen_port
+            "listen_port" => match val.parse::<u16>() {
+                Ok(port) => match self.open_listen_socket(port) {
+                    Ok(()) => {}
+                        Err(_) => return,
+                    },
+                Err(_) => return,
+                },
+                #[cfg(any(
+                target_os = "android",
+                target_os = "fuchsia",
+                target_os = "linux"
+                ))]
+            // There is no source for this parameter at the moment
+            "fwmark" => match val.parse::<u32>() {
+                Ok(mark) => match self.set_fwmark(mark) {
+                    Ok(()) => {}
+                       Err(_) => return,
+                    },
+                Err(_) => return,
+                },
+            // I have not seen a case for this call in our version yet
+            // but it may come handy when adding not previously seen peers
+            "replace_peers" => match val.parse::<bool>() {
+                Ok(true) => self.clear_peers(),
+                    Ok(false) => {}
+                      Err(_) => return,
+                    },
+                // If we are a client we can find the blockchain
+                // public key of the server and transform it to montgomery
+                // for to use as X25519 public key
+                // I think I can call set_key with device.config.cgrodt_public_key
+            "set_peer_public_key" => match val.parse::<KeyBytes>() {
+                // Indicates a new peer section
+                Ok(key_bytes) => {
+                    // So here a peer is set
+                    // As we don't know our peers (if we are a server)
+                    // We need to set a fictional peer that we may never see
+                    // api_set_peer needs to be reworked to use the info
+                    // from the rodt
+                        return self.api_set_peer(
+                            x25519::PublicKey::from(key_bytes.0),
+                        )
+                    }
+                    Err(_) => return,
+                },
+              _ => return,     
+            }
+    }
+
+    fn api_set_peer(&mut self, pub_key: x25519::PublicKey) {
+
+    // allowed-ips 10.0.0.2/32
+
+        let remove = false;
+        let replace_ips = false;
+        // let mut endpoint = None;
+        let keepalive = None;
+        let public_key = pub_key;
+        let preshared_key = None;
+        let mut allowed_ips: Vec<AllowedIP> = vec![];
+
+        if let Some((ip_str, port_str)) = self.config.cgrodt.metadata.endpoint.split_once(':'){
+            let ip: IpAddr = ip_str.parse().expect("Invalid IP address");
+            let port: u16 = port_str.parse().expect("Invalid port");
+            let socket_addr_v4 = SocketAddr::new(ip,port);      
+            let allowed_ip_str = &self.config.cgrodt.metadata.cidrblock; // Replace with your AllowedIP string
+            let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
+//            let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
+//            let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
+            allowed_ips.push(allowed_ip);
+            self.update_peer(
+                public_key, // public key of the peer
+                remove,
+                replace_ips,
+                Some(socket_addr_v4),
+                &allowed_ips,
+                keepalive,
+                preshared_key,
+                );                    
+            allowed_ips.clear(); //clear the vector content after update
+        }
+//      Ok(key_bytes) => public_key = key_bytes.0.into(),
+    }
 }
 
 /// A basic linear-feedback shift register implemented as xorshift, used to
@@ -1063,7 +1181,7 @@ impl Default for IndexLfsr {
     }
 }
 
-pub fn ed2Xkey(ed25519_private_key_hex: &str) -> String {
+pub fn ed2xkey(ed25519_private_key_hex: &str) -> String {
     // Ensure the decoded Private Key Ed25519 of 64 bytes has the expected length
     assert_eq!(ed25519_private_key_hex.len(), 128);
 

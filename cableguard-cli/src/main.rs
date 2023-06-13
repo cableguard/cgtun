@@ -139,7 +139,7 @@ fn main() {
     // Set the environment to testnet or mainnet
     let xnet = BLOCKCHAIN_ENV;
 
-    let mut cgrodt: Cgrodt = Cgrodt::default();
+    let cgrodt: Cgrodt;
     
     println!("ROTD Directory is NEAR.ORG: {}", SMART_CONTRACT);
     println!("Owner Account ID: {}", account_id);

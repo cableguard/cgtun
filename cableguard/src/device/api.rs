@@ -223,26 +223,26 @@ impl Device {
 
         self.queue.new_event(
             api_listener.as_raw_fd(),
-            Box::new(move |thisbufferdevice, _| {
+            Box::new(move |thisnetworkdevice, _| {
                 // This is the closure that listens on the api unix socket
                 let (api_conn, _) = match api_listener.accept() {
                     Ok(conn) => conn,
                     _ => return Action::Continue,
                 };
 
-                let mut reader = BufReader::new(&api_conn);
-                let mut writer = BufWriter::new(&api_conn);
+                let mut readerbufferdevice = BufReader::new(&api_conn);
+                let mut writerbufferdevice = BufWriter::new(&api_conn);
                 let mut cmd = String::new();
-                if reader.read_line(&mut cmd).is_ok() {
+                if readerbufferdevice.read_line(&mut cmd).is_ok() {
                     cmd.pop(); // pop the new line character
                     let status = match cmd.as_ref() {
                         // Only two commands are legal according to the protocol, get=1 and set=1.
-                        "get=1" => api_get(&mut writer, thisbufferdevice),
-                        "set=1" => api_set(&mut reader, thisbufferdevice),
+                        "get=2" => api_get(&mut writerbufferdevice, thisnetworkdevice),
+                        "set=2" => api_set(&mut readerbufferdevice, thisnetworkdevice),
                         _ => EIO,
                     };
                     // The protocol requires to return an error code as the response, or zero on success
-                    writeln!(writer, "errno={}\n", status).ok();
+                    writeln!(writerbufferdevice, "errno={}\n", status).ok();
                 }
                 Action::Continue // Indicates the worker thread should continue as normal
             }),
@@ -257,28 +257,28 @@ impl Device {
 
         self.queue.new_event(
             io_file.as_raw_fd(),
-            Box::new(move |thisbufferdevice, _| {
+            Box::new(move |thisnetworkdevice, _| {
                 // This is the closure that listens on the api file descriptor
 
-                let mut reader = BufReader::new(&io_file);
-                let mut writer = BufWriter::new(&io_file);
+                let mut readerbufferdevice = BufReader::new(&io_file);
+                let mut writerbufferdevice = BufWriter::new(&io_file);
                 let mut cmd = String::new();
-                if reader.read_line(&mut cmd).is_ok() {
+                if readerbufferdevice.read_line(&mut cmd).is_ok() {
                     cmd.pop(); // pop the new line character
                     let status = match cmd.as_ref() {
                         // Only two commands are legal according to the protocol, get=1 and set=1.
-                        "get=1" => api_get(&mut writer, thisbufferdevice),
+                        "get=1" => api_get(&mut writerbufferdevice, thisnetworkdevice),
                         // We are switching from api_set to api_set_internal 
                         // This means we are not taking commands
                         // from wg anymore, we are self-serving configuration
-                        "set=1" => api_set(&mut reader, thisbufferdevice),
+                        "set=1" => api_set(&mut readerbufferdevice, thisnetworkdevice),
                         _ => EIO,
                     };
                     // The protocol requires to return an error code as the response, or zero on success
-                    writeln!(writer, "errno={}\n", status).ok();
+                    writeln!(writerbufferdevice, "errno={}\n", status).ok();
                 } else {
                     // The remote side is likely closed; we should trigger an exit.
-                    thisbufferdevice.trigger_exit();
+                    thisnetworkdevice.trigger_exit();
                     return Action::Exit;
                 }
 
@@ -291,7 +291,7 @@ impl Device {
 
     fn register_monitor(&self, path: String) -> Result<(), Error> {
         self.queue.new_periodic_event(
-            Box::new(move |thisbufferdevice, _| {
+            Box::new(move |thisnetworkdevice, _| {
                 // This is not a very nice hack to detect if the control socket was removed
                 // and exiting nicely as a result. We check every 3 seconds in a loop if the
                 // file was deleted by stating it.
@@ -301,13 +301,13 @@ impl Device {
                 // TODO: Could this be an issue if we restart the service too quickly?
                 let path = std::path::Path::new(&path);
                 if !path.exists() {
-                    thisbufferdevice.trigger_exit();
+                    thisnetworkdevice.trigger_exit();
                     return Action::Exit;
                 }
 
                 // Periodically read the mtu of the interface in case it changes
-                if let Ok(mtu) = thisbufferdevice.iface.mtu() {
-                    thisbufferdevice.mtu.store(mtu, Ordering::Relaxed);
+                if let Ok(mtu) = thisnetworkdevice.iface.mtu() {
+                    thisnetworkdevice.mtu.store(mtu, Ordering::Relaxed);
                 }
 
                 Action::Continue
@@ -330,54 +330,54 @@ impl Device {
 }
 
 #[allow(unused_must_use)]
-fn api_get(writer: &mut BufWriter<&UnixStream>, thisbufferdevice: &Device) -> i32 {
+fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &Device) -> i32 {
     // get command requires an empty line, but there is no reason to be religious about it
-    if let Some(ref k) = thisbufferdevice.key_pair {
-        writeln!(writer, "own_public_key={}", encode_hex(k.1.as_bytes()));
+    if let Some(ref k) = thisnetworkdevice.key_pair {
+        writeln!(writerbufferdevice, "own_public_key={}", encode_hex(k.1.as_bytes()));
     }
 
-    if thisbufferdevice.listen_port != 0 {
-        writeln!(writer, "listen_port={}", thisbufferdevice.listen_port);
+    if thisnetworkdevice.listen_port != 0 {
+        writeln!(writerbufferdevice, "listen_port={}", thisnetworkdevice.listen_port);
     }
 
-    if let Some(fwmark) = thisbufferdevice.fwmark {
-        writeln!(writer, "fwmark={}", fwmark);
+    if let Some(fwmark) = thisnetworkdevice.fwmark {
+        writeln!(writerbufferdevice, "fwmark={}", fwmark);
     }
 
-    for (k, p) in thisbufferdevice.peers.iter() {
+    for (k, p) in thisnetworkdevice.peers.iter() {
         let p = p.lock();
-        writeln!(writer, "public_key={}", encode_hex(k.as_bytes()));
+        writeln!(writerbufferdevice, "public_key={}", encode_hex(k.as_bytes()));
 
         if let Some(ref key) = p.preshared_key() {
-            writeln!(writer, "preshared_key={}", encode_hex(key));
+            writeln!(writerbufferdevice, "preshared_key={}", encode_hex(key));
         }
 
         if let Some(keepalive) = p.persistent_keepalive() {
-            writeln!(writer, "persistent_keepalive_interval={}", keepalive);
+            writeln!(writerbufferdevice, "persistent_keepalive_interval={}", keepalive);
         }
 
         if let Some(ref addr) = p.endpoint().addr {
-            writeln!(writer, "endpoint={}", addr);
+            writeln!(writerbufferdevice, "endpoint={}", addr);
         }
 
         for (ip, cidr) in p.allowed_ips() {
-            writeln!(writer, "allowed_ip={}/{}", ip, cidr);
+            writeln!(writerbufferdevice, "allowed_ip={}/{}", ip, cidr);
         }
 
         if let Some(time) = p.time_since_last_handshake() {
-            writeln!(writer, "last_handshake_time_sec={}", time.as_secs());
-            writeln!(writer, "last_handshake_time_nsec={}", time.subsec_nanos());
+            writeln!(writerbufferdevice, "last_handshake_time_sec={}", time.as_secs());
+            writeln!(writerbufferdevice, "last_handshake_time_nsec={}", time.subsec_nanos());
         }
 
         let (_, tx_bytes, rx_bytes, ..) = p.tunnel.stats();
 
-        writeln!(writer, "rx_bytes={}", rx_bytes);
-        writeln!(writer, "tx_bytes={}", tx_bytes);
+        writeln!(writerbufferdevice, "rx_bytes={}", rx_bytes);
+        writeln!(writerbufferdevice, "tx_bytes={}", tx_bytes);
     }
     0
 }
 
-fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -> i32 {
+fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -> i32 {
     d.try_writeable(
         |device| device.trigger_yield(),
         |device| {
@@ -385,7 +385,7 @@ fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -
 
             let mut cmd = String::new();
 
-            while reader.read_line(&mut cmd).is_ok() {
+            while readerbufferdevice.read_line(&mut cmd).is_ok() {
                 cmd.pop(); // remove newline if any
                 if cmd.is_empty() {
                     return 0; // Done
@@ -441,7 +441,7 @@ fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -
                                 // As we don't know our peers (if we are a server)
                                 // We need to set a fictional peer that we may never see
                                 return api_set_peer(
-                                    reader,
+                                    readerbufferdevice,
                                     device,
                                     x25519::PublicKey::from(key_bytes.0),
                                 )
@@ -459,91 +459,9 @@ fn api_set(reader: &mut BufReader<&UnixStream>, d: &mut LockReadGuard<Device>) -
     .unwrap_or(EIO)
 }
 
-// This version of api_set operates internally, not talking to wg
-pub fn api_set_internal(key: &str, val: &str, device: &mut Device) -> i32 {
-// Usage: wg set <interface>
-// [private-key <file path>]
-// [listen-port <port>]
-// [fwmark <mark>] 
-// [peer <base64 public key> [remove] 
-// [preshared-key <file path>] 
-// [endpoint <ip>:<port>] 
-// [persistent-keepalive <interval seconds>] 
-// [allowed-ips <ip1>/<cidr1>[,<ip2>/<cidr2>]...] ]...
-            let (key, val) = (" "," ");
-            match key {
-                // We can self-server the private key from the input json wallet file
-                // Once transformed to Montgomery form
-                // I think I can call set_key with device.config.cgrodt_private_key
-                "private_key" => match val.parse::<KeyBytes>() {
-                    Ok(key_bytes) => {
-                        let key_str = serialization::keybytes_to_hex_string(&key_bytes);
-                        let string = format!("{:02X?}", key_str);
-                        // Dumping the private key that is associated with the device in HEX format
-                        tracing::error!(message = "TEN:Private_key FN api_set: {}", string);
-                        // This call needs to read the key from the cgrodt instead of key_bytes
-                        device.set_key(x25519::StaticSecret::from(key_bytes.0))
-                    }
-                    Err(_) => return EINVAL,
-                },
-                // We can self-server the listen_port from the Cgrodt
-                // I think I can call set_key with device.config.metadata.listen_port
-                "listen_port" => match val.parse::<u16>() {
-                    Ok(port) => match device.open_listen_socket(port) {
-                        Ok(()) => {}
-                            Err(_) => return EADDRINUSE,
-                    },
-                    Err(_) => return EINVAL,
-                },
-                #[cfg(any(
-                    target_os = "android",
-                    target_os = "fuchsia",
-                    target_os = "linux"
-                ))]
-                // There is no source for this parameter at the moment
-                "fwmark" => match val.parse::<u32>() {
-                    Ok(mark) => match device.set_fwmark(mark) {
-                        Ok(()) => {}
-                        Err(_) => return EADDRINUSE,
-                    },
-                    Err(_) => return EINVAL,
-                },
-                // I have not seen a case for this call in our version yet
-                // but it may come handy when adding not previously seen peers
-                "replace_peers" => match val.parse::<bool>() {
-                    Ok(true) => device.clear_peers(),
-                    Ok(false) => {}
-                    Err(_) => return EINVAL,
-                },
-                // If we are a client we can find the blockchain
-                // public key of the server and transform it to montgomery
-                // for to use as X25519 public key
-                // I think I can call set_key with device.config.cgrodt_public_key
-                "set_peer_public_key" => match val.parse::<KeyBytes>() {
-                    // Indicates a new peer section
-                    Ok(key_bytes) => {
-                        // So here a peer is set
-                        // As we don't know our peers (if we are a server)
-                        // We need to set a fictional peer that we may never see
-                        // api_set_peer needs to be reworked to use the info
-                        // from the rodt
-                        let reader;
-                        return api_set_peer(
-                            reader,
-                            device,
-                            x25519::PublicKey::from(key_bytes.0),
-                        )
-                    }
-                    Err(_) => return EINVAL,
-                },
-                  _ => return EINVAL,     
-                }
-                0
-}
-
 fn api_set_peer(
-    reader: &mut BufReader<&UnixStream>,
-    thisbufferdevice: &mut Device,
+    readerbufferdevice: &mut BufReader<&UnixStream>,
+    thisnetworkdevice: &mut Device,
     pub_key: x25519::PublicKey,
 ) -> i32 {
     let mut cmd = String::new();
@@ -555,10 +473,10 @@ fn api_set_peer(
     let mut public_key = pub_key;
     let mut preshared_key = None;
     let mut allowed_ips: Vec<AllowedIP> = vec![];
-    while reader.read_line(&mut cmd).is_ok() {
+    while readerbufferdevice.read_line(&mut cmd).is_ok() {
         cmd.pop(); // remove newline if any
         if cmd.is_empty() {
-            thisbufferdevice.update_peer(
+            thisnetworkdevice.update_peer(
                 public_key,
                 remove,
                 replace_ips,
@@ -606,7 +524,7 @@ fn api_set_peer(
                 "public_key" => {
                     // Indicates a new peer section.
                     // Commit changes for current peer, and continue to next peer
-                    thisbufferdevice.update_peer(
+                    thisnetworkdevice.update_peer(
                         public_key,
                         remove,
                         replace_ips,
@@ -622,7 +540,7 @@ fn api_set_peer(
                     }
                 }
                 "protocol_version" => match val.parse::<u32>() {
-                    Ok(1) => {} // Only version 1 is legal
+                    Ok(2) => {} // Only version 2 is legal
                     _ => return EINVAL,
                 },
                 _ => return EINVAL,

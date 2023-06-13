@@ -204,19 +204,19 @@ mod tests {
                 .set_read_timeout(Some(std::time::Duration::from_secs(60)))
                 .ok();
 
-            let mut reader = BufReader::new(tcp_conn);
+            let mut readerbufferdevice = BufReader::new(tcp_conn);
             let mut line = String::new();
             let mut response = String::new();
             let mut len = 0usize;
 
             // Read response code
-            if reader.read_line(&mut line).is_ok() && !line.starts_with("HTTP/1.1 200") {
+            if readerbufferdevice.read_line(&mut line).is_ok() && !line.starts_with("HTTP/1.1 200") {
                 return response;
             }
             line.clear();
 
             // Read headers
-            while reader.read_line(&mut line).is_ok() {
+            while readerbufferdevice.read_line(&mut line).is_ok() {
                 if line.trim() == "" {
                     break;
                 }
@@ -242,7 +242,7 @@ mod tests {
             let mut buf = [0u8; 256];
             while len > 0 {
                 let to_read = len.min(buf.len());
-                if reader.read_exact(&mut buf[..to_read]).is_err() {
+                if readerbufferdevice.read_exact(&mut buf[..to_read]).is_err() {
                     return response;
                 }
                 response.push_str(&String::from_utf8_lossy(&buf[..to_read]));
