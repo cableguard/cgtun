@@ -472,25 +472,32 @@ impl Device {
             tracing::error!("Ip addr add command failed to execute:\n{}", stderr);
         }
         // END of running postup
-
-        // BEGIN determine if we are server or client
-        if device.config.cgrodt.token_id != device.config.cgrodt.metadata.authornftcontractid{
-            tracing::error!("This is a client");
-        }
-        else{
+        
+        if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
             tracing::error!("This is a server");
-        }
-        // END determine if we are server or client
-
         // BEGIN If we are a client, find the server and check if it is trusted
         // This can be performed with a IsTrusted() call with 
         // cgrodt.metadata.authornftcontractid as a parameter
         // Checking if the Issuer smart contract has published a TXT 
         // entry with the token_id of the server
         // END If we are a client, find the server and check if it is trusted
+        }
+        else{
+            tracing::error!("This is a client");
+        }
 
         // BEGIN adding peers
         if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
+            // If we are a server we set a fictional peer to be ready for handshakes
+            /*            api_set_peer_internal(
+                readerbufferdevice,
+                device,
+                x25519::PublicKey::from(key_bytes.0),
+                "set_peer_public_key",
+                public_key 
+            ) */
+        }
+        else{
             // If we are client, add the server as a peer
             // readerbufferdevice is Buffer of instructions
             let account_idargs = "{\"account_id\":\"".to_owned() 
@@ -512,21 +519,10 @@ impl Device {
                         eprintln!("Error: {}", err);
                     }
                 }
-        }
-        else{
-            // If we are a server we set a fictional peer to be ready for handshakes
-/*            api_set_peer_internal(
-                readerbufferdevice,
-                device,
-                x25519::PublicKey::from(key_bytes.0),
-                "set_peer_public_key",
-                public_key 
-            ) */
-        }
-        // END adding peers
-
         Ok(device)
     }
+    // END adding peers
+
 
     fn open_listen_socket(&mut self, mut port: u16) -> Result<(), Error> {
         // Binds the network facing interfaces
