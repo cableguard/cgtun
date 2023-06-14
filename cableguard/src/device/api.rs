@@ -19,6 +19,7 @@ use base64::{URL_SAFE_NO_PAD};
 use reqwest::blocking::Client;
 use serde_json::{Value};
 use serde::{Deserialize, Serialize};
+use serde_json::from_slice;
 
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
@@ -122,11 +123,29 @@ pub fn nearorg_rpc_tokens_for_owner(
         .iter()
         .map(|v| v.as_u64().unwrap() as u8)
         .collect();
-    let result_slice: &[u8] = &result_bytes;
 
+    let result_slice: &[u8] = &result_bytes;
+        
     let result_string = core::str::from_utf8(&result_slice).unwrap();
-    let result_struct: Vec<Cgrodt> = serde_json::from_str(result_string).unwrap();
-    let mut result_iter = serde_json::from_str::<Vec<Cgrodt>>(result_string)?.into_iter();
+    
+    let result_struct: Vec<Cgrodt> = match serde_json::from_str(result_string) {
+        Ok(value) => value,
+        Err(err) => {
+            tracing::error!("can't handle struct {:?}",result_string);
+            // Handle the error, such as logging or returning an error result
+            return Err(Box::new(err));
+        }
+    };
+    
+    let mut result_iter = match serde_json::from_str::<Vec<Cgrodt>>(result_string) {
+        Ok(value) => value.into_iter(),
+        Err(err) => {
+            tracing::error!("can't handle iter  {}",result_string);
+            // Handle the error, such as logging or returning an error result
+            return Err(Box::new(err));
+        }
+    };
+    
     if let Some(cgrodt) = result_iter.next() {
         for cgrodt in result_struct {
             tracing::error!("token_id: {}", cgrodt.token_id);
@@ -151,6 +170,56 @@ pub fn nearorg_rpc_tokens_for_owner(
      // If no Cgrodt instance is available, return an error
         return Err("No Cgrodt instance found".into());
     }
+}
+
+pub fn nearorg_rpc_token(
+    xnet: &str,
+    id: &str,
+    method_name: &str,
+    args: &str,
+) -> Result<Cgrodt, Box<dyn std::error::Error>> {
+    let client: Client = Client::new();
+    let url: String = "https://rpc.".to_string() + &xnet + "near.org";
+    tracing::error!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
+    let json_data: String = format!(
+        r#"{{
+            "jsonrpc": "2.0",
+            "id": "{}",
+            "method": "query",
+            "params": {{
+                "request_type": "call_function",
+                "finality": "final",
+                "account_id": "{}",
+                "method_name": "{}",
+                "args_base64": "{}"
+            }}
+        }}"#,
+        id, id, method_name, base64::encode_config(args,URL_SAFE_NO_PAD)
+    );
+    let response: reqwest::blocking::Response = client
+        .post(&url)
+        .body(json_data)
+        .header("Content-Type", "application/json")
+        .send()?;
+
+    let response_text: String = response.text()?;
+
+    let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
+    
+    let result_array = parsed_json["result"]["result"].as_array().ok_or("Result is not an array")?;
+
+    let result_bytes: Vec<u8> = result_array
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
+
+    let result_slice: &[u8] = &result_bytes;    
+
+    let result_string = String::from_utf8(result_slice.to_vec()).unwrap();
+
+    let cgrodt: Cgrodt = serde_json::from_str(&result_string).unwrap();
+
+    Ok(cgrodt.clone())
 }
 
 pub fn nearorg_rpc_state(
@@ -237,8 +306,8 @@ impl Device {
                     cmd.pop(); // pop the new line character
                     let status = match cmd.as_ref() {
                         // Only two commands are legal according to the protocol, get=1 and set=1.
-                        "get=2" => api_get(&mut writerbufferdevice, thisnetworkdevice),
-                        "set=2" => api_set(&mut readerbufferdevice, thisnetworkdevice),
+                        "get=1" => api_get(&mut writerbufferdevice, thisnetworkdevice),
+                        "set=1" => api_set(&mut readerbufferdevice, thisnetworkdevice),
                         _ => EIO,
                     };
                     // The protocol requires to return an error code as the response, or zero on success

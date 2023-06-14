@@ -14,7 +14,7 @@ use
 std::process::Command;
 use hex::FromHex;
 use curve25519_dalek::scalar::Scalar;
-use api::nearorg_rpc_tokens_for_owner;
+use api::nearorg_rpc_token;
 use crate::serialization::{KeyBytes, self};
 
 // This is an embarrasing bit: I am reimplementing this because I don't know how to import it
@@ -60,6 +60,7 @@ use poll::{EventPoll, EventRef, WaitResult};
 use rand_core::{OsRng, RngCore};
 use socket2::{Domain, Protocol, Type};
 use tun::TunSocket;
+
 
 use dev_lock::{Lock, LockReadGuard};
 
@@ -473,19 +474,6 @@ impl Device {
         }
         // END of running postup
         
-        if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
-            tracing::error!("This is a server");
-        // BEGIN If we are a client, find the server and check if it is trusted
-        // This can be performed with a IsTrusted() call with 
-        // cgrodt.metadata.authornftcontractid as a parameter
-        // Checking if the Issuer smart contract has published a TXT 
-        // entry with the token_id of the server
-        // END If we are a client, find the server and check if it is trusted
-        }
-        else{
-            tracing::error!("This is a client");
-        }
-
         // BEGIN adding peers
         if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
             // If we are a server we set a fictional peer to be ready for handshakes
@@ -496,32 +484,44 @@ impl Device {
                 "set_peer_public_key",
                 public_key 
             ) */
+            tracing::error!("This is a server");
+            ()
         }
         else{
+            // BEGIN If we are a client, find the server and check if it is trusted
+            // This can be performed with a IsTrusted() call with 
+            // cgrodt.metadata.authornftcontractid as a parameter
+            // Checking if the Issuer smart contract has published a TXT 
+            // entry with the token_id of the server
             // If we are client, add the server as a peer
-            // readerbufferdevice is Buffer of instructions
-            let account_idargs = "{\"account_id\":\"".to_owned() 
-                + &device.config.cgrodt.metadata.authornftcontractid 
-                + "\",\"from_index\":0,\"limit\":1}";
-                match nearorg_rpc_tokens_for_owner(Self::xnet,
+            // END If we are a client, find the server and check if it is trusted
+            tracing::error!("This is a client");    
+
+            let account_idargs = "{\"token_id\": \"".to_owned() 
+                + &device.config.cgrodt.metadata.authornftcontractid + "\"}";
+                match nearorg_rpc_token(Self::xnet,
                     Self::smart_contract,
-                    Self::smart_contract,
-                    "nft_tokens_for_owner",
-                    &account_idargs) {
-                    Ok(server_cgrodt) => {
-                        let serverpeer_xpublic_key = ed2xkey(&server_cgrodt.owner_id);
+                    "nft_token",&account_idargs) {
+                    Ok(result) => {
+                        let server_cgrodt = result;
+                        tracing::error!("Server RODT: {:?}", server_cgrodt);
+                        tracing::error!("Server RODT Owner: {:?}", server_cgrodt.owner_id);
+                        let server_public_key_hex = hex::encode(&server_cgrodt.owner_id);
+                        let serverpeer_xpublic_key = ed2xkey(&server_public_key_hex);
+                        tracing::error!("TEN calling api_set_internal set peer public key with {:?}",serverpeer_xpublic_key);
                         device.api_set_internal("set_peer_public_key",
                             &serverpeer_xpublic_key);
                         // api_set_peer_internal(device,x25519::PublicKey::from(servercgrodt_publickey.0),
                         //    "list_port", device.config.metadata.listen_port)
                     }
                     Err(err) => {
-                        eprintln!("Error: {}", err);
-                    }
+                        tracing::error!("There is no server RODT associated with the account: {}", err);
+                        std::process::exit(1);        }
                 }
+        }
+        // END adding peers
         Ok(device)
     }
-    // END adding peers
 
 
     fn open_listen_socket(&mut self, mut port: u16) -> Result<(), Error> {
@@ -812,10 +812,6 @@ impl Device {
                         Packet::PacketData(p) => d.peers_by_idx.get(&(p.receiver_idx >> 8)),
                     };
                     
-
-
-
-
                     let peer = match peer {
                         None => continue,
                         Some(peer) => peer,
@@ -1027,7 +1023,7 @@ impl Device {
     // [allowed-ips <ip1>/<cidr1>[,<ip2>/<cidr2>]...] ]...
 
         match key {
-            // We can self-server the private key from the input json wallet file
+            // We can self-serve the private key from the input json wallet file
             // Once transformed to Montgomery form
             // I think I can call set_key with device.config.cgrodt_private_key
             "private_key" => match val.parse::<KeyBytes>() {
@@ -1035,13 +1031,13 @@ impl Device {
                 let key_str = serialization::keybytes_to_hex_string(&key_bytes);
                 let string = format!("{:02X?}", key_str);
                     // Dumping the private key that is associated with the device in HEX format
-                    tracing::error!(message = "TEN:Private_key FN api_set: {}", string);
+                    tracing::error!(message = "TEN:Private_key FN api_set_internal: {}", string);
                     // This call needs to read the key from the cgrodt instead of key_bytes
                     self.set_key(x25519::StaticSecret::from(key_bytes.0))
                     }
                 Err(_) => return,
                 },
-            // We can self-server the listen_port from the Cgrodt
+            // We can self-serve the listen_port from the Cgrodt
             // I think I can call set_key with device.config.metadata.listen_port
             "listen_port" => match val.parse::<u16>() {
                 Ok(port) => match self.open_listen_socket(port) {
@@ -1070,10 +1066,10 @@ impl Device {
                     Ok(false) => {}
                       Err(_) => return,
                     },
-                // If we are a client we can find the blockchain
-                // public key of the server and transform it to montgomery
-                // for to use as X25519 public key
-                // I think I can call set_key with device.config.cgrodt_public_key
+            // If we are a client we can find the blockchain
+            // public key of the server and transform it to montgomery
+            // for to use as X25519 public key
+            // I think I can call set_key with device.config.cgrodt_public_key
             "set_peer_public_key" => match val.parse::<KeyBytes>() {
                 // Indicates a new peer section
                 Ok(key_bytes) => {
@@ -1082,6 +1078,7 @@ impl Device {
                     // We need to set a fictional peer that we may never see
                     // api_set_peer needs to be reworked to use the info
                     // from the rodt
+                        tracing::error!(message = "TEN:Peer Public Key FN api_set_internal {:?}", "{:?}", key_bytes.0);
                         return self.api_set_peer(
                             x25519::PublicKey::from(key_bytes.0),
                         )
@@ -1093,7 +1090,7 @@ impl Device {
     }
 
     fn api_set_peer(&mut self, pub_key: x25519::PublicKey) {
-
+    // NEXT STEP IS TO ADD ALLOWED IPS TO THE PEER
     // allowed-ips 10.0.0.2/32
 
         let remove = false;
@@ -1104,12 +1101,25 @@ impl Device {
         let preshared_key = None;
         let mut allowed_ips: Vec<AllowedIP> = vec![];
 
-        if let Some((ip_str, port_str)) = self.config.cgrodt.metadata.endpoint.split_once(':'){
+        println!("Setting endpoint {}", self.config.cgrodt.metadata.endpoint);
+
+        // While I fix Cableguard Forge:
+        let temp = self.config.cgrodt.metadata.endpoint.clone() + ":12345";
+
+        if let Some((ip_str, port_str)) = temp.split_once(':'){
             let ip: IpAddr = ip_str.parse().expect("Invalid IP address");
+println!("Setting IP {}", ip);
             let port: u16 = port_str.parse().expect("Invalid port");
+println!("Setting PORT {}", port);
             let socket_addr_v4 = SocketAddr::new(ip,port);      
-            let allowed_ip_str = &self.config.cgrodt.metadata.cidrblock; // Replace with your AllowedIP string
+println!("Setting SOCKETADDR {}", socket_addr_v4);
+            let allowed_ip_str = &self.config.cgrodt.metadata.allowedips; // Replace with your AllowedIP string
+println!("Setting allowed IP str {}", allowed_ip_str);
+// pub struct AllowedIP {
+//    pub addr: IpAddr,
+//    pub cidr: u8,}
             let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
+println!("Setting allowed IP {:?}", allowed_ip);
 //            let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
 //            let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
             allowed_ips.push(allowed_ip);

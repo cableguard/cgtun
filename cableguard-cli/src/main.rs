@@ -162,7 +162,7 @@ fn main() {
         }
         Err(err) => {
             // Handle the error
-            eprintln!("There is no associated RODT: {}", err);
+            tracing::error!("There is no RODT associated with the account: {}", err);
             std::process::exit(1);
         }
     }
