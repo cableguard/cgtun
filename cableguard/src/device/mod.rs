@@ -484,8 +484,10 @@ impl Device {
             let rando_public_key_hex: [u8; 32] = randopublic_key.as_bytes().clone(); 
             let rando_public_key_str = hex::encode(rando_public_key_hex);        
             device.api_set_internal("set_peer_public_key", &rando_public_key_str);
-            let listenport = device.config.cgrodt.metadata.listenport.as_str();
-            device.api_set_internal("listen_port", listenport);
+
+            // listen port value passed is ignored and always set to 
+            // device.config.cgrodt.metadata.listenport
+            device.api_set_internal("listen_port", "0");          
         }
         else{
             // BEGIN If we are a client, find the server and check if it is trusted
@@ -1039,11 +1041,21 @@ impl Device {
                 },
             // We can self-serve the listen_port from the Cgrodt
             // I think I can call set_key with device.config.metadata.listen_port
+            // NEXT
             "listen_port" => match val.parse::<u16>() {
-                Ok(port) => match self.open_listen_socket(port) {
-                    Ok(()) => {}
+                Ok(port) => { 
+                    let listenport_str = &self.config.cgrodt.metadata.listenport;
+                    let listenport = listenport_str.parse::<u16>();
+                    match listenport {
+                        Ok(parsed_listenport) => {
+                            match self.open_listen_socket(parsed_listenport) {
+                                Ok(()) => {}
+                                Err(_) => return,
+                            }
+                        }
                         Err(_) => return,
-                    },
+                    }                    
+                },
                 Err(_) => return,
                 },
                 #[cfg(any(
