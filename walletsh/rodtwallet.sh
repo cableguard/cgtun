@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export BLOCKCHAIN_ENV="testnet"
-VERSION="1.3.2"
+VERSION="1.3.3"
 export NFTCONTRACTID=$(cat ./walletsh/dev-account)
 echo Version $VERSION "running on " $BLOCKCHAIN_ENV at Smart Contract $NFTCONTRACTID " Get help with: "$0" help"
 
@@ -13,7 +13,7 @@ if [ "$1" == "help" ]; then
     echo "  "$0" <accountID>           : Lists the RODT Ids in the account and its balance"
     echo "  "$0" <accountID> keys      : Displays the accountID and the Private Key of the account"
     echo "  "$0" <accountID> <RODT Id> : Displays the indicated RODT"
-    echo "  "$0" <funding accountId> <unitialized accountId> init    : Initializes account with 0.001 NEAR from funding acount"
+    echo "  "$0" <funding accountId> <unitialized accountId> init    : Initializes account with 0.01 NEAR from funding acount"
     echo "  "$0" <origin accountId>  <destination accountId> <rotid> : Sends ROTD from origin account to destination account"
     echo "  "$0" genaccount            : Creates a new uninitialized accountID"
     exit 0
@@ -42,8 +42,8 @@ if [ -n "$3" ] && [ "$3" != "init" ]; then
 fi
 
 if [ "$3" = "init" ] && [ -n "$3" ]; then
-    echo "Initializing with 0.001 NEAR "$2""
-    near send $1 $2 0.001
+    echo "Initializing with 0.01 NEAR "$2""
+    near send $1 $2 0.01
     exit 0
 fi
 
