@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export BLOCKCHAIN_ENV="testnet"
-VERSION="1.3.1"
+VERSION="1.3.2"
 export NFTCONTRACTID=$(cat ./walletsh/dev-account)
 echo Version $VERSION "running on " $BLOCKCHAIN_ENV at Smart Contract $NFTCONTRACTID " Get help with: "$0" help"
 
@@ -23,10 +23,15 @@ if [ "$1" == "genaccount" ]; then
     # Add code for generating a new uninitialized accountID
     echo "Generating a new uninitialized accountID..."
     wg genaccount
-    echo "The following is a list of token_ids belonging to the input account:"
-    output2=$(near view "$NFTCONTRACTID" nft_tokens_for_owner "{\"account_id\": \"$1\"}")
-    filtered_output2=$(echo "$output2" | grep -o "token_id: '[^']*'" | sed "s/token_id: //")
-    echo "$filtered_output2"
+    echo "The balance of the account is:"
+    near_state=$(near state "$1")
+    balance=$(echo "$near_state" | awk -F ': ' '/formattedAmount/ {print $2}')
+    if [ -z "$balance" ]; then
+        echo "The account does not exist in the blockchain as it has no balance. You need to initialize it with at least 0.01 NEAR."
+    else
+        echo "Account $1"
+        echo "Balance: '$balance'"
+    fi
     exit 0
 fi
 

@@ -51,6 +51,7 @@ pub struct CgrodtMetadata {
     pub notafter: String,
     pub notbefore: String,
     pub cidrblock: String,
+    pub listenport: String,
     pub dns: String,
     pub postup: String,
     pub postdown: String,

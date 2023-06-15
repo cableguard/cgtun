@@ -1090,51 +1090,42 @@ impl Device {
     }
 
     fn api_set_peer(&mut self, pub_key: x25519::PublicKey) {
-    // NEXT STEP IS TO ADD ALLOWED IPS TO THE PEER
-    // allowed-ips 10.0.0.2/32
+    // cidrblock is allowed-ips
+    // allowedips  is part of postup / postdown commands)
+    // What I am calling endpoint + listenport in boringtun is called socket_addr_v4
+    // Server rodt does not have listenport? Strange
 
         let remove = false;
         let replace_ips = false;
         // let mut endpoint = None;
         let keepalive = None;
-        let public_key = pub_key;
+        let public_key_ofthepeer = pub_key;
         let preshared_key = None;
         let mut allowed_ips: Vec<AllowedIP> = vec![];
 
-        println!("Setting endpoint {}", self.config.cgrodt.metadata.endpoint);
-
-        // While I fix Cableguard Forge:
-        let temp = self.config.cgrodt.metadata.endpoint.clone() + ":12345";
-
-        if let Some((ip_str, port_str)) = temp.split_once(':'){
-            let ip: IpAddr = ip_str.parse().expect("Invalid IP address");
-println!("Setting IP {}", ip);
-            let port: u16 = port_str.parse().expect("Invalid port");
-println!("Setting PORT {}", port);
-            let socket_addr_v4 = SocketAddr::new(ip,port);      
-println!("Setting SOCKETADDR {}", socket_addr_v4);
-            let allowed_ip_str = &self.config.cgrodt.metadata.allowedips; // Replace with your AllowedIP string
-println!("Setting allowed IP str {}", allowed_ip_str);
-// pub struct AllowedIP {
-//    pub addr: IpAddr,
-//    pub cidr: u8,}
-            let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
-println!("Setting allowed IP {:?}", allowed_ip);
+        let ip: IpAddr = self.config.cgrodt.metadata.endpoint.parse().expect("Invalid IP address");
+        println!("Setting IP {}", ip);
+        let port: u16 = self.config.cgrodt.metadata.listenport.parse().expect("Invalid port");
+        println!("Setting PORT {}", port);
+        let socket_addr_v4 = SocketAddr::new(ip,port);      
+        println!("Setting SOCKETADDR {}", socket_addr_v4);
+        let allowed_ip_str = &self.config.cgrodt.metadata.cidrblock; // Replace with your AllowedIP string
+        println!("Setting allowed IP str {}", allowed_ip_str);
+        let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
+        println!("Setting allowed IP {:?}", allowed_ip);
 //            let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
 //            let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
-            allowed_ips.push(allowed_ip);
-            self.update_peer(
-                public_key, // public key of the peer
-                remove,
-                replace_ips,
-                Some(socket_addr_v4),
-                &allowed_ips,
-                keepalive,
-                preshared_key,
-                );                    
-            allowed_ips.clear(); //clear the vector content after update
-        }
-//      Ok(key_bytes) => public_key = key_bytes.0.into(),
+        allowed_ips.push(allowed_ip);
+        self.update_peer(
+            public_key_ofthepeer, // public key of the peer
+            remove,
+            replace_ips,
+            Some(socket_addr_v4),
+            &allowed_ips,
+            keepalive,
+            preshared_key,
+            );                    
+        allowed_ips.clear();
     }
 }
 
