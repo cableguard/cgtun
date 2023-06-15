@@ -19,7 +19,6 @@ use base64::{URL_SAFE_NO_PAD};
 use reqwest::blocking::Client;
 use serde_json::{Value};
 use serde::{Deserialize, Serialize};
-use serde_json::from_slice;
 
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
@@ -70,6 +69,7 @@ impl Default for CgrodtMetadata {
             notafter: String::default(),
             notbefore: String::default(),
             cidrblock: String::default(),
+            listenport: String::default(),
             dns: String::default(),
             postup: String::default(),
             postdown: String::default(),

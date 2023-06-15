@@ -1103,18 +1103,23 @@ impl Device {
         let preshared_key = None;
         let mut allowed_ips: Vec<AllowedIP> = vec![];
 
+        // Endpoint and Listenport are socket_addr_v4
         let ip: IpAddr = self.config.cgrodt.metadata.endpoint.parse().expect("Invalid IP address");
         println!("Setting IP {}", ip);
         let port: u16 = self.config.cgrodt.metadata.listenport.parse().expect("Invalid port");
         println!("Setting PORT {}", port);
         let socket_addr_v4 = SocketAddr::new(ip,port);      
         println!("Setting SOCKETADDR {}", socket_addr_v4);
-        let allowed_ip_str = &self.config.cgrodt.metadata.cidrblock; // Replace with your AllowedIP string
+        
+        // Cidrblock is allowed_ip
+        let allowed_ip_str = &self.config.cgrodt.metadata.cidrblock;
         println!("Setting allowed IP str {}", allowed_ip_str);
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
         println!("Setting allowed IP {:?}", allowed_ip);
 //            let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
 //            let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
+
+        // Create or update peer
         allowed_ips.push(allowed_ip);
         self.update_peer(
             public_key_ofthepeer, // public key of the peer
