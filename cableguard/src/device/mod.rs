@@ -513,7 +513,7 @@ impl Device {
                         tracing::error!("TEN calling api_set_internal set peer public key with {:?}",serverpeer_xpublic_key);
                         device.api_set_internal("set_peer_public_key",
                             &serverpeer_xpublic_key);
-                        // api_set_peer_internal(device,x25519::PublicKey::from(servercgrodt_publickey.0),
+                        // api_set_peer_internal_internal_internal(device,x25519::PublicKey::from(servercgrodt_publickey.0),
                         //    "list_port", device.config.metadata.listen_port)
                     }
                     Err(err) => {
@@ -1014,6 +1014,8 @@ impl Device {
 
     // This version of api_set operates internally, not talking to wg
     pub fn api_set_internal(&mut self, key: &str, val: &str) {
+    // Check if both sides have all these properly configured to be able to connect
+    // with the Noise procotol that has not been modified yet
     // Usage: wg set <interface>
     // [private-key <file path>]
     // [listen-port <port>]
@@ -1040,24 +1042,17 @@ impl Device {
                 Err(_) => return,
                 },
             // We can self-serve the listen_port from the Cgrodt
-            // I think I can call set_key with device.config.metadata.listen_port
-            // NEXT
-            "listen_port" => match val.parse::<u16>() {
-                Ok(port) => { 
-                    let listenport_str = &self.config.cgrodt.metadata.listenport;
-                    let listenport = listenport_str.parse::<u16>();
-                    match listenport {
-                        Ok(parsed_listenport) => {
-                            match self.open_listen_socket(parsed_listenport) {
-                                Ok(()) => {}
-                                Err(_) => return,
-                            }
-                        }
-                        Err(_) => return,
-                    }                    
-                },
-                Err(_) => return,
-                },
+            "listen_port" => {
+                let listenport_str = &self.config.cgrodt.metadata.listenport;
+                let listenport = listenport_str.parse::<u16>();
+                if let Ok(parsed_listenport) = listenport {
+                    if let Err(_) = self.open_listen_socket(parsed_listenport) {
+                        return;
+                    }
+                } else {
+                    return;
+                }
+            },
                 #[cfg(any(
                 target_os = "android",
                 target_os = "fuchsia",
@@ -1081,7 +1076,6 @@ impl Device {
             // If we are a client we can find the blockchain
             // public key of the server and transform it to montgomery
             // for to use as X25519 public key
-            // I think I can call set_key with device.config.cgrodt_public_key
             "set_peer_public_key" => match val.parse::<KeyBytes>() {
                 // Indicates a new peer section
                 Ok(key_bytes) => {
@@ -1091,7 +1085,7 @@ impl Device {
                     // api_set_peer needs to be reworked to use the info
                     // from the rodt
                         tracing::error!(message = "TEN:Peer Public Key FN api_set_internal {:?}", "{:?}", key_bytes.0);
-                        return self.api_set_peer(
+                        return self.api_set_peer_internal(
                             x25519::PublicKey::from(key_bytes.0),
                         )
                     }
@@ -1101,11 +1095,9 @@ impl Device {
             }
     }
 
-    fn api_set_peer(&mut self, pub_key: x25519::PublicKey) {
+    fn api_set_peer_internal(&mut self, pub_key: x25519::PublicKey) {
     // cidrblock is allowed-ips
     // allowedips  is part of postup / postdown commands)
-    // What I am calling endpoint + listenport in boringtun is called socket_addr_v4
-    // Server rodt does not have listenport? Strange
 
         let remove = false;
         let replace_ips = false;
@@ -1115,11 +1107,10 @@ impl Device {
         let preshared_key = None;
         let mut allowed_ips: Vec<AllowedIP> = vec![];
 
-        // Endpoint and Listenport are socket_addr_v4
         let ip: IpAddr = self.config.cgrodt.metadata.endpoint.parse().expect("Invalid IP address");
         let port: u16 = self.config.cgrodt.metadata.listenport.parse().expect("Invalid port");
-        let socket_addr_v4 = SocketAddr::new(ip,port);      
-        println!("Setting Server IP and port {}", socket_addr_v4);        
+        let endpoint_listenport = SocketAddr::new(ip,port);      
+        println!("Setting Server IP and port {}", endpoint_listenport);        
         // Cidrblock is allowed_ip, it FAILS if the cidr format is not followed
         let allowed_ip_str = &self.config.cgrodt.metadata.cidrblock;
         println!("Setting own assigned IP? {}", allowed_ip_str);
@@ -1133,7 +1124,7 @@ impl Device {
             public_key_ofthepeer,
             remove,
             replace_ips,
-            Some(socket_addr_v4),
+            Some(endpoint_listenport),
             &allowed_ips,
             keepalive,
             preshared_key,
