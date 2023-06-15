@@ -1,12 +1,13 @@
 #!/bin/bash
 
 export BLOCKCHAIN_ENV="testnet"
-VERSION="1.3.3"
+VERSION="1.3.4"
 export NFTCONTRACTID=$(cat ./walletsh/dev-account)
 echo Version $VERSION "running on " $BLOCKCHAIN_ENV at Smart Contract $NFTCONTRACTID " Get help with: "$0" help"
 
 if [ "$1" == "help" ]; then
     echo "Usage: "$0" [account_id] [Options]"
+    echo "Will not work when called from $home you need to be in the cgtun directory"
     echo ""
     echo "Options:"
     echo "  "$0" List of available accounts"
@@ -57,8 +58,8 @@ fi
 if [ -n "$2" ]; then
     if [ "$2" == "keys" ]; then
         key_file="$HOME/.near-credentials/$BLOCKCHAIN_ENV/$1.json"
-        echo "The contents of the key file (accountID in Hex and PrivateKey in Base58) are:"
-        cat "$key_file" | jq -r '"\(.account_id)\n\(.private_key)"' | sed '2s/ed25519://'
+        echo "The contents of the key file (PrivateKey in Base58 account ID in Hex) are:"
+	cat "$key_file" | jq -r '"\(.private_key | sub("ed25519:"; ""))\n\(.account_id)"'
         exit 0
     else
         echo "RODT Contents"

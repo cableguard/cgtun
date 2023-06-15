@@ -60,13 +60,13 @@ use poll::{EventPoll, EventRef, WaitResult};
 use rand_core::{OsRng, RngCore};
 use socket2::{Domain, Protocol, Type};
 use tun::TunSocket;
-
-
 use dev_lock::{Lock, LockReadGuard};
 
 // Adding Cgrodt object as part of DeviceConfig
 use crate::device::api::Cgrodt;
-
+use crate::x25519::StaticSecret;
+use crate::x25519::PublicKey;
+    
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
@@ -477,15 +477,15 @@ impl Device {
         // BEGIN adding peers
         if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
             // If we are a server we set a fictional peer to be ready for handshakes
-            /*            api_set_peer_internal(
-                readerbufferdevice,
-                device,
-                x25519::PublicKey::from(key_bytes.0),
-                "set_peer_public_key",
-                public_key 
-            ) */
             tracing::error!("This is a server");
-            ()
+
+            let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
+            let randopublic_key: PublicKey = (&randoprivate_key).into();   
+            let rando_public_key_hex: [u8; 32] = randopublic_key.as_bytes().clone(); 
+            let rando_public_key_str = hex::encode(rando_public_key_hex);        
+            device.api_set_internal("set_peer_public_key", &rando_public_key_str);
+            let listenport = device.config.cgrodt.metadata.listenport.as_str();
+            device.api_set_internal("listen_port", listenport);
         }
         else{
             // BEGIN If we are a client, find the server and check if it is trusted
@@ -1105,24 +1105,20 @@ impl Device {
 
         // Endpoint and Listenport are socket_addr_v4
         let ip: IpAddr = self.config.cgrodt.metadata.endpoint.parse().expect("Invalid IP address");
-        println!("Setting IP {}", ip);
         let port: u16 = self.config.cgrodt.metadata.listenport.parse().expect("Invalid port");
-        println!("Setting PORT {}", port);
         let socket_addr_v4 = SocketAddr::new(ip,port);      
-        println!("Setting SOCKETADDR {}", socket_addr_v4);
-        
-        // Cidrblock is allowed_ip
+        println!("Setting Server IP and port {}", socket_addr_v4);        
+        // Cidrblock is allowed_ip, it FAILS if the cidr format is not followed
         let allowed_ip_str = &self.config.cgrodt.metadata.cidrblock;
-        println!("Setting allowed IP str {}", allowed_ip_str);
+        println!("Setting own assigned IP? {}", allowed_ip_str);
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
         println!("Setting allowed IP {:?}", allowed_ip);
 //            let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
 //            let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
-
         // Create or update peer
         allowed_ips.push(allowed_ip);
         self.update_peer(
-            public_key_ofthepeer, // public key of the peer
+            public_key_ofthepeer,
             remove,
             replace_ips,
             Some(socket_addr_v4),
