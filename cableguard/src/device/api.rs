@@ -14,7 +14,6 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::sync::atomic::Ordering;
-// use base64::{encode_config};
 use base64::{URL_SAFE_NO_PAD};
 use reqwest::blocking::Client;
 use serde_json::{Value};

@@ -1,6 +1,6 @@
 // Copyright (c) 2023 cableguard, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-use base64::encode;
+use hex::encode;
 use tracing::error;
 use hex::ToHex; // Import the `ToHex` trait to convert byte arrays to hexadecimal strings
 pub mod allowed_ips;
@@ -579,7 +579,7 @@ impl Device {
  
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
-        tracing::info!(message = "TEN: Curve25519 Public Key (PublicKey) FN set_key Base64: {}", string);
+        tracing::info!(message = "TEN: Curve25519 Public Key (PublicKey) FN set_key Hex: {}", string);
         
         // There is a quirk wheras the private key generated is alternates with 
         // a given input so I am invoking and dumping so the next time I call it 
@@ -593,7 +593,7 @@ impl Device {
         
         let tenpbytes = private_key.to_bytes();
         let stringp = encode(&tenpbytes);
-        tracing::info!(message = "TEN: Curve25519 Private Key (after StaticSecret) FN set_key Base64: {}", stringp);
+        tracing::info!(message = "TEN: Curve25519 Private Key (after StaticSecret) FN set_key Hex: {}", stringp);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.
@@ -1081,7 +1081,8 @@ impl Device {
                     // We need to set a fictional peer that we may never see
                     // api_set_peer needs to be reworked to use the info
                     // from the rodt
-                        tracing::info!(message = "TEN:Peer Public Key FN api_set_internal {:?}", "{:?}", key_bytes.0);
+                    let key_bytes_encoded = encode(key_bytes.0);
+                    tracing::info!("TEN:Peer Public Key FN api_set_internal {:?}", key_bytes_encoded);
                         return self.api_set_peer_internal(
                             x25519::PublicKey::from(key_bytes.0),
                         )
@@ -1179,6 +1180,8 @@ impl Default for IndexLfsr {
     }
 }
 
+// This function takes a Ed25519 private key in Hex of 64 bytes and creates a matching X25519 key
+// as a String of 32 bytes
 pub fn ed2xkey(ed25519_private_key_hex: &str) -> String {
     // Ensure the decoded Private Key Ed25519 of 64 bytes has the expected length
     assert_eq!(ed25519_private_key_hex.len(), 128);

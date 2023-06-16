@@ -58,8 +58,6 @@ impl RateLimiter {
         OsRng.fill_bytes(&mut secret_key);
 
         let secret_key_str = secret_key.encode_hex::<String>();
-        // Display the converted value in the trace
-        tracing::info!("TEN: secret_key: {}", secret_key_str);
         
         RateLimiter {
             nonce_key: Self::rand_bytes(),

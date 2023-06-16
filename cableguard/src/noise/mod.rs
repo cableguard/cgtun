@@ -19,6 +19,7 @@ use std::convert::{TryFrom, TryInto};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::Arc;
 use std::time::Duration;
+use hex::encode;
 
 /// The default value to use for rate limiting, when no other rate limiter is defined
 const PEER_HANDSHAKE_RATE_LIMIT: u64 = 10;
@@ -201,20 +202,15 @@ impl Tunn {
     ) -> Result<Self, &'static str> {
         let static_public = x25519::PublicKey::from(&static_private);
 
-        // Convert the bytes to a hexadecimal string
-//        let static_private_string = format!("{:?}", static_private_string);
-        let static_public_string = format!("{:?}", static_public);
-        let peer_static_public_string = format!("{:?}", peer_static_public);
         let preshared_key_string = match preshared_key {
             Some(key) => format!("{:?}", key),
             None => String::from("None"),
         };
 
-        // Display variables as trace
-//         tracing::info!(message = "TEN: static_private = {} in fn new/Tunn", static_private_string);
-        tracing::info!(message = "TEN: static_public = {} in fn new/Tunn", static_public_string);
-        tracing::info!(message = "TEN: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
-        tracing::info!(message = "TEN: preshared_key = {} in fn new/Tunn", preshared_key_string);
+        let static_public_string = encode(static_public);
+        let peer_static_public_string =  encode(peer_static_public);
+        tracing::info!("TEN: static_public = {} in fn new/Tunn", static_public_string);
+        tracing::info!("TEN: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
 
         let tunn = Tunn {
             handshake: Handshake::new(

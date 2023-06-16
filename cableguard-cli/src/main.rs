@@ -17,8 +17,9 @@ use serde_json::Value;
 use cableguard::device::api::nearorg_rpc_tokens_for_owner;
 use cableguard::device::api::nearorg_rpc_state;
 use cableguard::device::api::Cgrodt;
+use cableguard::device::ed2xkey;
 use hex::FromHex;
-use base64::{encode};
+use hex::{encode};
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::constants::ED25519_BASEPOINT_POINT;
 use curve25519_dalek::edwards::EdwardsPoint;
@@ -187,7 +188,7 @@ fn main() {
     tracing::info!("Ed25519 Private Key Hex {:?}",ed25519_private_key_hex);
 
     // We transform the hex Private Key Ed25519 of 64 bytes it to a [u8; 64] 
-    let private_key_vec = Vec::<u8>::from_hex(ed25519_private_key_hex).clone().expect("Invalid hexadecimal string");
+    let private_key_vec = Vec::<u8>::from_hex(ed25519_private_key_hex.clone()).clone().expect("Invalid hexadecimal string");
     let mut private_key_array: [u8; 64] = [0u8; 64];
     let (left,_right) = private_key_array.split_at_mut(private_key_vec.len());
     left.copy_from_slice(&private_key_vec);
@@ -213,14 +214,17 @@ fn main() {
 
     // Convert the public key to bytes
     let curve25519_public_key_bytes = curve25519_public_key.as_bytes();    
+    tracing::info!("X25519 Public key bytes fn main {:?}",curve25519_public_key_bytes);
+    let curve25519_public_key_display = ed2xkey(&ed25519_private_key_hex.clone());
+    tracing::info!("X25519 Public key hex fn main {:?}",curve25519_public_key_display);
 
     // Generate the Curve25519 base64 private key for display purposes
-    let curve25519_private_key_base64 = encode(curve25519_private_key_bytes);
-    tracing::info!("Curve25519 Private Key (Base64): {}",curve25519_private_key_base64);
+    let curve25519_private_key_display = encode(curve25519_private_key_bytes);
+    tracing::info!("Curve25519 Private Key FN main Hex: {}",curve25519_private_key_display);
     
     // Generate the Curve25519 base64 public key for display purpose
-    let curve25519_public_key_base64 = encode(curve25519_public_key_bytes);
-    tracing::info!("Curve25519 Public Key (Base64): {}",curve25519_public_key_base64);
+    let curve25519_public_key_display = encode(curve25519_public_key_bytes);
+    tracing::info!("Curve25519 Public Key FN main Hex: {}",curve25519_public_key_display);
 
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
