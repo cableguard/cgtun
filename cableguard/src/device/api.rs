@@ -91,7 +91,7 @@ pub fn nearorg_rpc_tokens_for_owner(
 ) -> Result<Cgrodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc.".to_string() + &xnet + "near.org";
-    tracing::error!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
+    tracing::info!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -149,21 +149,21 @@ pub fn nearorg_rpc_tokens_for_owner(
     
     if let Some(cgrodt) = result_iter.next() {
         for cgrodt in result_struct {
-            tracing::error!("token_id: {}", cgrodt.token_id);
-            tracing::error!("owner_id: {}", cgrodt.owner_id);
-            tracing::error!("title: {}", cgrodt.metadata.title);
-            tracing::error!("description: {}", cgrodt.metadata.description);
-            tracing::error!("notafter: {}", cgrodt.metadata.notafter);
-            tracing::error!("notbefore: {}", cgrodt.metadata.notbefore);
-            tracing::error!("cidrblock: {}", cgrodt.metadata.cidrblock);
-            tracing::error!("dns: {}", cgrodt.metadata.dns);
-            tracing::error!("postup: {}", cgrodt.metadata.postup);
-            tracing::error!("postdown: {}", cgrodt.metadata.postdown);
-            tracing::error!("allowedips: {}", cgrodt.metadata.allowedips);
-            tracing::error!("endpoint: {}", cgrodt.metadata.endpoint);
-            tracing::error!("authornftcontractid: {}", cgrodt.metadata.authornftcontractid);
-            tracing::error!("authorsignature: {}", cgrodt.metadata.authorsignature);
-            tracing::error!("kbpersecond: {}", cgrodt.metadata.kbpersecond);
+            tracing::info!("token_id: {}", cgrodt.token_id);
+            tracing::info!("owner_id: {}", cgrodt.owner_id);
+            tracing::info!("title: {}", cgrodt.metadata.title);
+            tracing::info!("description: {}", cgrodt.metadata.description);
+            tracing::info!("notafter: {}", cgrodt.metadata.notafter);
+            tracing::info!("notbefore: {}", cgrodt.metadata.notbefore);
+            tracing::info!("cidrblock: {}", cgrodt.metadata.cidrblock);
+            tracing::info!("dns: {}", cgrodt.metadata.dns);
+            tracing::info!("postup: {}", cgrodt.metadata.postup);
+            tracing::info!("postdown: {}", cgrodt.metadata.postdown);
+            tracing::info!("allowedips: {}", cgrodt.metadata.allowedips);
+            tracing::info!("endpoint: {}", cgrodt.metadata.endpoint);
+            tracing::info!("authornftcontractid: {}", cgrodt.metadata.authornftcontractid);
+            tracing::info!("authorsignature: {}", cgrodt.metadata.authorsignature);
+            tracing::info!("kbpersecond: {}", cgrodt.metadata.kbpersecond);
         }
      // Return the first Cgrodt instance as the result
         return Ok(cgrodt.clone());
@@ -181,7 +181,7 @@ pub fn nearorg_rpc_token(
 ) -> Result<Cgrodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc.".to_string() + &xnet + "near.org";
-    tracing::error!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
+    tracing::info!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -230,7 +230,7 @@ pub fn nearorg_rpc_state(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc.".to_string() + &xnet + "near.org";
-    tracing::error!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
+    tracing::info!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -474,7 +474,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 let key_str = serialization::keybytes_to_hex_string(&key_bytes);
                                 let string = format!("{:02X?}", key_str);
                                 // Dumping the private key that is associated with the device in HEX format
-                                tracing::error!(message = "TEN:Private_key FN api_set: {}", string);
+                                tracing::info!(message = "TEN:Private_key FN api_set: {}", string);
                                 // This call needs to read the key from the cgrodt instead of key_bytes
                                 device.set_key(x25519::StaticSecret::from(key_bytes.0))
                             }

@@ -211,10 +211,10 @@ impl Tunn {
         };
 
         // Display variables as trace
-//         tracing::error!(message = "TEN: static_private = {} in fn new/Tunn", static_private_string);
-        tracing::error!(message = "TEN: static_public = {} in fn new/Tunn", static_public_string);
-        tracing::error!(message = "TEN: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
-        tracing::error!(message = "TEN: preshared_key = {} in fn new/Tunn", preshared_key_string);
+//         tracing::info!(message = "TEN: static_private = {} in fn new/Tunn", static_private_string);
+        tracing::info!(message = "TEN: static_public = {} in fn new/Tunn", static_public_string);
+        tracing::info!(message = "TEN: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
+        tracing::info!(message = "TEN: preshared_key = {} in fn new/Tunn", preshared_key_string);
 
         let tunn = Tunn {
             handshake: Handshake::new(
@@ -628,8 +628,7 @@ mod tests {
         let their_public_key_str = encode(their_public_key.as_bytes());
 
         // Display the converted values in the trace
-        tracing::error!(
-            "TEN: my_secret_key: {}, my_public_key: {}, their_secret_key: {}, their_public_key: {} in fn create_two_tuns",
+        tracing::info!("TEN: my_secret_key: {}, my_public_key: {}, their_secret_key: {}, their_public_key: {} in fn create_two_tuns",
             my_secret_key_str,
             my_public_key_str,
             their_secret_key_str,

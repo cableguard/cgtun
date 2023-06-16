@@ -170,10 +170,10 @@ fn main() {
     // In the following line INTERFACE_NAME is derived from the token_id ULID, with a max
     // 15 characters, by default utun+last 11 of ULID, this is compatible with: fn check_tun_name
     let tun_name = format!("utun{}", &cgrodt.token_id[cgrodt.token_id.len() - 11..]);
-    tracing::error!("Name of the tun device is: {}", tun_name);
+    tracing::info!("Name of the tun device is: {}", tun_name);
 
     // We have a Base58 format Private Key Ed25519 of 64 bytes
-    tracing::error!("Ed25519 Private Key Base58 {:?}",private_key_base58);
+    tracing::info!("Ed25519 Private Key Base58 {:?}",private_key_base58);
 
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
     let ed25519_private_key_bytes = bs58::decode(private_key_base58)
@@ -184,7 +184,7 @@ fn main() {
     // Ensure the decoded Private Key Ed25519 of 64 bytes has the expected length
     assert_eq!(ed25519_private_key_hex.len(), 128);
 
-    tracing::error!("Ed25519 Private Key Hex {:?}",ed25519_private_key_hex);
+    tracing::info!("Ed25519 Private Key Hex {:?}",ed25519_private_key_hex);
 
     // We transform the hex Private Key Ed25519 of 64 bytes it to a [u8; 64] 
     let private_key_vec = Vec::<u8>::from_hex(ed25519_private_key_hex).clone().expect("Invalid hexadecimal string");
@@ -216,11 +216,11 @@ fn main() {
 
     // Generate the Curve25519 base64 private key for display purposes
     let curve25519_private_key_base64 = encode(curve25519_private_key_bytes);
-    tracing::error!("Curve25519 Private Key (Base64): {}",curve25519_private_key_base64);
+    tracing::info!("Curve25519 Private Key (Base64): {}",curve25519_private_key_base64);
     
     // Generate the Curve25519 base64 public key for display purpose
     let curve25519_public_key_base64 = encode(curve25519_public_key_bytes);
-    tracing::error!("Curve25519 Public Key (Base64): {}",curve25519_public_key_base64);
+    tracing::info!("Curve25519 Public Key (Base64): {}",curve25519_public_key_base64);
 
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
@@ -231,9 +231,9 @@ fn main() {
     
     let _guard;
     
-    tracing::error!("To display current configuration of the tunnel use \"sudo wg show\"");
-    tracing::error!("To display available NEAR.ORG accounts use \"showrotd.sh\"");
-    tracing::error!("To create a NEAR.ORG account use \"wg genaccount\"");
+    tracing::info!("To display current configuration of the tunnel use \"sudo wg show\"");
+    tracing::info!("To display available NEAR.ORG accounts use \"showrotd.sh\"");
+    tracing::info!("To create a NEAR.ORG account use \"wg genaccount\"");
 
     if background {
         // Running in background mode
@@ -273,7 +273,7 @@ fn main() {
                 // Perform an action when the daemon process exits
                 let mut b = [0u8; 1];
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
-                    tracing::error!("CableGuard started successfully");
+                    tracing::info!("CableGuard started successfully");
                 } else {
                     eprintln!("CableGuard failed to start. Check if the capabilities are set and you are running with enough privileges.");
                     exit(1);
