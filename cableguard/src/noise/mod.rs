@@ -202,11 +202,6 @@ impl Tunn {
     ) -> Result<Self, &'static str> {
         let static_public = x25519::PublicKey::from(&static_private);
 
-        let preshared_key_string = match preshared_key {
-            Some(key) => format!("{:?}", key),
-            None => String::from("None"),
-        };
-
         let static_public_string = encode(static_public);
         let peer_static_public_string =  encode(peer_static_public);
         tracing::info!("TEN: static_public = {} in fn new/Tunn", static_public_string);

@@ -1,30 +1,29 @@
 // Copyright (c) 2023 Cableguard, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
-use cableguard::device::drop_privileges::drop_privileges;
-use cableguard::device::{DeviceConfig, DeviceHandle};
 use clap::{Arg, Command};
 use daemonize::Daemonize;
 use std::os::unix::net::UnixDatagram;
 use std::process::exit;
-use std::env;
-use tracing::Level;
 use std::fs::{File, OpenOptions};
-// use std::io::prelude::*;
 use std::io::{self, ErrorKind};
 use std::io::Read;
+use std::env;
+use tracing::Level;
 use serde_json::Value;
+use cableguard::device::drop_privileges::drop_privileges;
+use cableguard::device::{DeviceConfig, DeviceHandle};
 use cableguard::device::api::nearorg_rpc_tokens_for_owner;
 use cableguard::device::api::nearorg_rpc_state;
 use cableguard::device::api::Cgrodt;
-use cableguard::device::ed2xkey;
-use hex::FromHex;
-use hex::{encode};
+use cableguard::device::ed2x_public_key_hex;
+use cableguard::x25519::PublicKey;
+use cableguard::x25519::StaticSecret;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::constants::ED25519_BASEPOINT_POINT;
 use curve25519_dalek::edwards::EdwardsPoint;
-use cableguard::x25519::PublicKey;
-use cableguard::x25519::StaticSecret;
+use hex::FromHex;
+use hex::{encode};
 use crate::constants::SMART_CONTRACT;
 use crate::constants::BLOCKCHAIN_ENV;
 
@@ -37,7 +36,7 @@ mod constants {
 fn main() {
     let matches = Command::new("cableguard")
         .version(env!("CARGO_PKG_VERSION"))
-        .author("Vicente Aceituno Canal <vicente@cableguard.org> and Vlad Krasnov <vlad@cloudflare.com>")
+        .author("Vicente Aceituno Canal <vicente@cableguard.org> and Vlad Krasnov <vlad@cloudflare.com> et al")
         .args(&[
             // We input a file path and name that has the private key
             // of the blockchain account, the interface name will be derived from the token_id of the RODT
@@ -96,30 +95,31 @@ fn main() {
         .get_matches();
 
     let background = !matches.is_present("foreground");
+
     #[cfg(target_os = "linux")]
     let uapi_fd: i32 = matches.value_of_t("uapi-fd").unwrap_or_else(|e| e.exit());
 
-    // Here is where we need to extract the public key from the file with the account
-    // and use to to perform a RPC call and obtain the token_id
-    let file_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
+    // Extract the public key from the file with the account
+    // Perform a RPC call with it and obtain the token_id
+    let accountfile_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
 
-    let file_path = file_name;
-    let mut file = match File::open(&file_path) {
-        Ok(file) => file,
+    let accountfile_path = accountfile_name;
+    let mut accountfile = match File::open(&accountfile_path) {
+        Ok(accountfile) => accountfile,
         Err(err) => {
             eprintln!("Failed to open the file: {}", err);
             return; // Terminate the program or handle the error accordingly
         }
     };
 
-    let mut file_contents = String::new();
-    if let Err(err) = file.read_to_string(&mut file_contents) {
+    let mut accountfile_contents = String::new();
+    if let Err(err) = accountfile.read_to_string(&mut accountfile_contents) {
         eprintln!("Failed to read the file: {}", err);
         return; // Terminate the program or handle the error accordingly
     }
 
-    let json: Value = match serde_json::from_str(&file_contents) {
-        Ok(value) => value,
+    let json: Value = match serde_json::from_str(&accountfile_contents) {
+        Ok(contents) => contents,
         Err(err) => {
             eprintln!("Failed to parse JSON: {}", err);
             // Add any additional error handling logic if needed
@@ -127,10 +127,10 @@ fn main() {
         }
     };
 
-    // Extract the value of the "account_id" field, include it in a json string and encode it as Base64
+    // Extract the value of the "account_id" field, include it in a json string
     let account_id = json["account_id"].as_str().expect("Invalid account_id value");
 
-    // Extract the value of the "private_key" field  from the account file
+    // Extract the value of the "private_key" field, include it in a json string and encode it as Base58
     let private_key_base58 = json["private_key"].as_str().expect("Invalid private_key value");   
     let private_key_base58 = private_key_base58.trim_start_matches("ed25519:");
 
@@ -140,12 +140,13 @@ fn main() {
     // Set the environment to testnet or mainnet
     let xnet = BLOCKCHAIN_ENV;
 
+    // Initialize a RODT object
     let cgrodt: Cgrodt;
     
     println!("ROTD Directory is NEAR.ORG: {}", SMART_CONTRACT);
     println!("Owner Account ID: {}", account_id);
 
-    // WARNING if the account is not primed    
+    // Show a warning if the account is not primed    
     match nearorg_rpc_state(xnet, smart_contract, account_id) {
         Ok(result) => { println!("Result {:?}",result)
         }
@@ -156,6 +157,7 @@ fn main() {
         }
     }
 
+    // Retrieve from the blockchain the RODT using the account_id
     let account_idargs = "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
     match nearorg_rpc_tokens_for_owner(xnet, smart_contract, smart_contract, "nft_tokens_for_owner", &account_idargs) {
         Ok(result) => {
@@ -168,63 +170,69 @@ fn main() {
         }
     }
 
-    // In the following line INTERFACE_NAME is derived from the token_id ULID, with a max
-    // 15 characters, by default utun+last 11 of ULID, this is compatible with: fn check_tun_name
+    // Create an Interface Name derived from the token_id ULID,
+    // with a max length of 15 characters, by default utun+last 11 of ULID for operating systems compatibility, 
     let tun_name = format!("utun{}", &cgrodt.token_id[cgrodt.token_id.len() - 11..]);
-    tracing::info!("Name of the tun device is: {}", tun_name);
-
-    // We have a Base58 format Private Key Ed25519 of 64 bytes
-    tracing::info!("Ed25519 Private Key Base58 {:?}",private_key_base58);
+    
+    // Now we create a Curve5519 key pair from Private Key Ed25519 of 64 bytes in Base58 format
+    tracing::info!("Ed25519 Private Key Base58 {}",private_key_base58);
 
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
     let ed25519_private_key_bytes = bs58::decode(private_key_base58)
-    .into_vec()
-    .expect("Failed to decode the private key from Base58");
+        .into_vec()
+        .expect("Failed to decode the private key from Base58");
     let ed25519_private_key_hex = hex::encode(&ed25519_private_key_bytes);
 
     // Ensure the decoded Private Key Ed25519 of 64 bytes has the expected length
+    assert_eq!(ed25519_private_key_bytes.len(), 64);
     assert_eq!(ed25519_private_key_hex.len(), 128);
 
-    tracing::info!("Ed25519 Private Key Hex {:?}",ed25519_private_key_hex);
+    tracing::info!("Ed25519 Private Key Hex {}",ed25519_private_key_hex);
 
-    // We transform the hex Private Key Ed25519 of 64 bytes it to a [u8; 64] 
-    let private_key_vec = Vec::<u8>::from_hex(ed25519_private_key_hex.clone()).clone().expect("Invalid hexadecimal string");
+    // We extract the Secret Key of 32 bytes from the hex Private Key Ed25519 of 64 bytes
     let mut private_key_array: [u8; 64] = [0u8; 64];
+    let private_key_vec = Vec::<u8>::from_hex(ed25519_private_key_hex.clone()).clone().expect("Invalid hexadecimal string");
+    
+    // Extract the Secret Key
     let (left,_right) = private_key_array.split_at_mut(private_key_vec.len());
     left.copy_from_slice(&private_key_vec);
+
+    // Convert to Scalar type
     let secret_key: [u8; 64] = private_key_array;
     let secret_key_scalar = Scalar::from_bytes_mod_order_wide(&secret_key);
 
-    // Obtain the secret point from the Private Key Ed25519 of 64 bytes
+    // Obtain the secret point from the Secret Key of 32 bytes
     let secret_key_point: EdwardsPoint = &secret_key_scalar * &ED25519_BASEPOINT_POINT;
 
-    // Generate the X25519 key pair from the Private Key Ed25519
+    // Generate the X25519 Private Key from the Private Key Ed25519
     let curve25519_private_key_montgomery = secret_key_point.to_montgomery();
     let curve25519_private_key_bytes = curve25519_private_key_montgomery.to_bytes();
 
-    // Convert the private key bytes to a [u8; 32] array
+    // Create a StaticSecret from the private key bytes, with a [u8; 32] array as intermediate format
     let mut curve25519_private_key_array = [0u8; 32];
     curve25519_private_key_array.copy_from_slice(&curve25519_private_key_bytes[..]);
-
-    // Create a StaticSecret from the private key bytes
     let curve25519_private_key_ss = StaticSecret::from(curve25519_private_key_array);
 
-    // Generate the corresponding public key
+    // Generate the corresponding PublicKey from the StaticSecret
     let curve25519_public_key: PublicKey = (&curve25519_private_key_ss).into();
 
-    // Convert the public key to bytes
-    let curve25519_public_key_bytes = curve25519_public_key.as_bytes();    
-    tracing::info!("X25519 Public key bytes fn main {:?}",curve25519_public_key_bytes);
-    let curve25519_public_key_display = ed2xkey(&ed25519_private_key_hex.clone());
-    tracing::info!("X25519 Public key hex fn main {:?}",curve25519_public_key_display);
+    // Convert the PublicKey to bytes
+    let curve25519_public_key_bytes = curve25519_public_key.as_bytes();  
 
     // Generate the Curve25519 base64 private key for display purposes
     let curve25519_private_key_display = encode(curve25519_private_key_bytes);
-    tracing::info!("Curve25519 Private Key FN main Hex: {}",curve25519_private_key_display);
+    tracing::info!("X25519 Private Key FN main Hex: {}",curve25519_private_key_display);
     
     // Generate the Curve25519 base64 public key for display purpose
     let curve25519_public_key_display = encode(curve25519_public_key_bytes);
-    tracing::info!("Curve25519 Public Key FN main Hex: {}",curve25519_public_key_display);
+    tracing::info!("X25519 Public Key FN main Hex: {}",curve25519_public_key_display);
+
+    // We are NEXT here
+    // Number 0: Verify that you can still tunnel with the currently created key pairs
+    // Number 1: create ed2xpublickey that creates a X public key in Hex from an Ed public Key
+    // Number 2: verify that you get the same X public key when you create it from an Ed public Key or from an Ed private Key 
+    let curve25519_public_key_display  = ed2x_public_key_hex(account_id);
+    tracing::info!("X25519 Public key hex fn main {:?}",curve25519_public_key_display);
 
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
