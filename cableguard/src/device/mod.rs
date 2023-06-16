@@ -10,12 +10,11 @@ pub mod drop_privileges;
 #[cfg(test)]
 mod integration_tests;
 pub mod peer;
-use 
-std::process::Command;
+use std::process::Command;
 use hex::FromHex;
-use curve25519_dalek::scalar::Scalar;
 use api::nearorg_rpc_token;
 use crate::serialization::{KeyBytes, self};
+use std::convert::TryInto;
 
 // This is an embarrasing bit: I am reimplementing this because I don't know how to import it
 const SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
@@ -507,8 +506,7 @@ impl Device {
                         let server_cgrodt = result;
                         tracing::info!("Server RODT: {:?}", server_cgrodt);
                         tracing::info!("Server RODT Owner: {:?}", server_cgrodt.owner_id);
-                        let server_public_key_hex = hex::encode(&server_cgrodt.owner_id);
-                        let serverpeer_xpublic_key = ed2x_public_key_hex(&server_public_key_hex);
+                        let serverpeer_xpublic_key = ed2x_public_key_hex(&server_cgrodt.owner_id);
                         tracing::info!("TEN calling api_set_internal set peer public key with {:?}",serverpeer_xpublic_key);
                         device.api_set_internal("set_peer_public_key",
                             &serverpeer_xpublic_key);
@@ -1181,29 +1179,25 @@ impl Default for IndexLfsr {
     }
 }
 
-// This function takes a Ed25519 private key in Hex of 64 bytes and creates a matching X25519 key
-// as a String of 32 bytes
-pub fn ed2x_public_key_hex(ed25519_private_key_hex: &str) -> String {
-    // Ensure the decoded Private Key Ed25519 of 64 bytes has the expected length
-    assert_eq!(ed25519_private_key_hex.len(), 128);
+// This function takes a Ed25519 public key in Hex of 32 bytes and creates a matching X25519 key
+// as a <KeyBytes> of 32 bytes
+pub fn ed2x_public_key_hex(key: &str) -> String {
+    // Parse the input key string as a hex-encoded Ed25519 public key
+    let ed25519_pub_bytes = hex::decode(key).expect("Invalid hexadecimal string");
+    tracing::info!("Server Public Ed25519 Key in Bytes: {:?}", ed25519_pub_bytes);
 
-    tracing::info!("Ed25519 Private Key Hex {:?}", ed25519_private_key_hex);
-
-    // We transform the hex Private Key Ed25519 of 64 bytes to a [u8; 64]
-    let private_key_vec = Vec::<u8>::from_hex(ed25519_private_key_hex).expect("Invalid hexadecimal string");
-    let mut private_key_array: [u8; 64] = [0u8; 64];
-    let (left, _right) = private_key_array.split_at_mut(private_key_vec.len());
-    left.copy_from_slice(&private_key_vec);
-    let secret_key: [u8; 64] = private_key_array;
-    let secret_key_scalar = Scalar::from_bytes_mod_order_wide(&secret_key);
-    // Obtain the secret point from the Key Ed25519 of 64 bytes
-    let secret_key_point = &secret_key_scalar * &curve25519_dalek::constants::ED25519_BASEPOINT_TABLE;
-    // Generate the X25519 key from the Key Ed25519
-    let curve25519_private_key_montgomery = secret_key_point.to_montgomery();
-    let curve25519_private_key_bytes = curve25519_private_key_montgomery.to_bytes();
-
-    // Convert the private key bytes to a hexadecimal string
-    let curve25519_private_key_hex = hex::encode(&curve25519_private_key_bytes);
-
-    curve25519_private_key_hex
+    // Convert the Ed25519 public key bytes to Montgomery form
+    let ed25519_pub_array: [u8; 32] = ed25519_pub_bytes.as_slice().try_into().expect("Invalid length");
+    let x25519_pub_key = curve25519_dalek::edwards::CompressedEdwardsY(ed25519_pub_array)
+    .decompress()
+    .expect("An Ed25519 public key is a valid point by construction.")
+    .to_montgomery()
+    .0;
+            
+    // Convert the Montgomery public key to a hex-encoded string
+    let x25519_pub_key_hex = hex::encode(x25519_pub_key);
+            
+    // Return the hex-encoded public key as a String
+    x25519_pub_key_hex
 }
+            
