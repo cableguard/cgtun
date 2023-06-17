@@ -2,10 +2,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 use crate::device::peer::AllowedIP;
-
 use ip_network::IpNetwork;
 use ip_network_table::IpNetworkTable;
-
 use std::collections::VecDeque;
 use std::iter::FromIterator;
 use std::net::IpAddr;

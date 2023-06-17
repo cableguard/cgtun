@@ -27,6 +27,7 @@ use crate::ffi::x25519_secret_key;
 
 use crate::noise::Tunn;
 
+// CG: This seems to be void of content, is it necessary?
 pub extern "C" fn log_print(_log_string: *const c_char) {
     /*
     XXX:

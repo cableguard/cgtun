@@ -18,12 +18,6 @@ use cableguard::device::api::nearorg_rpc_state;
 use cableguard::device::api::Cgrodt;
 use cableguard::device::ed2x_public_key_hex;
 use cableguard::device::ed2x_private_key_hex;
-// use cableguard::x25519::PublicKey;
-// use cableguard::x25519::StaticSecret;
-// use curve25519_dalek::scalar::Scalar;
-// use curve25519_dalek::constants::ED25519_BASEPOINT_POINT;
-// use curve25519_dalek::edwards::EdwardsPoint;
-// use hex::FromHex;
 use hex::{encode};
 use crate::constants::SMART_CONTRACT;
 use crate::constants::BLOCKCHAIN_ENV;
@@ -40,7 +34,7 @@ fn main() {
         .author("Vicente Aceituno Canal <vicente@cableguard.org> and Vlad Krasnov <vlad@cloudflare.com> et al")
         .args(&[
             // We input a file path and name that has the private key
-            // of the blockchain account, the interface name will be derived from the token_id of the RODT
+            // of the blockchain account
             Arg::new("FILE_WITH_ACCOUNT")
                 .required(true)
                 .takes_value(true)
@@ -101,7 +95,6 @@ fn main() {
     let uapi_fd: i32 = matches.value_of_t("uapi-fd").unwrap_or_else(|e| e.exit());
 
     // Extract the public key from the file with the account
-    // Perform a RPC call with it and obtain the token_id
     let accountfile_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
 
     let accountfile_path = accountfile_name;
@@ -147,6 +140,7 @@ fn main() {
     println!("ROTD Directory is NEAR.ORG: {}", SMART_CONTRACT);
     println!("Owner Account ID: {}", account_id);
 
+    // Perform a RPC call with it and obtain the token_id
     // Show a warning if the account is not primed    
     match nearorg_rpc_state(xnet, smart_contract, account_id) {
         Ok(result) => { println!("Result {:?}",result)
@@ -190,62 +184,16 @@ fn main() {
 
     println!("Ed25519 Private Key Hex {}",ed25519_private_key_hex);
 
-    // let curve25519_private_key_ss = ed2x_private_key_hex(&ed25519_private_key_hex);
-
-    // We extract the Secret Key of 32 bytes from the hex Private Key Ed25519 of 64 bytes
-    // let mut private_key_array: [u8; 64] = [0u8; 64];
-    // let private_key_vec = Vec::<u8>::from_hex(ed25519_private_key_hex.clone()).clone().expect("Invalid hexadecimal string");
-    
-    // Extract the Secret Key
-    // let (left,_right) = private_key_array.split_at_mut(private_key_vec.len());
-    // left.copy_from_slice(&private_key_vec);
-
-    // Convert to Scalar type
-    // let secret_key: [u8; 64] = private_key_array;
-    // let secret_key_scalar = Scalar::from_bytes_mod_order_wide(&secret_key);
-
     // Generate the Curve25519 private key with direct conversion from the private key
     let server_xprivate_key_ss = ed2x_private_key_hex(ed25519_private_key_bytes.try_into().unwrap());
     let curve25519_private_key_bytes = server_xprivate_key_ss.as_bytes();  
     println!("X25519 Private Key DIRECT FN main Hex{:?}",encode(curve25519_private_key_bytes));
-
-    // Obtain the secret point from the Secret Key of 32 bytes
-    // let secret_key_point: EdwardsPoint = &secret_key_scalar * &ED25519_BASEPOINT_POINT;
-
-    // Generate the X25519 Private Key from the Private Key Ed25519
-    // let curve25519_private_key_montgomery = secret_key_point.to_montgomery();
-    // let curve25519_private_key_bytes = curve25519_private_key_montgomery.to_bytes();
-
-    // Create a StaticSecret from the private key bytes, with a [u8; 32] array as intermediate format
-    // let mut curve25519_private_key_array = [0u8; 32];
-    // curve25519_private_key_array.copy_from_slice(&curve25519_private_key_bytes[..]);
-    // let curve25519_private_key_ss = StaticSecret::from(curve25519_private_key_array);
-
-    // Generate the corresponding PublicKey from the StaticSecret
-    // let curve25519_public_key: PublicKey = (&curve25519_private_key_ss).into();
-
-    // Convert the PublicKey to bytes
-    // let mut curve25519_public_key_bytes = curve25519_public_key.as_bytes();  
-
-    // Generate the Curve25519 base64 private key for display purposes
-    // let curve25519_private_key_display = encode(curve25519_private_key_bytes);
-    // println!("X25519 Private Key FN main Hex: {}",curve25519_private_key_display);
-    
-    // Generate the Curve25519 base64 public key for display purpose
-    // let curve25519_public_key_display = encode(curve25519_public_key_bytes);
-    // println!("X25519 Public Key VIA PRIVATE FN main Hex: {}",curve25519_public_key_display);
 
     // Generate the Curve25519 public key with direct conversion from the account id
     let server_xpublic_key_str = ed2x_public_key_hex(&account_id);
     let curve25519_public_key_bytes = server_xpublic_key_str;
     println!("X25519 account ID DIRECT FN main Hex{:?}",account_id);
     println!("X25519 Public Key DIRECT FN main Hex{:?}",encode(server_xpublic_key_str));
-
-    // Number 0: Verify that you can still tunnel with the currently created key pairs
-    // Number 1: create ed2xpublickey that creates a X public key in Hex from an Ed public Key
-    // Number 2: verify that you get the same X public key when you create it from an Ed public Key or from an Ed private Key 
-    // let curve25519_public_key_display  = ed2x_public_key_hex(account_id);
-    // println!("X25519 Public key hex fn main {:?}",curve25519_public_key_display);
 
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());

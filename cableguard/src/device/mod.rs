@@ -47,7 +47,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
-
 use crate::noise::errors::WireGuardError;
 use crate::noise::handshake::parse_handshake_anon;
 use crate::noise::rate_limiter::RateLimiter;
@@ -61,14 +60,10 @@ use rand_core::{OsRng, RngCore};
 use socket2::{Domain, Protocol, Type};
 use tun::TunSocket;
 use dev_lock::{Lock, LockReadGuard};
-
-// Adding Cgrodt object as part of DeviceConfig
 use crate::device::api::Cgrodt;
 use crate::x25519::StaticSecret;
 use crate::x25519::PublicKey;
-    
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
-
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
 

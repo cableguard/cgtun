@@ -1,3 +1,5 @@
+// CG: Missing license
+
 use std::time::Duration;
 
 use nix::sys::time::TimeSpec;

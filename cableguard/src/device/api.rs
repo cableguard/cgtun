@@ -18,7 +18,6 @@ use base64::{URL_SAFE_NO_PAD};
 use reqwest::blocking::Client;
 use serde_json::{Value};
 use serde::{Deserialize, Serialize};
-
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
