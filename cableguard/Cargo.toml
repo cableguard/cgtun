@@ -50,6 +50,8 @@ mock_instant = { version = "0.2", optional = true }
 socket2 = { version = "0.4.7", features = ["all"], optional = true }
 thiserror = { version = "1", optional = true }
 reqwest = { version = "0.10.0-alpha.2", features = ["blocking"] }
+zeroize= "1.5.0"
+sha2 = "0.10.7"
 
 [target.'cfg(unix)'.dependencies]
 nix = { version = "0.25", default-features = false, features = [

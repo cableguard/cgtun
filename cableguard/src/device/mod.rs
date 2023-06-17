@@ -1,6 +1,5 @@
 // Copyright (c) 2023 cableguard, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-use hex::encode;
 use tracing::error;
 use hex::ToHex; // Import the `ToHex` trait to convert byte arrays to hexadecimal strings
 pub mod allowed_ips;
@@ -11,10 +10,12 @@ pub mod drop_privileges;
 mod integration_tests;
 pub mod peer;
 use std::process::Command;
-use hex::FromHex;
 use api::nearorg_rpc_token;
 use crate::serialization::{KeyBytes, self};
 use std::convert::TryInto;
+use zeroize::Zeroize;
+use sha2::{Sha512,Digest};
+use hex::{encode};
 
 // This is an embarrasing bit: I am reimplementing this because I don't know how to import it
 const SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
@@ -508,8 +509,13 @@ impl Device {
                         tracing::info!("Server RODT Owner: {:?}", server_cgrodt.owner_id);
                         let serverpeer_xpublic_key = ed2x_public_key_hex(&server_cgrodt.owner_id);
                         tracing::info!("TEN calling api_set_internal set peer public key with {:?}",serverpeer_xpublic_key);
+                        let serverpeer_xpublic_key_hex: String = serverpeer_xpublic_key
+                        .iter()
+                        .map(|byte| format!("{:02X}", byte))
+                        .collect();
+                        let serverpeer_xpublic_key_str: &str = &serverpeer_xpublic_key_hex;
                         device.api_set_internal("set_peer_public_key",
-                            &serverpeer_xpublic_key);
+                            &serverpeer_xpublic_key_str);
                         // api_set_peer_internal_internal_internal(device,x25519::PublicKey::from(servercgrodt_publickey.0),
                         //    "list_port", device.config.metadata.listen_port)
                     }
@@ -1179,9 +1185,29 @@ impl Default for IndexLfsr {
     }
 }
 
+// So we are panicking at a conversion that we already knew how to do
+// in the main.rs conversion code, using libsodium approach in this version
+// sk conversion libsodium
+// https://github.com/jedisct1/libsodium/blob
+// /a3c44aba9415994ea4ababdeee8fa21308c2f3bc
+// /src/libsodium/crypto_sign/ed25519/ref10/keypair.c#L46
+pub fn ed2x_private_key_hex(key: [u8; 64]) -> x25519::StaticSecret {
+    let ed25519_sk = key;
+    let mut curve25519_sk: [u8; 32] = [0; 32];
+    let mut hasher = Sha512::new();
+    hasher.update(ed25519_sk);
+    let result = hasher.finalize();
+    // thread 'main' panicked at 'source slice length (64) does not
+    // match destination slice length (32)', cableguard/src/device/mod.rs:1211:19
+    curve25519_sk.copy_from_slice(&result[..32]);
+    let sk = StaticSecret::from(curve25519_sk);
+    curve25519_sk.iter_mut().zeroize();
+    sk
+}
+
 // This function takes a Ed25519 public key in Hex of 32 bytes and creates a matching X25519 key
 // as a <KeyBytes> of 32 bytes
-pub fn ed2x_public_key_hex(key: &str) -> String {
+pub fn ed2x_public_key_hex(key: &str) -> [u8; 32] {
     // Parse the input key string as a hex-encoded Ed25519 public key
     let ed25519_pub_bytes = hex::decode(key).expect("Invalid hexadecimal string");
     tracing::info!("Server Public Ed25519 Key in Bytes: {:?}", ed25519_pub_bytes);
@@ -1193,11 +1219,27 @@ pub fn ed2x_public_key_hex(key: &str) -> String {
     .expect("An Ed25519 public key is a valid point by construction.")
     .to_montgomery()
     .0;
-            
-    // Convert the Montgomery public key to a hex-encoded string
-    let x25519_pub_key_hex = hex::encode(x25519_pub_key);
-            
-    // Return the hex-encoded public key as a String
-    x25519_pub_key_hex
+                        
+    x25519_pub_key
 }
-            
+
+// pk conversion libsodium
+// https://github.com/jedisct1/libsodium/blob
+// /a3c44aba9415994ea4ababdeee8fa21308c2f3bc
+// /src/libsodium/crypto_sign/ed25519/ref10/keypair.c#L46
+//    ge25519_p3 A;
+//    fe25519    x;
+//    fe25519    one_minus_y;
+//
+//    if (ge25519_frombytes_negate_vartime(&A, ed25519_pk) != 0 ||
+//        ge25519_has_small_order(&A) != 0 ||
+//        ge25519_is_on_main_subgroup(&A) == 0) {
+//        return -1;
+//    }
+//    fe25519_1(one_minus_y);
+//    fe25519_sub(one_minus_y, one_minus_y, A.Y);
+//    fe25519_1(x);
+//    fe25519_add(x, x, A.Y);
+//    fe25519_invert(one_minus_y, one_minus_y);
+//    fe25519_mul(x, x, one_minus_y);
+//    fe25519_tobytes(curve25519_pk, x);
