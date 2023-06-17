@@ -1,13 +1,14 @@
 // Copyright (c) 2023 cableguard, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 use tracing::error;
-use hex::ToHex; // Import the `ToHex` trait to convert byte arrays to hexadecimal strings
 pub mod allowed_ips;
 pub mod api;
 mod dev_lock;
 pub mod drop_privileges;
+
 #[cfg(test)]
 mod integration_tests;
+
 pub mod peer;
 use std::process::Command;
 use api::nearorg_rpc_token;
@@ -16,11 +17,12 @@ use std::convert::TryInto;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
 use hex::{encode};
+use hex::ToHex; 
 
-// This is an embarrasing bit: I am reimplementing this because I don't know how to import it
+// CG: This is an embarrasing bit: I am reimplementing this because I don't know how to import it
 const SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
 const BLOCKCHAIN_ENV: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
-// This exist in main.rs
+// This already exist in main.rs
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 #[path = "kqueue.rs"]
