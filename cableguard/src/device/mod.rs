@@ -1057,6 +1057,7 @@ impl Device {
                 } else {
                     return;
                 }
+                return;
             },
                 #[cfg(any(
                 target_os = "android",
@@ -1090,7 +1091,7 @@ impl Device {
                     // api_set_peer needs to be reworked to use the info
                     // from the rodt
                     let key_bytes_encoded = encode(key_bytes.0);
-                    tracing::info!("TEN:Peer Public Key FN api_set_internal {:?}", key_bytes_encoded);
+                    tracing::info!("Debugging: Peer Public Key FN api_set_internal {:?}", key_bytes_encoded);
                         return self.api_set_peer_internal(
                             x25519::PublicKey::from(key_bytes.0),
                         )
