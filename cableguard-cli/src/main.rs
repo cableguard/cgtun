@@ -11,7 +11,6 @@ use std::io::Read;
 use std::env;
 use tracing::Level;
 use serde_json::Value;
-use core::str::from_utf8;
 use cableguard::device::drop_privileges::drop_privileges;
 use cableguard::device::{DeviceConfig, DeviceHandle};
 use cableguard::device::api::nearorg_rpc_tokens_for_owner;
@@ -19,7 +18,8 @@ use cableguard::device::api::nearorg_rpc_state;
 use cableguard::device::api::Cgrodt;
 use cableguard::device::ed2x_public_key_hex;
 use cableguard::device::ed2x_private_key_bytes;
-use hex::{encode, FromHex};
+use hex::{FromHex};
+use base64::encode as base64encode;
 use crate::constants::SMART_CONTRACT;
 use crate::constants::BLOCKCHAIN_ENV;
 
@@ -138,17 +138,18 @@ fn main() {
     // Initialize a RODT object
     let cgrodt: Cgrodt;
     
-    println!("ROTD Directory is NEAR.ORG: {}", SMART_CONTRACT);
-    println!("Owner Account ID in Hex: {}", account_id);
+    println!("ROTD Directory: {}", "NEAR.ORG");
+    println!("Smart Contract Account in Base58: {}", SMART_CONTRACT);
+    println!("RODT owner Account ID in Hex: {}", account_id);
 
     // Perform a RPC call with it and obtain the token_id
     // CG: Show a warning if the account is not primed?
     match nearorg_rpc_state(xnet, smart_contract, account_id) {
-        Ok(result) => { println!("Result {:?}",result)
+        Ok(result) => { result
         }
         Err(err) => {
             // CG: This is to be tested
-            tracing::error!("Error: RPC Return Error (account has no NEAR balance): {}", err);
+            tracing::error!("Error: Account has no NEAR balance): {}", err);
             std::process::exit(1);
         }
     }
@@ -171,29 +172,23 @@ fn main() {
     let tun_name = format!("utun{}", &cgrodt.token_id[cgrodt.token_id.len() - 11..]);
     
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
-    println!("Ed25519 Private Key Base58 {}",private_key_base58);
+    println!("Ed25519 Private Key Base58: {}",private_key_base58);
     let ed25519_private_key_bytes = bs58::decode(private_key_base58)
         .into_vec()
         .expect("Failed to decode the private key from Base58");
-    // let ed25519_private_key_hex = hex::encode(&ed25519_private_key_bytes);
-    // println!("Ed25519 Private Key Hex {}",ed25519_private_key_hex);
-    // Ensure the decoded Private Key Ed25519 of 64 bytes has the expected length
     assert_eq!(ed25519_private_key_bytes.len(), 64);
 
     // Create a Curve5519 key pair from Private Key Ed25519 of 64 bytes
     let server_xprivate_key_ss = ed2x_private_key_bytes(ed25519_private_key_bytes.try_into().unwrap());
     let curve25519_private_key_bytes = server_xprivate_key_ss.as_bytes();  
-    let curve25519_private_key_b64 = hex_to_base64(&encode(curve25519_private_key_bytes));
-    println!("X25519 Private Key Base64{:?}",curve25519_private_key_b64);
+    let curve25519_private_key_b64 = hex_to_base64(&curve25519_private_key_bytes);
+    println!("X25519 Private Key Base64: {}",curve25519_private_key_b64);
 
     // Generate the Curve25519 public key from the accountId that is the 
     // Public Key Ed25519 of 32 bytes
-    let server_xpublic_key_str = ed2x_public_key_hex(&account_id);
-    let curve25519_public_key_bytes = server_xpublic_key_str;
-    println!("accountId Hex{:?}",account_id);
-    let server_xpublic_key_b64 = hex_to_base64(from_utf8(&server_xpublic_key_str)
-    .expect("Invalid UTF-8 encoding"));
-    println!("X25519 Public Key Base64{:?}",encode(server_xpublic_key_b64));
+    let curve25519_public_key_bytes = ed2x_public_key_hex(&account_id);
+    let curve25519_public_key_b64 = hex_to_base64(&curve25519_public_key_bytes);
+    println!("X25519 Public Key Base64 {}",curve25519_public_key_b64);
 
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
@@ -204,9 +199,9 @@ fn main() {
     
     let _guard;
     
-    println!("To display current configuration of the tunnel use \"sudo wg show\"");
-    println!("To display available NEAR.ORG accounts use \"showrotd.sh\"");
-    println!("To create a NEAR.ORG account use \"wg genaccount\"");
+    println!("To display current configuration of the tunnel use: \"sudo wg show\"");
+    println!("To display available NEAR.ORG accounts use: \"showrotd.sh\"");
+    println!("To create a NEAR.ORG account use: \"wg genaccount\"");
 
     if background {
         // Running in background mode
@@ -312,7 +307,12 @@ fn main() {
     device_handle.wait();    
 }
 
-fn hex_to_base64(hex_string: &str) -> String {
-    let bytes = Vec::from_hex(hex_string).expect("Invalid Hex string");
-    encode(&bytes)
+fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
+    let hex_string = hex_bytes.iter()
+        .map(|byte| format!("{:02X}", byte))
+        .collect::<Vec<String>>()
+        .join("");
+    
+    let bytes = Vec::from_hex(&hex_string).expect("Invalid Hex string");
+    base64encode(&bytes)
 }
