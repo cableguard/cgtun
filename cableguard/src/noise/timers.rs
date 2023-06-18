@@ -205,7 +205,7 @@ impl Tunn {
             // All ephemeral private keys and symmetric session keys are zeroed out after
             // (REJECT_AFTER_TIME * 3) ms if no new keys have been exchanged.
             if now - session_established >= REJECT_AFTER_TIME * 3 {
-                tracing::error!("CONNECTION_EXPIRED(REJECT_AFTER_TIME * 3)");
+                tracing::error!("Error: CONNECTION_EXPIRED(REJECT_AFTER_TIME * 3)");
                 self.handshake.set_expired();
                 self.clear_all();
                 return TunnResult::Err(WireGuardError::ConnectionExpired);
@@ -218,7 +218,7 @@ impl Tunn {
                     // the retries give up and cease, and clear all existing packets queued
                     // up to be sent. If a packet is explicitly queued up to be sent, then
                     // this timer is reset.
-                    tracing::error!("CONNECTION_EXPIRED(REKEY_ATTEMPT_TIME)");
+                    tracing::error!("Error: CONNECTION_EXPIRED(REKEY_ATTEMPT_TIME)");
                     self.handshake.set_expired();
                     self.clear_all();
                     return TunnResult::Err(WireGuardError::ConnectionExpired);

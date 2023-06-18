@@ -474,7 +474,9 @@ impl Device {
         if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
             // If we are a server we set a fictional peer to be ready for handshakes
             tracing::info!("This is a server");
-
+            
+            // CG: rando just to prime the peers list
+            // Peers will be added via Cableguard AUTH dinamically
             let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
             let randopublic_key: PublicKey = (&randoprivate_key).into();   
             let rando_public_key_hex: [u8; 32] = randopublic_key.as_bytes().clone(); 
@@ -517,7 +519,7 @@ impl Device {
                         //    "list_port", device.config.metadata.listen_port)
                     }
                     Err(err) => {
-                        tracing::error!("There is no server RODT associated with the account: {}", err);
+                        tracing::error!("Error: There is no server RODT associated with the account: {}", err);
                         std::process::exit(1);        }
                 }
         }
@@ -998,7 +1000,7 @@ impl Device {
                             } else if let Some(addr @ SocketAddr::V6(_)) = endpoint.addr {
                                 let _: Result<_, _> = udp6.send_to(packet, &addr.into());
                             } else {
-                                tracing::error!("No endpoint");
+                                tracing::error!("Error: No endpoint");
                             }
                         }
                         _ => panic!("Unexpected result from encapsulate"),
@@ -1188,7 +1190,7 @@ impl Default for IndexLfsr {
 // https://github.com/jedisct1/libsodium/blob
 // /a3c44aba9415994ea4ababdeee8fa21308c2f3bc
 // /src/libsodium/crypto_sign/ed25519/ref10/keypair.c#L46
-pub fn ed2x_private_key_hex(key: [u8; 64]) -> x25519::StaticSecret {
+pub fn ed2x_private_key_bytes(key: [u8; 64]) -> x25519::StaticSecret {
     let ed25519_sk = key;
     let mut curve25519_sk: [u8; 32] = [0; 32];
     let mut hasher = Sha512::new();

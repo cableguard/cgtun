@@ -17,13 +17,13 @@ use cableguard::device::api::nearorg_rpc_tokens_for_owner;
 use cableguard::device::api::nearorg_rpc_state;
 use cableguard::device::api::Cgrodt;
 use cableguard::device::ed2x_public_key_hex;
-use cableguard::device::ed2x_private_key_hex;
+use cableguard::device::ed2x_private_key_bytes;
 use hex::{encode};
 use crate::constants::SMART_CONTRACT;
 use crate::constants::BLOCKCHAIN_ENV;
 
 mod constants {
-    // Define the global constant as a static item
+    // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
     pub static SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
     pub static BLOCKCHAIN_ENV: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
 }
@@ -33,8 +33,7 @@ fn main() {
         .version(env!("CARGO_PKG_VERSION"))
         .author("Vicente Aceituno Canal <vicente@cableguard.org> and Vlad Krasnov <vlad@cloudflare.com> et al")
         .args(&[
-            // We input a file path and name that has the private key
-            // of the blockchain account
+            // We input a NEAR Protocol json implicit account file as argument
             Arg::new("FILE_WITH_ACCOUNT")
                 .required(true)
                 .takes_value(true)
@@ -63,6 +62,7 @@ fn main() {
                 .env("WG_UAPI_FD")
                 .help("File descriptor for the user API")
                 .default_value("-1"),
+                // CG: This probably needs to be tested and may be removed as tun devices are named and created internally
             Arg::new("tun-fd")
                 .long("tun-fd")
                 .env("WG_TUN_FD")
@@ -94,28 +94,28 @@ fn main() {
     #[cfg(target_os = "linux")]
     let uapi_fd: i32 = matches.value_of_t("uapi-fd").unwrap_or_else(|e| e.exit());
 
-    // Extract the public key from the file with the account
+    // Extract the public key from the file with the accountId
     let accountfile_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
 
     let accountfile_path = accountfile_name;
     let mut accountfile = match File::open(&accountfile_path) {
         Ok(accountfile) => accountfile,
         Err(err) => {
-            eprintln!("Failed to open the file: {}", err);
+            eprintln!("Failed to open the file with the accountId: {}", err);
             return; // Terminate the program or handle the error accordingly
         }
     };
 
     let mut accountfile_contents = String::new();
     if let Err(err) = accountfile.read_to_string(&mut accountfile_contents) {
-        eprintln!("Failed to read the file: {}", err);
+        eprintln!("Failed to read the file with the accountId: {}", err);
         return; // Terminate the program or handle the error accordingly
     }
 
     let json: Value = match serde_json::from_str(&accountfile_contents) {
         Ok(contents) => contents,
         Err(err) => {
-            eprintln!("Failed to parse JSON: {}", err);
+            eprintln!("Failed to parse JSON of the file with the accountId: {}", err);
             // Add any additional error handling logic if needed
             return; // Terminate the program
         }
@@ -138,16 +138,16 @@ fn main() {
     let cgrodt: Cgrodt;
     
     println!("ROTD Directory is NEAR.ORG: {}", SMART_CONTRACT);
-    println!("Owner Account ID: {}", account_id);
+    println!("Owner Account ID in Hex: {}", account_id);
 
     // Perform a RPC call with it and obtain the token_id
-    // Show a warning if the account is not primed    
+    // CG: Show a warning if the account is not primed?
     match nearorg_rpc_state(xnet, smart_contract, account_id) {
         Ok(result) => { println!("Result {:?}",result)
         }
         Err(err) => {
-            // Handle the error
-            tracing::error!("RPC Return Error: {}", err);
+            // CG: This is to be tested
+            tracing::error!("Error: RPC Return Error (account has no NEAR balance): {}", err);
             std::process::exit(1);
         }
     }
@@ -160,7 +160,7 @@ fn main() {
         }
         Err(err) => {
             // Handle the error
-            tracing::error!("There is no RODT associated with the account: {}", err);
+            tracing::error!("Error: There is no RODT associated with the account: {}", err);
             std::process::exit(1);
         }
     }
@@ -169,31 +169,27 @@ fn main() {
     // with a max length of 15 characters, by default utun+last 11 of ULID for operating systems compatibility, 
     let tun_name = format!("utun{}", &cgrodt.token_id[cgrodt.token_id.len() - 11..]);
     
-    // Now we create a Curve5519 key pair from Private Key Ed25519 of 64 bytes in Base58 format
-    println!("Ed25519 Private Key Base58 {}",private_key_base58);
-
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
+    println!("Ed25519 Private Key Base58 {}",private_key_base58);
     let ed25519_private_key_bytes = bs58::decode(private_key_base58)
         .into_vec()
         .expect("Failed to decode the private key from Base58");
-    let ed25519_private_key_hex = hex::encode(&ed25519_private_key_bytes);
-
+    // let ed25519_private_key_hex = hex::encode(&ed25519_private_key_bytes);
+    // println!("Ed25519 Private Key Hex {}",ed25519_private_key_hex);
     // Ensure the decoded Private Key Ed25519 of 64 bytes has the expected length
     assert_eq!(ed25519_private_key_bytes.len(), 64);
-    assert_eq!(ed25519_private_key_hex.len(), 128);
 
-    println!("Ed25519 Private Key Hex {}",ed25519_private_key_hex);
-
-    // Generate the Curve25519 private key with direct conversion from the private key
-    let server_xprivate_key_ss = ed2x_private_key_hex(ed25519_private_key_bytes.try_into().unwrap());
+    // Create a Curve5519 key pair from Private Key Ed25519 of 64 bytes
+    let server_xprivate_key_ss = ed2x_private_key_bytes(ed25519_private_key_bytes.try_into().unwrap());
     let curve25519_private_key_bytes = server_xprivate_key_ss.as_bytes();  
-    println!("X25519 Private Key DIRECT FN main Hex{:?}",encode(curve25519_private_key_bytes));
+    println!("X25519 Private Key Hex{:?}",encode(curve25519_private_key_bytes));
 
-    // Generate the Curve25519 public key with direct conversion from the account id
+    // Generate the Curve25519 public key from the accountId that is the 
+    // Public Key Ed25519 of 32 bytes
     let server_xpublic_key_str = ed2x_public_key_hex(&account_id);
     let curve25519_public_key_bytes = server_xpublic_key_str;
-    println!("X25519 account ID DIRECT FN main Hex{:?}",account_id);
-    println!("X25519 Public Key DIRECT FN main Hex{:?}",encode(server_xpublic_key_str));
+    println!("accountId Hex{:?}",account_id);
+    println!("X25519 Public Key Hex{:?}",encode(server_xpublic_key_str));
 
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
@@ -269,7 +265,7 @@ fn main() {
             .init();
     }
     
-    // Configure the device with the provided settings
+    // Configure the device with the RODT
     let config = DeviceConfig {
         cgrodt,
         cgrodt_private_key:*curve25519_private_key_bytes,

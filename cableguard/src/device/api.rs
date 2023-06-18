@@ -130,7 +130,7 @@ pub fn nearorg_rpc_tokens_for_owner(
     let result_struct: Vec<Cgrodt> = match serde_json::from_str(result_string) {
         Ok(value) => value,
         Err(err) => {
-            tracing::error!("can't handle struct {:?}",result_string);
+            tracing::error!("Error: can't handle struct {:?}",result_string);
             // Handle the error, such as logging or returning an error result
             return Err(Box::new(err));
         }
@@ -139,7 +139,7 @@ pub fn nearorg_rpc_tokens_for_owner(
     let mut result_iter = match serde_json::from_str::<Vec<Cgrodt>>(result_string) {
         Ok(value) => value.into_iter(),
         Err(err) => {
-            tracing::error!("can't handle iter  {}",result_string);
+            tracing::error!("Error: can't handle iter  {}",result_string);
             // Handle the error, such as logging or returning an error result
             return Err(Box::new(err));
         }
