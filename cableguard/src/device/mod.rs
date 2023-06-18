@@ -586,7 +586,7 @@ impl Device {
  
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
-        tracing::info!(message = "Debugging: Curve25519 Public Key (PublicKey) FN set_key Hex: {}", string);
+        tracing::info!(message = "TEN: Curve25519 Public Key (PublicKey) FN set_key Hex: {}", string);
         
         // There is a quirk wheras the private key generated is alternates with 
         // a given input so I am invoking and dumping so the next time I call it 
@@ -600,7 +600,7 @@ impl Device {
         
         let tenpbytes = private_key.to_bytes();
         let stringp = encode(&tenpbytes);
-        tracing::info!(message = "Debugging: Curve25519 Private Key (after StaticSecret) FN set_key Hex: {}", stringp);
+        tracing::info!(message = "TEN: Curve25519 Private Key (after StaticSecret) FN set_key Hex: {}", stringp);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.
@@ -1090,7 +1090,7 @@ impl Device {
                     // api_set_peer needs to be reworked to use the info
                     // from the rodt
                     let key_bytes_encoded = encode(key_bytes.0);
-                    tracing::info!("Debugging: Peer Public Key FN api_set_internal {:?}", key_bytes_encoded);
+                    tracing::info!("TEN:Peer Public Key FN api_set_internal {:?}", key_bytes_encoded);
                         return self.api_set_peer_internal(
                             x25519::PublicKey::from(key_bytes.0),
                         )
