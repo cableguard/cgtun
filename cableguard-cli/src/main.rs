@@ -11,6 +11,7 @@ use std::io::Read;
 use std::env;
 use tracing::Level;
 use serde_json::Value;
+use core::str::from_utf8;
 use cableguard::device::drop_privileges::drop_privileges;
 use cableguard::device::{DeviceConfig, DeviceHandle};
 use cableguard::device::api::nearorg_rpc_tokens_for_owner;
@@ -18,7 +19,7 @@ use cableguard::device::api::nearorg_rpc_state;
 use cableguard::device::api::Cgrodt;
 use cableguard::device::ed2x_public_key_hex;
 use cableguard::device::ed2x_private_key_bytes;
-use hex::{encode};
+use hex::{encode, FromHex};
 use crate::constants::SMART_CONTRACT;
 use crate::constants::BLOCKCHAIN_ENV;
 
@@ -182,14 +183,17 @@ fn main() {
     // Create a Curve5519 key pair from Private Key Ed25519 of 64 bytes
     let server_xprivate_key_ss = ed2x_private_key_bytes(ed25519_private_key_bytes.try_into().unwrap());
     let curve25519_private_key_bytes = server_xprivate_key_ss.as_bytes();  
-    println!("X25519 Private Key Hex{:?}",encode(curve25519_private_key_bytes));
+    let curve25519_private_key_b64 = hex_to_base64(&encode(curve25519_private_key_bytes));
+    println!("X25519 Private Key Base64{:?}",curve25519_private_key_b64);
 
     // Generate the Curve25519 public key from the accountId that is the 
     // Public Key Ed25519 of 32 bytes
     let server_xpublic_key_str = ed2x_public_key_hex(&account_id);
     let curve25519_public_key_bytes = server_xpublic_key_str;
     println!("accountId Hex{:?}",account_id);
-    println!("X25519 Public Key Hex{:?}",encode(server_xpublic_key_str));
+    let server_xpublic_key_b64 = hex_to_base64(from_utf8(&server_xpublic_key_str)
+    .expect("Invalid UTF-8 encoding"));
+    println!("X25519 Public Key Base64{:?}",encode(server_xpublic_key_b64));
 
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
@@ -306,4 +310,9 @@ fn main() {
     
     // Wait for the device handle to finish processing
     device_handle.wait();    
+}
+
+fn hex_to_base64(hex_string: &str) -> String {
+    let bytes = Vec::from_hex(hex_string).expect("Invalid Hex string");
+    encode(&bytes)
 }
