@@ -361,7 +361,7 @@ impl Device {
         let public_key_str = device_key_pair.1.encode_hex::<String>();
     
         // Display the converted values in the trace
-        tracing::info!("TEN:pub_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
+        tracing::info!("Debugging:pub_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
             pub_key_str,
             private_key_str,
             public_key_str
@@ -582,7 +582,7 @@ impl Device {
  
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
-        tracing::info!(message = "TEN: Curve25519 Public Key (PublicKey) FN set_key Hex: {}", string);
+        tracing::info!(message = "Debugging: Curve25519 Public Key (PublicKey) in Hex, fn set_key: {}", string);
         
         // There is a quirk wheras the private key generated is alternates with 
         // a given input so I am invoking and dumping so the next time I call it 
@@ -596,7 +596,7 @@ impl Device {
         
         let tenpbytes = private_key.to_bytes();
         let stringp = encode(&tenpbytes);
-        tracing::info!(message = "TEN: Curve25519 Private Key (after StaticSecret) FN set_key Hex: {}", stringp);
+        tracing::info!(message = "Debugging: Curve25519 Private Key (after StaticSecret) in Hex, fn set_key: {}", stringp);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.
@@ -623,7 +623,7 @@ impl Device {
                 let public_key_str = public_key.encode_hex::<String>();
         
                 // Display the converted values in the trace
-                tracing::info!("TEN: private_key: {}, public_key: {} in fn set_key",
+                tracing::info!("Debugging: private_key: {}, public_key: {} in fn set_key",
                     private_key_str,
                     public_key_str
                 );
@@ -800,7 +800,7 @@ impl Device {
                                     let peer_static_public_str = hh.peer_static_public.encode_hex::<String>();
                     
                                     // Display the converted values in the trace
-                                    tracing::info!("TEN: private_key: {}, public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
+                                    tracing::info!("Debugging: private_key: {}, public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
                                         private_key_str,
                                         public_key_str,
                                         peer_static_public_str
@@ -1036,7 +1036,7 @@ impl Device {
                 let key_str = serialization::keybytes_to_hex_string(&key_bytes);
                 let string = format!("{:02X?}", key_str);
                     // Dumping the private key that is associated with the device in HEX format
-                    tracing::info!(message = "TEN:Private_key FN api_set_internal: {}", string);
+                    tracing::info!(message = "Debugging:Private_key FN api_set_internal: {}", string);
                     // This call needs to read the key from the cgrodt instead of key_bytes
                     self.set_key(x25519::StaticSecret::from(key_bytes.0))
                     }
@@ -1086,7 +1086,7 @@ impl Device {
                     // api_set_peer needs to be reworked to use the info
                     // from the rodt
                     let key_bytes_encoded = encode(key_bytes.0);
-                    tracing::info!("TEN:Peer Public Key FN api_set_internal {:?}", key_bytes_encoded);
+                    tracing::info!("Debugging:Peer Public Key FN api_set_internal {:?}", key_bytes_encoded);
                         return self.api_set_peer_internal(
                             x25519::PublicKey::from(key_bytes.0),
                         )

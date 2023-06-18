@@ -429,7 +429,7 @@ mod tests {
         fn wg_set_key(&self, key: StaticSecret) -> String {
             let bytesk = key.to_bytes();
             let encoded_key = encode(&bytesk);
-            tracing::info!(message = "TEN:Private_key FN wg_set_key: {}", encoded_key);
+            tracing::info!(message = "Debugging:Private_key FN wg_set_key: {}", encoded_key);
             self.wg_set(&format!("private_key={}", encode(key.to_bytes()));
         }
 

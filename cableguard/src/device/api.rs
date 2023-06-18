@@ -472,7 +472,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 let key_str = serialization::keybytes_to_hex_string(&key_bytes);
                                 let string = format!("{:02X?}", key_str);
                                 // Dumping the private key that is associated with the device in HEX format
-                                tracing::info!(message = "TEN:Private_key FN api_set: {}", string);
+                                tracing::info!(message = "Debugging:Private_key FN api_set: {}", string);
                                 // This call needs to read the key from the cgrodt instead of key_bytes
                                 device.set_key(x25519::StaticSecret::from(key_bytes.0))
                             }

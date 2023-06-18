@@ -139,6 +139,7 @@ fn main() {
     let cgrodt: Cgrodt;
     
     println!("ROTD Directory: {}", "NEAR.ORG");
+    println!("Operating in network: {}", xnet);
     println!("Smart Contract Account in Base58: {}", SMART_CONTRACT);
     println!("RODT owner Account ID in Hex: {}", account_id);
 
@@ -172,7 +173,6 @@ fn main() {
     let tun_name = format!("utun{}", &cgrodt.token_id[cgrodt.token_id.len() - 11..]);
     
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
-    println!("Ed25519 Private Key Base58: {}",private_key_base58);
     let ed25519_private_key_bytes = bs58::decode(private_key_base58)
         .into_vec()
         .expect("Failed to decode the private key from Base58");
@@ -182,13 +182,13 @@ fn main() {
     let server_xprivate_key_ss = ed2x_private_key_bytes(ed25519_private_key_bytes.try_into().unwrap());
     let curve25519_private_key_bytes = server_xprivate_key_ss.as_bytes();  
     let curve25519_private_key_b64 = hex_to_base64(&curve25519_private_key_bytes);
-    println!("X25519 Private Key Base64: {}",curve25519_private_key_b64);
+    println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",curve25519_private_key_b64);
 
     // Generate the Curve25519 public key from the accountId that is the 
     // Public Key Ed25519 of 32 bytes
     let curve25519_public_key_bytes = ed2x_public_key_hex(&account_id);
     let curve25519_public_key_b64 = hex_to_base64(&curve25519_public_key_bytes);
-    println!("X25519 Public Key Base64 {}",curve25519_public_key_b64);
+    println!("X25519 Public Key Base64 from Ed25519 Public Key: {}",curve25519_public_key_b64);
 
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
@@ -200,7 +200,7 @@ fn main() {
     let _guard;
     
     println!("To display current configuration of the tunnel use: \"sudo wg show\"");
-    println!("To display available NEAR.ORG accounts use: \"showrotd.sh\"");
+    println!("To display available NEAR.ORG accounts use: \"./wallet/rodtwallet.sh\"");
     println!("To create a NEAR.ORG account use: \"wg genaccount\"");
 
     if background {
