@@ -374,7 +374,7 @@ pub fn parse_handshake_anon(
     let peer_static_public_str = peer_static_public.encode_hex::<String>();
 
     // Display the converted values in the trace
-    tracing::info!("TEN: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
+    tracing::info!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
         static_private_str,
         static_public_str,
         peer_ephemeral_public_str,
@@ -431,7 +431,7 @@ impl NoiseParams {
 
         // Display the converted values in the trace
         error!(
-            "TEN: static_private: {}, static_public: {} fn set_static_private",
+            "Debugging: static_private: {}, static_public: {} fn set_static_private",
             static_private_str,
             static_public_str
         );

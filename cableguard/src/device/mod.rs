@@ -361,7 +361,7 @@ impl Device {
         let public_key_str = device_key_pair.1.encode_hex::<String>();
     
         // Display the converted values in the trace
-        tracing::info!("TEN:pub_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
+        tracing::info!("Debugging:pub_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
             pub_key_str,
             private_key_str,
             public_key_str
@@ -389,7 +389,7 @@ impl Device {
                 .insert(*addr, *cidr as _, Arc::clone(&peer));
         }
 
-        tracing::info!("Peer added");
+        tracing::info!("Debugging: Peer added");
     }
 
     pub fn new(name: &str, config: DeviceConfig) -> Result<Device, Error> {
@@ -463,25 +463,29 @@ impl Device {
         
         if output.status.success() {
             let _stdout = String::from_utf8_lossy(&output.stdout);
-            tracing::info!("Ip addr add command executed successfully:\n{}",device.config.cgrodt.metadata.cidrblock);
+            tracing::info!("Debugging: Ip addr add command executed successfully:\n{}",device.config.cgrodt.metadata.cidrblock);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            tracing::info!("Ip addr add command failed to execute:\n{}", stderr);
+            tracing::info!("Debugging: Ip addr add command failed to execute:\n{}", stderr);
         }
         // END of running postup
         
         // BEGIN adding peers
         if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
             // If we are a server we set a fictional peer to be ready for handshakes
-            tracing::info!("This is a server");
+            tracing::info!("Debugging: This is a server");
             
+            // CG: Temporarily suspended part of code for testing
             // CG: rando just to prime the peers list
             // Peers will be added via Cableguard AUTH dinamically
-            let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
-            let randopublic_key: PublicKey = (&randoprivate_key).into();   
-            let rando_public_key_hex: [u8; 32] = randopublic_key.as_bytes().clone(); 
-            let rando_public_key_str = hex::encode(rando_public_key_hex);        
-            device.api_set_internal("set_peer_public_key", &rando_public_key_str);
+            // let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
+            // let randopublic_key: PublicKey = (&randoprivate_key).into();   
+            // let rando_public_key_hex: [u8; 32] = randopublic_key.as_bytes().clone(); 
+            // let rando_public_key_str = hex::encode(rando_public_key_hex);  
+
+            // CG The following line is just for testing purposes, will be removed
+            let notrando_public_key_hex = "97706c64ce324726574c82fd7c1d259c26956b3052befef74bddcef462564734";
+            device.api_set_internal("set_peer_public_key", &notrando_public_key_hex);
 
             // listen port value passed is ignored and always set to 
             // device.config.cgrodt.metadata.listenport
@@ -507,7 +511,7 @@ impl Device {
                         tracing::info!("Server RODT: {:?}", server_cgrodt);
                         tracing::info!("Server RODT Owner: {:?}", server_cgrodt.owner_id);
                         let serverpeer_xpublic_key = ed2x_public_key_hex(&server_cgrodt.owner_id);
-                        tracing::info!("TEN calling api_set_internal set peer public key with {:?}",serverpeer_xpublic_key);
+                        tracing::info!("Debugging: Peer Public Key in Hex, fn api_set_internal {:?}",encode(serverpeer_xpublic_key));
                         let serverpeer_xpublic_key_hex: String = serverpeer_xpublic_key
                         .iter()
                         .map(|byte| format!("{:02X}", byte))
@@ -582,7 +586,7 @@ impl Device {
  
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
-        tracing::info!(message = "TEN: Curve25519 Public Key (PublicKey) FN set_key Hex: {}", string);
+        tracing::info!(message = "Debugging: Curve25519 Public Key (PublicKey) FN set_key Hex: {}", string);
         
         // There is a quirk wheras the private key generated is alternates with 
         // a given input so I am invoking and dumping so the next time I call it 
@@ -596,7 +600,7 @@ impl Device {
         
         let tenpbytes = private_key.to_bytes();
         let stringp = encode(&tenpbytes);
-        tracing::info!(message = "TEN: Curve25519 Private Key (after StaticSecret) FN set_key Hex: {}", stringp);
+        tracing::info!(message = "Debugging: Curve25519 Private Key (after StaticSecret) FN set_key Hex: {}", stringp);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.
@@ -623,7 +627,7 @@ impl Device {
                 let public_key_str = public_key.encode_hex::<String>();
         
                 // Display the converted values in the trace
-                tracing::info!("TEN: private_key: {}, public_key: {} in fn set_key",
+                tracing::info!("Debugging: private_key: {}, public_key: {} in fn set_key",
                     private_key_str,
                     public_key_str
                 );
@@ -800,7 +804,7 @@ impl Device {
                                     let peer_static_public_str = hh.peer_static_public.encode_hex::<String>();
                     
                                     // Display the converted values in the trace
-                                    tracing::info!("TEN: private_key: {}, public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
+                                    tracing::info!("Debugging: private_key: {}, public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
                                         private_key_str,
                                         public_key_str,
                                         peer_static_public_str
@@ -1036,7 +1040,7 @@ impl Device {
                 let key_str = serialization::keybytes_to_hex_string(&key_bytes);
                 let string = format!("{:02X?}", key_str);
                     // Dumping the private key that is associated with the device in HEX format
-                    tracing::info!(message = "TEN:Private_key FN api_set_internal: {}", string);
+                    tracing::info!(message = "Debugging:Private_key FN api_set_internal: {}", string);
                     // This call needs to read the key from the cgrodt instead of key_bytes
                     self.set_key(x25519::StaticSecret::from(key_bytes.0))
                     }
@@ -1086,7 +1090,7 @@ impl Device {
                     // api_set_peer needs to be reworked to use the info
                     // from the rodt
                     let key_bytes_encoded = encode(key_bytes.0);
-                    tracing::info!("TEN:Peer Public Key FN api_set_internal {:?}", key_bytes_encoded);
+                    tracing::info!("Debugging: Peer Public Key FN api_set_internal {:?}", key_bytes_encoded);
                         return self.api_set_peer_internal(
                             x25519::PublicKey::from(key_bytes.0),
                         )
@@ -1209,7 +1213,7 @@ pub fn ed2x_private_key_bytes(key: [u8; 64]) -> x25519::StaticSecret {
 pub fn ed2x_public_key_hex(key: &str) -> [u8; 32] {
     // Parse the input key string as a hex-encoded Ed25519 public key
     let ed25519_pub_bytes = hex::decode(key).expect("Invalid hexadecimal string");
-    tracing::info!("Server Public Ed25519 Key in Bytes: {:?}", ed25519_pub_bytes);
+    tracing::info!("Server Public Ed25519 Key in Hex: {:?}", encode(ed25519_pub_bytes.clone()));
 
     // Convert the Ed25519 public key bytes to Montgomery form
     let ed25519_pub_array: [u8; 32] = ed25519_pub_bytes.as_slice().try_into().expect("Invalid length");
