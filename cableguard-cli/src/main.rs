@@ -18,6 +18,7 @@ use cableguard::device::api::nearorg_rpc_state;
 use cableguard::device::api::Cgrodt;
 use cableguard::device::ed2x_public_key_hex;
 use cableguard::device::ed2x_private_key_bytes;
+use cableguard::device::deletethis;
 use hex::{FromHex};
 use base64::encode as base64encode;
 use crate::constants::SMART_CONTRACT;
@@ -178,11 +179,16 @@ fn main() {
         .expect("Failed to decode the private key from Base58");
     assert_eq!(ed25519_private_key_bytes.len(), 64);
 
-    // Create a Curve5519 key pair from Private Key Ed25519 of 64 bytes
+    // Create a X25519 key pair from Private Key Ed25519 of 64 bytes
     let server_xprivate_key_ss = ed2x_private_key_bytes(ed25519_private_key_bytes.try_into().unwrap());
     let curve25519_private_key_bytes = server_xprivate_key_ss.as_bytes();  
     let curve25519_private_key_b64 = hex_to_base64(&curve25519_private_key_bytes);
     println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",curve25519_private_key_b64);
+
+    // Generate the X25519 public key from the X25519 private key of 32 bytes
+    let curve25519_public_direct_key_u832 = deletethis(server_xprivate_key_ss.clone());
+    let curve25519_public_direct_key_b64 = hex_to_base64(&curve25519_public_direct_key_u832);
+    println!("X25519 Public Key Base64 from X25519 Private Key: {}", curve25519_public_direct_key_b64);
 
     // Generate the X25519 public key from the accountId that is the 
     // Public Key Ed25519 of 32 bytes

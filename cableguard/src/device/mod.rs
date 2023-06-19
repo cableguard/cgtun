@@ -54,6 +54,7 @@ use crate::noise::handshake::parse_handshake_anon;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use crate::x25519;
+use crate::x25519::PublicKey;
 use allowed_ips::AllowedIps;
 use parking_lot::Mutex;
 use peer::{AllowedIP, Peer};
@@ -64,7 +65,6 @@ use tun::TunSocket;
 use dev_lock::{Lock, LockReadGuard};
 use crate::device::api::Cgrodt;
 use crate::x25519::StaticSecret;
-use crate::x25519::PublicKey;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
@@ -368,7 +368,7 @@ impl Device {
         );
     
         let tunn = Tunn::new(
-            device_key_pair.0.clone(),
+            device_key_pair.0.clone(), // Passing on only the X25519 private key
             pub_peer_key,
             preshared_key,
             keepalive,
@@ -1210,41 +1210,43 @@ impl Default for IndexLfsr {
     }
 }
 
-// So we are panicking at a conversion that we already knew how to do
-// in the main.rs conversion code, using libsodium approach in this version
-// sk conversion libsodium
-// https://github.com/jedisct1/libsodium/blob
-// /a3c44aba9415994ea4ababdeee8fa21308c2f3bc
-// /src/libsodium/crypto_sign/ed25519/ref10/keypair.c#L46
-pub fn ed2x_private_key_bytes(key: [u8; 64]) -> x25519::StaticSecret {
-    let ed25519_sk = key;
-    let mut curve25519_sk: [u8; 32] = [0; 32];
-    let mut hasher = Sha512::new();
-    hasher.update(ed25519_sk);
-    let result = hasher.finalize();
-    // thread 'main' panicked at 'source slice length (64) does not
-    // match destination slice length (32)', cableguard/src/device/mod.rs:1211:19
-    curve25519_sk.copy_from_slice(&result[..32]);
-    let sk = StaticSecret::from(curve25519_sk);
-    curve25519_sk.iter_mut().zeroize();
-    sk
-}
-
 // This function takes a Ed25519 public key in Hex of 32 bytes and creates a matching X25519 key
 // as a <KeyBytes> of 32 bytes
 pub fn ed2x_public_key_hex(key: &str) -> [u8; 32] {
     // Parse the input key string as a hex-encoded Ed25519 public key
     let ed25519_pub_bytes = hex::decode(key).expect("Invalid hexadecimal string");
-
     // Convert the Ed25519 public key bytes to Montgomery form
     let ed25519_pub_array: [u8; 32] = ed25519_pub_bytes.as_slice().try_into().expect("Invalid length");
     let x25519_pub_key = curve25519_dalek::edwards::CompressedEdwardsY(ed25519_pub_array)
     .decompress()
     .expect("An Ed25519 public key is a valid point by construction.")
     .to_montgomery()
-    .0;
-                        
+    .0;     
     x25519_pub_key
+}
+
+pub fn ed2x_private_key_bytes(ed25519_sk: [u8; 64]) -> x25519::StaticSecret {
+    let mut curve25519_sk: [u8; 32] = [0; 32];
+    let mut hasher = Sha512::new();
+    hasher.update(ed25519_sk.as_ref());
+    let result = hasher.finalize();
+    curve25519_sk.copy_from_slice(&result[..32]);
+    let sk = StaticSecret::from(curve25519_sk);
+    curve25519_sk.iter_mut().zeroize();
+    sk
+}
+
+pub fn deletethis(static_private: x25519::StaticSecret) -> [u8; 32] {
+    let static_public = x25519::PublicKey::from(&static_private);
+    let static_public = convert_to_u8_array(static_public);
+    static_public
+}
+
+pub fn convert_to_u8_array(public_key: PublicKey) -> [u8; 32] {
+    let public_key_bytes = public_key.as_bytes();
+    let mut result = [0u8; 32];
+    result.copy_from_slice(&public_key_bytes[..32]);
+    result
 }
 
 // pk conversion libsodium

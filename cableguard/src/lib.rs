@@ -23,7 +23,7 @@ pub(crate) mod serialization;
 
 // CG: I don't see how creating a sinonym improves the code readability
 /// Re-export of the x25519 types
-pub mod x25519 {
+mod x25519 {
     pub use x25519_dalek::{
         EphemeralSecret, PublicKey, ReusableSecret, SharedSecret, StaticSecret
     };
