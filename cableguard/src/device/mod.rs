@@ -447,11 +447,6 @@ impl Device {
             }
         }
 
-        // Normally the tunnel waits to receive the command to set the private key
-        // Instead we are proactively setting it
-        // Derive the seed from the private key using a KDF (SHA-256 in this example)
-        device.set_key(x25519::StaticSecret::from(device.config.cgrodt_private_key));
-
         // BEGIN running "sudo ip addr add cidrblock dev tun_name"
         let command = "ip addr add ".to_owned()+&device.config.cgrodt.metadata.cidrblock +" dev "+ name;
     
@@ -469,7 +464,12 @@ impl Device {
             tracing::info!("Debugging: Ip addr add command failed to execute:\n{}", stderr);
         }
         // END of running postup
-        
+
+        // Normally the tunnel waits to receive the command to set the private key
+        // Instead we are proactively setting it
+        // Derive the seed from the private key using a KDF (SHA-256 in this example)
+        device.set_key(x25519::StaticSecret::from(device.config.cgrodt_private_key));
+
         // BEGIN adding peers
         if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
             // If we are a server we set a fictional peer to be ready for handshakes
@@ -483,13 +483,32 @@ impl Device {
             // let rando_public_key_hex: [u8; 32] = randopublic_key.as_bytes().clone(); 
             // let rando_public_key_str = hex::encode(rando_public_key_hex);  
 
-            // CG The following line is just for testing purposes, will be removed
-            let notrando_public_key_hex = "97706c64ce324726574c82fd7c1d259c26956b3052befef74bddcef462564734";
-            device.api_set_internal("set_peer_public_key", &notrando_public_key_hex);
+            // CG The following lines are just for testing purposes, will be removed
 
-            // listen port value passed is ignored and always set to 
-            // device.config.cgrodt.metadata.listenport
-            device.api_set_internal("listen_port", "0");          
+            let account_idargs = "{\"token_id\": \"".to_owned() 
+                + "01H2ZARQ5TMRQQZXRR1WN3A5RC" + "\"}";
+                tracing::info!("account idargs: {:?}", account_idargs);
+            match nearorg_rpc_token(Self::xnet,
+                Self::smart_contract,
+                "nft_token",&account_idargs) {
+                Ok(result) => {
+                    let client_cgrodt = result;
+                    tracing::info!("Client RODT: {:?}", client_cgrodt);
+                    tracing::info!("Client RODT Owner: {:?}", client_cgrodt.owner_id);
+                    let clientpeer_xpublic_key = ed2x_public_key_hex(&client_cgrodt.owner_id);
+                    tracing::info!("Debugging: Peer Public Key in Hex, fn api_set_internal {:?}",encode(clientpeer_xpublic_key));
+                    let clientpeer_xpublic_key_hex: String = clientpeer_xpublic_key
+                    .iter()
+                    .map(|byte| format!("{:02X}", byte))
+                    .collect();
+                    let clientpeer_xpublic_key_str: &str = &clientpeer_xpublic_key_hex;
+                    device.api_set_internal("set_peer_public_key",
+                        &clientpeer_xpublic_key_str);
+                }
+                Err(err) => {
+                    tracing::error!("Error: There is no client RODT associated with the account: {}", err);
+                    std::process::exit(1);        }
+            }     
         }
         else{
             // BEGIN If we are a client, find the server and check if it is trusted
@@ -499,33 +518,35 @@ impl Device {
             // entry with the token_id of the server
             // If we are client, add the server as a peer
             // END If we are a client, find the server and check if it is trusted
-            tracing::info!("This is a client");    
+            tracing::info!("Debugging: This is a client");    
 
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.cgrodt.metadata.authornftcontractid + "\"}";
-                match nearorg_rpc_token(Self::xnet,
-                    Self::smart_contract,
-                    "nft_token",&account_idargs) {
-                    Ok(result) => {
-                        let server_cgrodt = result;
-                        tracing::info!("Server RODT: {:?}", server_cgrodt);
-                        tracing::info!("Server RODT Owner: {:?}", server_cgrodt.owner_id);
-                        let serverpeer_xpublic_key = ed2x_public_key_hex(&server_cgrodt.owner_id);
-                        tracing::info!("Debugging: Peer Public Key in Hex, fn api_set_internal {:?}",encode(serverpeer_xpublic_key));
-                        let serverpeer_xpublic_key_hex: String = serverpeer_xpublic_key
-                        .iter()
-                        .map(|byte| format!("{:02X}", byte))
-                        .collect();
-                        let serverpeer_xpublic_key_str: &str = &serverpeer_xpublic_key_hex;
-                        device.api_set_internal("set_peer_public_key",
-                            &serverpeer_xpublic_key_str);
-                        // api_set_peer_internal_internal_internal(device,x25519::PublicKey::from(servercgrodt_publickey.0),
-                        //    "list_port", device.config.metadata.listen_port)
-                    }
-                    Err(err) => {
-                        tracing::error!("Error: There is no server RODT associated with the account: {}", err);
-                        std::process::exit(1);        }
+                tracing::info!("account idargs: {:?}", account_idargs);
+            match nearorg_rpc_token(Self::xnet,
+                Self::smart_contract,
+                "nft_token",&account_idargs) {
+                Ok(result) => {
+                    let server_cgrodt = result;
+                    tracing::info!("Server RODT: {:?}", server_cgrodt);
+                    tracing::info!("Server RODT Owner: {:?}", server_cgrodt.owner_id);
+                    let serverpeer_xpublic_key = ed2x_public_key_hex(&server_cgrodt.owner_id);
+                    tracing::info!("Debugging: Peer Public Key in Hex, fn api_set_internal {:?}",encode(serverpeer_xpublic_key));
+                    let serverpeer_xpublic_key_hex: String = serverpeer_xpublic_key
+                    .iter()
+                    .map(|byte| format!("{:02X}", byte))
+                    .collect();
+                    let serverpeer_xpublic_key_str: &str = &serverpeer_xpublic_key_hex;
+                    device.api_set_internal("set_peer_public_key",
+                        &serverpeer_xpublic_key_str);
+                    // CG: Set server port
+                    // api_set_peer_internal_internal_internal(device,x25519::PublicKey::from(servercgrodt_publickey.0),
+                    //    "list_port", device.config.metadata.listen_port)
                 }
+                Err(err) => {
+                    tracing::error!("Error: There is no server RODT associated with the account: {}", err);
+                    std::process::exit(1);        }
+            }
         }
         // END adding peers
         Ok(device)
@@ -586,7 +607,7 @@ impl Device {
  
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
-        tracing::info!(message = "TEN: Curve25519 Public Key (PublicKey) FN set_key Hex: {}", string);
+        tracing::info!(message = "TEN: X25518 Public Key (PublicKey) FN set_key Hex: {}", string);
         
         // There is a quirk wheras the private key generated is alternates with 
         // a given input so I am invoking and dumping so the next time I call it 
@@ -600,7 +621,7 @@ impl Device {
         
         let tenpbytes = private_key.to_bytes();
         let stringp = encode(&tenpbytes);
-        tracing::info!(message = "TEN: Curve25519 Private Key (after StaticSecret) FN set_key Hex: {}", stringp);
+        tracing::info!(message = "TEN: X25518 Private Key (after StaticSecret) FN set_key Hex: {}", stringp);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.

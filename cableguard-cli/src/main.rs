@@ -184,7 +184,7 @@ fn main() {
     let curve25519_private_key_b64 = hex_to_base64(&curve25519_private_key_bytes);
     println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",curve25519_private_key_b64);
 
-    // Generate the Curve25519 public key from the accountId that is the 
+    // Generate the X25518 public key from the accountId that is the 
     // Public Key Ed25519 of 32 bytes
     let curve25519_public_key_bytes = ed2x_public_key_hex(&account_id);
     let curve25519_public_key_b64 = hex_to_base64(&curve25519_public_key_bytes);

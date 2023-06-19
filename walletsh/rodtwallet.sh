@@ -1,10 +1,10 @@
 #!/bin/bash
 
 export BLOCKCHAIN_ENV="testnet"
-VERSION="1.3.4"
+VERSION="1.3.5"
 export NFTCONTRACTID=$(cat ./walletsh/dev-account)
-echo Version $VERSION "running on " $BLOCKCHAIN_ENV at Smart Contract $NFTCONTRACTID " Get help with: "$0" help"
-echo It works properly only from the ~/cgtun directory at the moment; To be fixed
+echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
+echo "It works properly only from the ~/cgtun directory at the moment; To be fixed"
 
 if [ "$1" == "help" ]; then
     echo "Usage: "$0" [account_id] [Options]"

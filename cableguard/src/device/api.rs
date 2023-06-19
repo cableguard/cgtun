@@ -89,7 +89,7 @@ pub fn nearorg_rpc_tokens_for_owner(
 ) -> Result<Cgrodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc.".to_string() + &xnet + "near.org";
-    tracing::info!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
+    tracing::info!("Debugging: Is this testnet? {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -179,7 +179,7 @@ pub fn nearorg_rpc_token(
 ) -> Result<Cgrodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc.".to_string() + &xnet + "near.org";
-    tracing::info!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
+    tracing::info!("Debugging: Is this testnet? {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -228,7 +228,7 @@ pub fn nearorg_rpc_state(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc.".to_string() + &xnet + "near.org";
-    tracing::info!("Say testnet if we are in testnet, or . for mainnet: {}",xnet);
+    tracing::info!("Debugging: Is this testnet? {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
