@@ -310,8 +310,8 @@ impl Device {
         self.next_index.next()
     }
 
-    fn remove_peer(&mut self, pub_key: &x25519::PublicKey) {
-        if let Some(peer) = self.peers.remove(pub_key) {
+    fn remove_peer(&mut self, pub_peer_key: &x25519::PublicKey) {
+        if let Some(peer) = self.peers.remove(pub_peer_key) {
             // Found a peer to remove, now purge all references to it:
             {
                 let p = peer.lock();
@@ -329,7 +329,7 @@ impl Device {
     #[allow(clippy::too_many_arguments)]
     fn update_peer(
         &mut self,
-        pub_key: x25519::PublicKey,
+        pub_peer_key: x25519::PublicKey,
         remove: bool,
         _replace_ips: bool,
         endpoint: Option<SocketAddr>,
@@ -339,11 +339,11 @@ impl Device {
     ) {
         if remove {
             // Completely remove a peer
-            return self.remove_peer(&pub_key);
+            return self.remove_peer(&pub_peer_key);
         }
 
         // Update an existing peer
-        if self.peers.get(&pub_key).is_some() {
+        if self.peers.get(&pub_peer_key).is_some() {
             // We already have a peer, we need to merge the existing config into the newly created one
             panic!("Modifying existing peers is not yet supported. Remove and add again instead.");
         }
@@ -354,22 +354,22 @@ impl Device {
         .as_ref()
         .expect("Private key must be set first");
     
-        let pub_key_str = pub_key.encode_hex::<String>();
+        let pub_peer_key_str = pub_peer_key.encode_hex::<String>();
     
         // Convert the device_key_pair to strings
         let private_key_str = device_key_pair.0.encode_hex::<String>();
         let public_key_str = device_key_pair.1.encode_hex::<String>();
     
         // Display the converted values in the trace
-        tracing::info!("Debugging:pub_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
-            pub_key_str,
+        tracing::info!("Debugging:pub_peer_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
+            pub_peer_key_str,
             private_key_str,
             public_key_str
         );
     
         let tunn = Tunn::new(
             device_key_pair.0.clone(),
-            pub_key,
+            pub_peer_key,
             preshared_key,
             keepalive,
             next_index,
@@ -381,7 +381,7 @@ impl Device {
         let peer = Peer::new(tunn, next_index, endpoint, allowed_ips, preshared_key);
 
         let peer = Arc::new(Mutex::new(peer));
-        self.peers.insert(pub_key, Arc::clone(&peer));
+        self.peers.insert(pub_peer_key, Arc::clone(&peer));
         self.peers_by_idx.insert(next_index, Arc::clone(&peer));
 
         for AllowedIP { addr, cidr } in allowed_ips {
@@ -493,10 +493,10 @@ impl Device {
                 "nft_token",&account_idargs) {
                 Ok(result) => {
                     let client_cgrodt = result;
-                    tracing::info!("Client RODT: {:?}", client_cgrodt);
-                    tracing::info!("Client RODT Owner: {:?}", client_cgrodt.owner_id);
+                    tracing::info!("Debugging: Client RODT: {:?}", client_cgrodt);
+                    tracing::info!("Debugging: Client RODT Owner: {:?}", client_cgrodt.owner_id);
                     let clientpeer_xpublic_key = ed2x_public_key_hex(&client_cgrodt.owner_id);
-                    tracing::info!("Debugging: Peer Public Key in Hex, fn api_set_internal {:?}",encode(clientpeer_xpublic_key));
+                    tracing::info!("Debugging: Peer Public Key in Hex, fn device.new {:?}",encode(clientpeer_xpublic_key));
                     let clientpeer_xpublic_key_hex: String = clientpeer_xpublic_key
                     .iter()
                     .map(|byte| format!("{:02X}", byte))
@@ -607,7 +607,7 @@ impl Device {
  
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
-        tracing::info!(message = "TEN: X25518 Public Key (PublicKey) FN set_key Hex: {}", string);
+        tracing::info!(message = "Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key: {}", string);
         
         // There is a quirk wheras the private key generated is alternates with 
         // a given input so I am invoking and dumping so the next time I call it 
@@ -621,7 +621,7 @@ impl Device {
         
         let tenpbytes = private_key.to_bytes();
         let stringp = encode(&tenpbytes);
-        tracing::info!(message = "TEN: X25518 Private Key (after StaticSecret) FN set_key Hex: {}", stringp);
+        tracing::info!(message = "Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key: {}", stringp);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.
@@ -1123,7 +1123,7 @@ impl Device {
             }
     }
 
-    fn api_set_peer_internal(&mut self, pub_key: x25519::PublicKey) {
+    fn api_set_peer_internal(&mut self, pub_peer_key: x25519::PublicKey) {
     // cidrblock is allowed-ips
     // allowedips  is part of postup / postdown commands)
 
@@ -1131,7 +1131,7 @@ impl Device {
         let replace_ips = false;
         // let mut endpoint = None;
         let keepalive = None;
-        let public_key_ofthepeer = pub_key;
+        let public_key_ofthepeer = pub_peer_key;
         let preshared_key = None;
         let mut allowed_ips: Vec<AllowedIP> = vec![];
 
@@ -1235,7 +1235,6 @@ pub fn ed2x_private_key_bytes(key: [u8; 64]) -> x25519::StaticSecret {
 pub fn ed2x_public_key_hex(key: &str) -> [u8; 32] {
     // Parse the input key string as a hex-encoded Ed25519 public key
     let ed25519_pub_bytes = hex::decode(key).expect("Invalid hexadecimal string");
-    tracing::info!("Server Public Ed25519 Key in Hex: {:?}", encode(ed25519_pub_bytes.clone()));
 
     // Convert the Ed25519 public key bytes to Montgomery form
     let ed25519_pub_array: [u8; 32] = ed25519_pub_bytes.as_slice().try_into().expect("Invalid length");

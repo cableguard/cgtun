@@ -530,7 +530,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
 fn api_set_peer(
     readerbufferdevice: &mut BufReader<&UnixStream>,
     thisnetworkdevice: &mut Device,
-    pub_key: x25519::PublicKey,
+    pub_peer_key: x25519::PublicKey,
 ) -> i32 {
     let mut cmd = String::new();
 
@@ -538,7 +538,7 @@ fn api_set_peer(
     let mut replace_ips = false;
     let mut endpoint = None;
     let mut keepalive = None;
-    let mut public_key = pub_key;
+    let mut public_key = pub_peer_key;
     let mut preshared_key = None;
     let mut allowed_ips: Vec<AllowedIP> = vec![];
     while readerbufferdevice.read_line(&mut cmd).is_ok() {
