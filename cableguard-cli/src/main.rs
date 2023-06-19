@@ -192,9 +192,11 @@ fn main() {
 
     // Generate the X25519 public key from the accountId that is the 
     // Public Key Ed25519 of 32 bytes
-    let curve25519_public_key_bytes = ed2x_public_key_hex(&account_id);
-    let curve25519_public_key_b64 = hex_to_base64(&curve25519_public_key_bytes);
-    println!("X25519 Public Key Base64 from Ed25519 Public Key: {}",curve25519_public_key_b64);
+    // CG: Dropping the idea to generate and use X25519 Public Key Base64 from Ed25519 Public Key
+    // CG: We will just sign digitally the public key instead
+    // let curve25519_public_key_bytes = ed2x_public_key_hex(&account_id);
+    // let curve25519_public_key_b64 = hex_to_base64(&curve25519_public_key_bytes);
+    // println!("X25519 Public Key Base64 from Ed25519 Public Key: {}",curve25519_public_key_b64);
 
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
@@ -205,9 +207,7 @@ fn main() {
     
     let _guard;
     
-    println!("To display current configuration of the tunnel use: \"sudo wg show\"");
-    println!("To display available NEAR.ORG accounts use: \"./wallet/rodtwallet.sh\"");
-    println!("To create a NEAR.ORG account use: \"wg genaccount\"");
+    println!("To create or display available NEAR.ORG accounts use: \"./wallet/rodtwallet.sh\"");
 
     if background {
         // Running in background mode
