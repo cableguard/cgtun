@@ -16,7 +16,6 @@ use cableguard::device::{DeviceConfig, DeviceHandle};
 use cableguard::device::api::nearorg_rpc_tokens_for_owner;
 use cableguard::device::api::nearorg_rpc_state;
 use cableguard::device::api::Cgrodt;
-use cableguard::device::ed2x_public_key_hex;
 use cableguard::device::ed2x_private_key_bytes;
 use cableguard::device::deletethis;
 use hex::{FromHex};
@@ -274,7 +273,7 @@ fn main() {
     let config = DeviceConfig {
         cgrodt,
         cgrodt_private_key:*curve25519_private_key_bytes,
-        cgrodt_public_key:curve25519_public_key_bytes,
+        cgrodt_public_key:curve25519_public_direct_key_u832,
         n_threads,
         #[cfg(target_os = "linux")]
         uapi_fd,
