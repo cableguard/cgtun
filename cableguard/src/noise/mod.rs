@@ -440,7 +440,6 @@ impl Tunn {
 
     /// Formats a new handshake initiation message and store it in dst. If force_resend is true will send
     /// a new handshake, even if a handshake is already in progress (for example when a handshake times out)
-    // CG: This is where we need to add data fields
     pub fn format_handshake_initiation<'a>(
         &mut self,
         dst: &'a mut [u8],
