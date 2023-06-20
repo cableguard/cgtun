@@ -232,7 +232,7 @@ impl Tai64N {
 }
 
 /// Parameters used by the noise protocol
-// THIS IS WHERE WE NEED TO PLUG THE TOKEN ID FOR BLOCKCHAIN CHECKS
+// CG: First we need to check that we can exchange extra info, then that we can use the extra info inserted
 struct NoiseParams {
     /// Our static public key
     static_public: x25519::PublicKey,
@@ -240,6 +240,11 @@ struct NoiseParams {
     static_private: x25519::StaticSecret,
     /// Static public key of the other party
     peer_static_public: x25519::PublicKey,
+    /// CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
+    /// This needs a known lengh, we can use 64 or 128 as a limit to accomodate full RODT ID
+    // rodt_id: &str[64]
+    /// CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
+    // rodt_signature_with_pk[128] 
     /// A shared key = DH(static_private, peer_static_public)
     static_shared: x25519::SharedSecret,
     /// A pre-computation of HASH("mac1----", peer_static_public) for this peer
@@ -762,6 +767,11 @@ impl Handshake {
     }
 
     // token_id this is the function that creates the handshake initiation packet
+    // CG: This is where we need to plug additional fields:
+    // One is the RODT ID
+    // The other is the digital signature of the RODT ID
+    // On the opposite side of initialization we can check possession of the RODT ID
+    // and accept the declared public key
     pub(super) fn format_handshake_initiation<'a>(
         &mut self,
         dst: &'a mut [u8],
@@ -786,12 +796,13 @@ impl Handshake {
         // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         let mut hash = INITIAL_CHAIN_HASH;
         
-        // The following line implies that we already know the peer_static_public
-        // of the other side of the tunnel. This could be fetched 
-        // from the blockchain if published.
-        // Instead of exchanging the hashes of the public they can exchange
-        // the public itself + token_id, encrypted with the known public 
-        // from the blockchain to prevent visibility
+    /// CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
+    // rodt_id: &str[64]
+    // rodt_signature_with_pk[128] 
+    // CG: Perform the checks of matching fields to verify the client belongs to the server and vice versa
+    // CG: Read of owner_id (pk) of the rodt_id and check that the signature matches
+    // CG: If it matches, add the peer_static_public to the list of peers
+
         hash = b2s_hash(&hash, self.params.peer_static_public.as_bytes());
         
         // initiator.ephemeral_private = DH_GENERATE()

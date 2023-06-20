@@ -17,7 +17,6 @@ use cableguard::device::api::nearorg_rpc_tokens_for_owner;
 use cableguard::device::api::nearorg_rpc_state;
 use cableguard::device::api::Cgrodt;
 use cableguard::device::ed2x_private_key_bytes;
-use cableguard::device::deletethis;
 use hex::{FromHex};
 use base64::encode as base64encode;
 use crate::constants::SMART_CONTRACT;
