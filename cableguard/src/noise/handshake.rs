@@ -542,8 +542,8 @@ impl Handshake {
     ) -> Result<(&'a mut [u8], Session), WireGuardError> {
         // initiator.chaining_key = HASH(CONSTRUCTION)
         let mut chaining_key = INITIAL_CHAIN_KEY;
-        // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         let mut hash = INITIAL_CHAIN_HASH;
+        // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         hash = b2s_hash(&hash, self.params.static_public.as_bytes());
         // msg.sender_index = little_endian(initiator.sender_index)
         let peer_index = packet.sender_idx;
@@ -633,8 +633,8 @@ impl Handshake {
         let peer_index = packet.sender_idx;
         let local_index = state.local_index;
 
+         // msg.unencrypted_ephemeral = DH_PUBKEY(responder.ephemeral_private)
         let unencrypted_ephemeral = x25519::PublicKey::from(*packet.unencrypted_ephemeral);
-        // msg.unencrypted_ephemeral = DH_PUBKEY(responder.ephemeral_private)
         // responder.hash = HASH(responder.hash || msg.unencrypted_ephemeral)
         let mut hash = b2s_hash(&state.hash, unencrypted_ephemeral.as_bytes());
         // temp = HMAC(responder.chaining_key, msg.unencrypted_ephemeral)
@@ -957,16 +957,15 @@ impl Handshake {
 
         // Derive keys
         // temp1 = HMAC(initiator.chaining_key, [empty])
+        let temp1 = b2s_hmac(&chaining_key, &[]);
         // temp2 = HMAC(temp1, 0x1)
+        let temp2 = b2s_hmac(&temp1, &[0x01]);
         // temp3 = HMAC(temp1, temp2 || 0x2)
+        let temp3 = b2s_hmac2(&temp1, &temp2, &[0x02]);
         // initiator.sending_key = temp2
         // initiator.receiving_key = temp3
         // initiator.sending_key_counter = 0
         // initiator.receiving_key_counter = 0
-        let temp1 = b2s_hmac(&chaining_key, &[]);
-        let temp2 = b2s_hmac(&temp1, &[0x01]);
-        let temp3 = b2s_hmac2(&temp1, &temp2, &[0x02]);
-
         let dst = self.append_mac1_and_mac2(local_index, &mut dst[..super::HANDSHAKE_RESP_SZ])?;
 
         Ok((dst, Session::new(local_index, peer_index, temp2, temp3)))

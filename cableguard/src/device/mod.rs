@@ -345,6 +345,7 @@ impl Device {
         // Update an existing peer
         if self.peers.get(&pub_peer_key).is_some() {
             // We already have a peer, we need to merge the existing config into the newly created one
+            // CG: There should be an alternative to panicking
             panic!("Modifying existing peers is not yet supported. Remove and add again instead.");
         }
 
@@ -377,7 +378,7 @@ impl Device {
         )
         .unwrap();
         
-        // This is where a new peer is updated, apparently
+        // CG: Creation and insertion of a peer
         let peer = Peer::new(tunn, next_index, endpoint, allowed_ips, preshared_key);
 
         let peer = Arc::new(Mutex::new(peer));
