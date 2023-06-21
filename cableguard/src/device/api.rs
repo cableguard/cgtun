@@ -503,11 +503,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                             Err(_) => return EINVAL,
                         },
                         "public_key" => match val.parse::<KeyBytes>() {
-                            // Indicates a new peer section
                             Ok(key_bytes) => {
-                                // So here a peer is set
-                                // As we don't know our peers (if we are a server)
-                                // We need to set a fictional peer that we may never see
                                 return api_set_peer(
                                     readerbufferdevice,
                                     device,
