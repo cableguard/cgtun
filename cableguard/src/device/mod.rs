@@ -337,6 +337,7 @@ impl Device {
         keepalive: Option<u16>,
         preshared_key: Option<[u8; 32]>,
     ) {
+        //CG: If it wasn't for keeping compability, I would remove the silly logic
         if remove {
             // Completely remove a peer
             return self.remove_peer(&pub_peer_key);
@@ -344,9 +345,8 @@ impl Device {
 
         // Update an existing peer
         if self.peers.get(&pub_peer_key).is_some() {
-            // We already have a peer, we need to merge the existing config into the newly created one
-            // CG: There should be an alternative to panicking
-            panic!("Modifying existing peers is not yet supported. Remove and add again instead.");
+            tracing::info!("Debugging: Peers are dinamically added and removed so it makes no sense to update them. No actions have been performed");
+            return
         }
 
         let next_index = self.next_index();
@@ -355,13 +355,10 @@ impl Device {
         .as_ref()
         .expect("Private key must be set first");
     
+        // CG: Snooping the keys 
         let pub_peer_key_str = pub_peer_key.encode_hex::<String>();
-    
-        // Convert the device_key_pair to strings
         let private_key_str = device_key_pair.0.encode_hex::<String>();
         let public_key_str = device_key_pair.1.encode_hex::<String>();
-    
-        // Display the converted values in the trace
         tracing::info!("Debugging:pub_peer_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
             pub_peer_key_str,
             private_key_str,
@@ -389,7 +386,6 @@ impl Device {
             self.peers_by_ip
                 .insert(*addr, *cidr as _, Arc::clone(&peer));
         }
-
         tracing::info!("Debugging: Peer added");
     }
 
@@ -408,7 +404,6 @@ impl Device {
         let mut device = Device {
             queue: Arc::new(poll),
             iface,
-            // I think that config contains a Cgrodt
             config,
             exit_notice: Default::default(),
             yield_notice: Default::default(),
@@ -448,7 +443,11 @@ impl Device {
             }
         }
 
-        // BEGIN running "sudo ip addr add cidrblock dev tun_name"
+        // CG: We are adding here addtional device building:
+        // Add IPs, set private key, add initial peer
+        // We are only leaving out bringing the device UP
+        
+        // CG: Adding an ip to the interface with "sudo ip addr add cidrblock dev tun_name"
         let command = "ip addr add ".to_owned()+&device.config.cgrodt.metadata.cidrblock +" dev "+ name;
     
         let output = Command::new("bash")
@@ -464,61 +463,29 @@ impl Device {
             let stderr = String::from_utf8_lossy(&output.stderr);
             tracing::info!("Debugging: Ip addr add command failed to execute:\n{}", stderr);
         }
-        // END of running postup
 
-        // Normally the tunnel waits to receive the command to set the private key
-        // Instead we are proactively setting it
-        // Derive the seed from the private key using a KDF (SHA-256 in this example)
+        // CG: Proactively setting the Static Private Key for the device
         device.set_key(x25519::StaticSecret::from(device.config.cgrodt_private_key));
 
-        // BEGIN adding peers
+        // CG: Adding peers
         if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
-            // If we are a server we set a fictional peer to be ready for handshakes
+            // CG: If we are a server we set a fictional peer to be ready for handshakes
             tracing::info!("Debugging: This is a server");
             
-            // CG: Temporarily suspended part of code for testing
             // CG: rando just to prime the peers list
             // Peers will be added via Cableguard AUTH dinamically
-            // let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
-            // let randopublic_key: PublicKey = (&randoprivate_key).into();   
-            // let rando_public_key_hex: [u8; 32] = randopublic_key.as_bytes().clone(); 
-            // let rando_public_key_str = hex::encode(rando_public_key_hex);  
-
-            // CG The following lines are just for testing purposes, will be removed
-
-            let account_idargs = "{\"token_id\": \"".to_owned() 
-                + "01H2ZARQ5TMRQQZXRR1WN3A5RC" + "\"}";
-                tracing::info!("account idargs: {:?}", account_idargs);
-            match nearorg_rpc_token(Self::xnet,
-                Self::smart_contract,
-                "nft_token",&account_idargs) {
-                Ok(result) => {
-                    let client_cgrodt = result;
-                    tracing::info!("Debugging: Client RODT: {:?}", client_cgrodt);
-                    tracing::info!("Debugging: Client RODT Owner: {:?}", client_cgrodt.owner_id);
-                    let clientpeer_xpublic_key = ed2x_public_key_hex(&client_cgrodt.owner_id);
-                    tracing::info!("Debugging: Peer Public Key in Hex, fn device.new {:?}",encode(clientpeer_xpublic_key));
-                    let clientpeer_xpublic_key_hex: String = clientpeer_xpublic_key
-                    .iter()
-                    .map(|byte| format!("{:02X}", byte))
-                    .collect();
-                    let clientpeer_xpublic_key_str: &str = &clientpeer_xpublic_key_hex;
-                    device.api_set_internal("set_peer_public_key",
-                        &clientpeer_xpublic_key_str);
-                }
-                Err(err) => {
-                    tracing::error!("Error: There is no client RODT associated with the account: {}", err);
-                    std::process::exit(1);        }
-            }     
+            let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
+            let randopublic_key: PublicKey = (&randoprivate_key).into();   
+            let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
+            let rando_public_key_str: &str = &hex::encode(rando_public_key_u832);
+            device.api_set_internal("set_peer_public_key", &rando_public_key_str);
+            device.api_set_internal("list_port", "this parameter is not used for this option");
         }
         else{
-            // BEGIN If we are a client, find the server and check if it is trusted
-            // This can be performed with a IsTrusted() call with 
-            // cgrodt.metadata.authornftcontractid as a parameter
-            // Checking if the Issuer smart contract has published a TXT 
+            // CG: If we are a client, find the server and check if
+            // IsTrusted(cgrodt.metadata.authornftcontractid);
+            // ,checking if the Issuer smart contract has published a TXT 
             // entry with the token_id of the server
-            // If we are client, add the server as a peer
-            // END If we are a client, find the server and check if it is trusted
             tracing::info!("Debugging: This is a client");    
 
             let account_idargs = "{\"token_id\": \"".to_owned() 
@@ -540,19 +507,14 @@ impl Device {
                     let serverpeer_xpublic_key_str: &str = &serverpeer_xpublic_key_hex;
                     device.api_set_internal("set_peer_public_key",
                         &serverpeer_xpublic_key_str);
-                    // CG: Set server port
-                    // api_set_peer_internal_internal_internal(device,x25519::PublicKey::from(servercgrodt_publickey.0),
-                    //    "list_port", device.config.metadata.listen_port)
                 }
                 Err(err) => {
                     tracing::error!("Error: There is no server RODT associated with the account: {}", err);
                     std::process::exit(1);        }
             }
         }
-        // END adding peers
         Ok(device)
     }
-
 
     fn open_listen_socket(&mut self, mut port: u16) -> Result<(), Error> {
         // Binds the network facing interfaces
@@ -1068,7 +1030,6 @@ impl Device {
                     }
                 Err(_) => return,
                 },
-            // We can self-serve the listen_port from the Cgrodt
             "listen_port" => {
                 let listenport_str = &self.config.cgrodt.metadata.listenport;
                 let listenport = listenport_str.parse::<u16>();
@@ -1086,7 +1047,6 @@ impl Device {
                 target_os = "fuchsia",
                 target_os = "linux"
                 ))]
-            // There is no source for this parameter at the moment
             "fwmark" => match val.parse::<u32>() {
                 Ok(mark) => match self.set_fwmark(mark) {
                     Ok(()) => {}
@@ -1094,24 +1054,13 @@ impl Device {
                     },
                 Err(_) => return,
                 },
-            // I have not seen a case for this call in our version yet
-            // but it may come handy when adding not previously seen peers
             "replace_peers" => match val.parse::<bool>() {
                 Ok(true) => self.clear_peers(),
                     Ok(false) => {}
                       Err(_) => return,
                     },
-            // If we are a client we can find the blockchain
-            // public key of the server and transform it to montgomery
-            // for to use as X25519 public key
             "set_peer_public_key" => match val.parse::<KeyBytes>() {
-                // Indicates a new peer section
                 Ok(key_bytes) => {
-                    // So here a peer is set
-                    // As we don't know our peers (if we are a server)
-                    // We need to set a fictional peer that we may never see
-                    // api_set_peer needs to be reworked to use the info
-                    // from the rodt
                     let key_bytes_encoded = encode(key_bytes.0);
                     tracing::info!("Debugging: Peer Public Key FN api_set_internal {:?}", key_bytes_encoded);
                         return self.api_set_peer_internal(
@@ -1237,7 +1186,7 @@ pub fn ed2x_private_key_bytes(ed25519_sk: [u8; 64]) -> x25519::StaticSecret {
     sk
 }
 
-pub fn deletethis(static_private: x25519::StaticSecret) -> [u8; 32] {
+pub fn skx2pkx(static_private: x25519::StaticSecret) -> [u8; 32] {
     let static_public = x25519::PublicKey::from(&static_private);
     let static_public = convert_to_u8_array(static_public);
     static_public
@@ -1249,24 +1198,3 @@ pub fn convert_to_u8_array(public_key: PublicKey) -> [u8; 32] {
     result.copy_from_slice(&public_key_bytes[..32]);
     result
 }
-
-// pk conversion libsodium
-// https://github.com/jedisct1/libsodium/blob
-// /a3c44aba9415994ea4ababdeee8fa21308c2f3bc
-// /src/libsodium/crypto_sign/ed25519/ref10/keypair.c#L46
-//    ge25519_p3 A;
-//    fe25519    x;
-//    fe25519    one_minus_y;
-//
-//    if (ge25519_frombytes_negate_vartime(&A, ed25519_pk) != 0 ||
-//        ge25519_has_small_order(&A) != 0 ||
-//        ge25519_is_on_main_subgroup(&A) == 0) {
-//        return -1;
-//    }
-//    fe25519_1(one_minus_y);
-//    fe25519_sub(one_minus_y, one_minus_y, A.Y);
-//    fe25519_1(x);
-//    fe25519_add(x, x, A.Y);
-//    fe25519_invert(one_minus_y, one_minus_y);
-//    fe25519_mul(x, x, one_minus_y);
-//    fe25519_tobytes(curve25519_pk, x);

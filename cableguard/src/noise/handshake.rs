@@ -796,7 +796,7 @@ impl Handshake {
         // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         let mut hash = INITIAL_CHAIN_HASH;
         
-    /// CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
+    // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
     // rodt_id: &str[64]
     // rodt_signature_with_pk[128] 
     // CG: Perform the checks of matching fields to verify the client belongs to the server and vice versa

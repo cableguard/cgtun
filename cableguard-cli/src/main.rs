@@ -17,6 +17,7 @@ use cableguard::device::api::nearorg_rpc_tokens_for_owner;
 use cableguard::device::api::nearorg_rpc_state;
 use cableguard::device::api::Cgrodt;
 use cableguard::device::ed2x_private_key_bytes;
+use cableguard::device::skx2pkx;
 use hex::{FromHex};
 use base64::encode as base64encode;
 use crate::constants::SMART_CONTRACT;
@@ -31,13 +32,13 @@ mod constants {
 fn main() {
     let matches = Command::new("cableguard")
         .version(env!("CARGO_PKG_VERSION"))
-        .author("Vicente Aceituno Canal <vicente@cableguard.org> and Vlad Krasnov <vlad@cloudflare.com> et al")
+        .author("Vicente Aceituno Canal <vicente@cableguard.org> and Vlad Krasnov <vlad@cloudflare.com> et al, based on Wireguard (C) by Jason Donefeld")
         .args(&[
             // We input a NEAR Protocol json implicit account file as argument
             Arg::new("FILE_WITH_ACCOUNT")
                 .required(true)
                 .takes_value(true)
-                .help("The full filename of the file with the blockchain account"),
+                .help("The full filename and path of the file with the NEAR.ORG blockchain implicit account"),
             Arg::new("foreground")
                 .long("foreground")
                 .short('f')
@@ -177,24 +178,16 @@ fn main() {
         .expect("Failed to decode the private key from Base58");
     assert_eq!(ed25519_private_key_bytes.len(), 64);
 
-    // Create a X25519 key pair from Private Key Ed25519 of 64 bytes
+    // Create a X25519 private key from a Private Key Ed25519 of 64 bytes
     let server_xprivate_key_ss = ed2x_private_key_bytes(ed25519_private_key_bytes.try_into().unwrap());
     let curve25519_private_key_bytes = server_xprivate_key_ss.as_bytes();  
     let curve25519_private_key_b64 = hex_to_base64(&curve25519_private_key_bytes);
     println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",curve25519_private_key_b64);
 
     // Generate the X25519 public key from the X25519 private key of 32 bytes
-    let curve25519_public_direct_key_u832 = deletethis(server_xprivate_key_ss.clone());
+    let curve25519_public_direct_key_u832 = skx2pkx(server_xprivate_key_ss.clone());
     let curve25519_public_direct_key_b64 = hex_to_base64(&curve25519_public_direct_key_u832);
     println!("X25519 Public Key Base64 from X25519 Private Key: {}", curve25519_public_direct_key_b64);
-
-    // Generate the X25519 public key from the accountId that is the 
-    // Public Key Ed25519 of 32 bytes
-    // CG: Dropping the idea to generate and use X25519 Public Key Base64 from Ed25519 Public Key
-    // CG: We will just sign digitally the public key instead
-    // let curve25519_public_key_bytes = ed2x_public_key_hex(&account_id);
-    // let curve25519_public_key_b64 = hex_to_base64(&curve25519_public_key_bytes);
-    // println!("X25519 Public Key Base64 from Ed25519 Public Key: {}",curve25519_public_key_b64);
 
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());

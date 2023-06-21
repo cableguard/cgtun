@@ -317,15 +317,15 @@ impl Tunn {
         dst: &'a mut [u8],
     ) -> TunnResult<'a> {
         match packet {
-            Packet::HandshakeInit(p) => self.handle_handshake_init(p, dst),
-            Packet::HandshakeResponse(p) => self.handle_handshake_response(p, dst),
+            Packet::HandshakeInit(p) => self.handle_received_handshake_init(p, dst),
+            Packet::HandshakeResponse(p) => self.handle_received_handshake_response(p, dst),
             Packet::PacketCookieReply(p) => self.handle_cookie_reply(p),
             Packet::PacketData(p) => self.handle_data(p, dst),
         }
         .unwrap_or_else(TunnResult::from)
     }
 
-    fn handle_handshake_init<'a>(
+    fn handle_received_handshake_init<'a>(
         &mut self,
         p: HandshakeInit,
         dst: &'a mut [u8],
@@ -352,7 +352,7 @@ impl Tunn {
         Ok(TunnResult::WriteToNetwork(packet))
     }
 
-    fn handle_handshake_response<'a>(
+    fn handle_received_handshake_response<'a>(
         &mut self,
         p: HandshakeResponse,
         dst: &'a mut [u8],
@@ -633,7 +633,9 @@ mod tests {
 
         (my_tun, their_tun)
     }
-    // token_id we need to modify how the handshake initiation is created
+    
+    
+    // CG: token_id we need to modify how the handshake initiation is created
     // and match it on the receiving end
     fn create_handshake_init(tun: &mut Tunn) -> Vec<u8> {
         let mut dst = vec![0u8; 2048];
