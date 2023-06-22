@@ -149,7 +149,7 @@ fn aead_chacha20_open_inner(
 
     let mut inner_buffer = data.to_owned();
 
-    // token_id this is where we obtain the public key of the peer decrypted
+    // CG: token_id this is where we obtain the public key of the peer decrypted
     let plaintext = key.open_in_place(
         Nonce::assume_unique_for_key(nonce),
         Aad::from(aad),

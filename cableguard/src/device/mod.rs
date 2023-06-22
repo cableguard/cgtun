@@ -191,7 +191,8 @@ impl DeviceHandle {
     pub fn new(name: &str, config: DeviceConfig) -> Result<DeviceHandle, Error> {
         let n_threads = config.n_threads;
         let mut wg_interface = Device::new(name, config)?;
-        let port = 0; // 0 is the correct value if we want to listen on a random port
+        let port = 0; // CG: Server probable should start listening in 
+        // specific por, 0 is the correct value if we want to listen on a random port
         wg_interface.open_listen_socket(port)?;
 
         let interface_lock = Arc::new(Lock::new(wg_interface));
@@ -552,22 +553,16 @@ impl Device {
     fn set_key(&mut self, mut private_key: x25519::StaticSecret) {
         let mut bad_peers = vec![];
 
-        // This was the original assignment of the public key
-        // let public_key = x25519::PublicKey::from(&private_key);
-        // Now we are going to set public_key to the rodt value
-        let public_key = x25519::PublicKey::from(self.config.rodt_public_key);
+        // CG: Now we are going to set public_key with the RODT private key
+        let public_key = x25519::PublicKey::from(self.config.rodt_private_key);
  
+        // Now we are going to set public_key to the rodt value, discarding the passed parameter
+        // CG: For tests purposes let's take the IO wg inputs and not the RODT inputs
+        // private_key = x25519::StaticSecret::from(self.config.rodt_private_key);
+
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
         tracing::info!(message = "Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key: {}", string);
-        
-        // There is a quirk wheras the private key generated is alternates with 
-        // a given input so I am invoking and dumping so the next time I call it 
-        // I get the same output as the previous one
-//         let _dump = x25519::StaticSecret::from(self.config.rodt_private_key);
-
-        // Now we are going to set public_key to the rodt value, discarding the passed parameter
-        private_key = x25519::StaticSecret::from(self.config.rodt_private_key);
         
         let key_pair = Some((private_key.clone(), public_key));
         
@@ -590,7 +585,7 @@ impl Device {
                 .tunnel
                 .set_static_private(
                     private_key.clone(),
-                    public_key.clone(),
+                    public_key,
                     Some(Arc::clone(&rate_limiter)),
                 )
                 .is_err()

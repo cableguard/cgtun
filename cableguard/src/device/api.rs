@@ -402,6 +402,7 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
     // get command requires an empty line, but there is no reason to be religious about it
     if let Some(ref k) = thisnetworkdevice.key_pair {
         writeln!(writerbufferdevice, "own_public_key={}", encode_hex(k.1.as_bytes()));
+        writeln!(writerbufferdevice, "own_private_key={}", encode_hex(k.0.as_bytes()));
     }
 
     if thisnetworkdevice.listen_port != 0 {
@@ -604,7 +605,7 @@ fn api_set_peer(
                     }
                 }
                 "protocol_version" => match val.parse::<u32>() {
-                    Ok(2) => {} // Only version 2 is legal
+                    Ok(1) => {}
                     _ => return EINVAL,
                 },
                 _ => return EINVAL,
