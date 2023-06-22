@@ -446,7 +446,7 @@ impl Device {
         // CG: We are adding here addtional device building:
         // Add IPs, set private key, add initial peer
         // We are only leaving out bringing the device UP
-        
+        /* 449 CG: SHUTDOWN FOR TESTING
         // CG: Adding an ip to the interface with "sudo ip addr add cidrblock dev tun_name"
         let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ name;
     
@@ -500,6 +500,8 @@ impl Device {
         let rando_public_key_str: &str = &hex::encode(rando_public_key_u832);
         device.api_set_internal("set_peer_public_key", &rando_public_key_str);
         device.api_set_internal("listen_port", "this parameter is not used for this option");
+        503 CG shutdown for testing */
+
         Ok(device)
     }
 
