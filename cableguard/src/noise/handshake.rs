@@ -231,26 +231,26 @@ impl Tai64N {
     }
 }
 
-/// Parameters used by the noise protocol
+// Parameters used by the noise protocol
 // CG: First we need to check that we can exchange extra info, then that we can use the extra info inserted
 struct NoiseParams {
-    /// Our static public key
+    // Our static public key
     static_public: x25519::PublicKey,
-    /// Our static private key
+    // Our static private key
     static_private: x25519::StaticSecret,
-    /// Static public key of the other party
+    // Static public key of the other party
     peer_static_public: x25519::PublicKey,
-    /// CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
-    /// This needs a known lengh, we can use 64 or 128 as a limit to accomodate full RODT ID
-    // rodt_id: &str[64]
-    /// CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
-    // rodt_signature_with_pk[128] 
-    /// A shared key = DH(static_private, peer_static_public)
     static_shared: x25519::SharedSecret,
-    /// A pre-computation of HASH("mac1----", peer_static_public) for this peer
+    // A pre-computation of HASH("mac1----", peer_static_public) for this peer
     sending_mac1_key: [u8; KEY_LEN],
-    /// An optional preshared key
+    // An optional preshared key
     preshared_key: Option<[u8; KEY_LEN]>,
+    // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
+    // This needs a known lengh, we can use 64 or 128 as a limit to accomodate full RODT ID
+//    rodt_id: Option<[u8; KEY_LEN]>,
+    // CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
+//    rodt_signature_with_pk: Option<[u8; 2*KEY_LEN]>,
+    // A shared key = DH(static_private, peer_static_public)
 }
 
 impl std::fmt::Debug for NoiseParams {
@@ -416,6 +416,8 @@ impl NoiseParams {
             static_shared,
             sending_mac1_key: initial_sending_mac_key,
             preshared_key,
+//            rodt_id,
+//            rodt_signature_with_pk,
         })
     }
 

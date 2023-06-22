@@ -63,7 +63,7 @@ use rand_core::{OsRng, RngCore};
 use socket2::{Domain, Protocol, Type};
 use tun::TunSocket;
 use dev_lock::{Lock, LockReadGuard};
-use crate::device::api::Cgrodt;
+use crate::device::api::Rodt;
 use crate::x25519::StaticSecret;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
@@ -123,23 +123,23 @@ pub struct DeviceHandle {
 //#[derive(Debug, Clone, Copy)] 
 #[derive(Clone)]
 pub struct DeviceConfig {
-    pub cgrodt: Cgrodt,
-    pub cgrodt_private_key:[u8;32],
-    pub cgrodt_public_key:[u8;32],
     pub n_threads: usize,
     pub use_connected_socket: bool,
     #[cfg(target_os = "linux")]
     pub use_multi_queue: bool,
     #[cfg(target_os = "linux")]
     pub uapi_fd: i32,
+    pub rodt: Rodt,
+    pub rodt_private_key:[u8;32],
+    pub rodt_public_key:[u8;32],
 }
 
 impl Default for DeviceConfig {
     fn default() -> Self {
         DeviceConfig {
-            cgrodt: Cgrodt::default(),
-            cgrodt_private_key:[0;32],
-            cgrodt_public_key:[0;32],
+            rodt: Rodt::default(),
+            rodt_private_key:[0;32],
+            rodt_public_key:[0;32],
             n_threads: 4,
             use_connected_socket: true,
             #[cfg(target_os = "linux")]
@@ -448,7 +448,7 @@ impl Device {
         // We are only leaving out bringing the device UP
         
         // CG: Adding an ip to the interface with "sudo ip addr add cidrblock dev tun_name"
-        let command = "ip addr add ".to_owned()+&device.config.cgrodt.metadata.cidrblock +" dev "+ name;
+        let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ name;
     
         let output = Command::new("bash")
             .arg("-c")
@@ -458,61 +458,48 @@ impl Device {
         
         if output.status.success() {
             let _stdout = String::from_utf8_lossy(&output.stdout);
-            tracing::info!("Debugging: Ip addr add command executed successfully:\n{}",device.config.cgrodt.metadata.cidrblock);
+            tracing::info!("Debugging: Ip addr add command executed successfully:\n{}",device.config.rodt.metadata.cidrblock);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
             tracing::info!("Debugging: Ip addr add command failed to execute:\n{}", stderr);
         }
 
         // CG: Proactively setting the Static Private Key for the device
-        device.set_key(x25519::StaticSecret::from(device.config.cgrodt_private_key));
+        device.set_key(x25519::StaticSecret::from(device.config.rodt_private_key));
 
-        // CG: Adding peers
-        if device.config.cgrodt.token_id.contains(&device.config.cgrodt.metadata.authornftcontractid) {
-            // CG: If we are a server we set a fictional peer to be ready for handshakes
+        // CG: We set a fictional peer to be ready for handshakes
+        if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {
             tracing::info!("Debugging: This is a server");
-            
-            // CG: rando just to prime the peers list
-            // Peers will be added via Cableguard AUTH dinamically
-            let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
-            let randopublic_key: PublicKey = (&randoprivate_key).into();   
-            let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
-            let rando_public_key_str: &str = &hex::encode(rando_public_key_u832);
-            device.api_set_internal("set_peer_public_key", &rando_public_key_str);
-            device.api_set_internal("list_port", "this parameter is not used for this option");
         }
         else{
             // CG: If we are a client, find the server and check if
-            // IsTrusted(cgrodt.metadata.authornftcontractid);
+            // IsTrusted(rodt.metadata.authornftcontractid);
             // ,checking if the Issuer smart contract has published a TXT 
             // entry with the token_id of the server
             tracing::info!("Debugging: This is a client");    
-
             let account_idargs = "{\"token_id\": \"".to_owned() 
-                + &device.config.cgrodt.metadata.authornftcontractid + "\"}";
+                + &device.config.rodt.metadata.authornftcontractid + "\"}";
                 tracing::info!("account idargs: {:?}", account_idargs);
             match nearorg_rpc_token(Self::xnet,
                 Self::smart_contract,
                 "nft_token",&account_idargs) {
                 Ok(result) => {
-                    let server_cgrodt = result;
-                    tracing::info!("Server RODT: {:?}", server_cgrodt);
-                    tracing::info!("Server RODT Owner: {:?}", server_cgrodt.owner_id);
-                    let serverpeer_xpublic_key = ed2x_public_key_hex(&server_cgrodt.owner_id);
-                    tracing::info!("Debugging: Peer Public Key in Hex, fn api_set_internal {:?}",encode(serverpeer_xpublic_key));
-                    let serverpeer_xpublic_key_hex: String = serverpeer_xpublic_key
-                    .iter()
-                    .map(|byte| format!("{:02X}", byte))
-                    .collect();
-                    let serverpeer_xpublic_key_str: &str = &serverpeer_xpublic_key_hex;
-                    device.api_set_internal("set_peer_public_key",
-                        &serverpeer_xpublic_key_str);
+                    let server_rodt = result;
+                    tracing::info!("Server RODT Owner: {:?}", server_rodt.owner_id);
                 }
                 Err(err) => {
                     tracing::error!("Error: There is no server RODT associated with the account: {}", err);
                     std::process::exit(1);        }
             }
         }
+        // CG: rando just to prime the peers list
+        // Peers will be added via Cableguard AUTH dinamically
+        let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
+        let randopublic_key: PublicKey = (&randoprivate_key).into();   
+        let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
+        let rando_public_key_str: &str = &hex::encode(rando_public_key_u832);
+        device.api_set_internal("set_peer_public_key", &rando_public_key_str);
+        device.api_set_internal("listen_port", "this parameter is not used for this option");
         Ok(device)
     }
 
@@ -565,8 +552,8 @@ impl Device {
 
         // This was the original assignment of the public key
         // let public_key = x25519::PublicKey::from(&private_key);
-        // Now we are going to set public_key to the cgrodt value
-        let public_key = x25519::PublicKey::from(self.config.cgrodt_public_key);
+        // Now we are going to set public_key to the rodt value
+        let public_key = x25519::PublicKey::from(self.config.rodt_public_key);
  
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
@@ -575,10 +562,10 @@ impl Device {
         // There is a quirk wheras the private key generated is alternates with 
         // a given input so I am invoking and dumping so the next time I call it 
         // I get the same output as the previous one
-//         let _dump = x25519::StaticSecret::from(self.config.cgrodt_private_key);
+//         let _dump = x25519::StaticSecret::from(self.config.rodt_private_key);
 
-        // Now we are going to set public_key to the cgrodt value, discarding the passed parameter
-        private_key = x25519::StaticSecret::from(self.config.cgrodt_private_key);
+        // Now we are going to set public_key to the rodt value, discarding the passed parameter
+        private_key = x25519::StaticSecret::from(self.config.rodt_private_key);
         
         let key_pair = Some((private_key.clone(), public_key));
         
@@ -1017,7 +1004,7 @@ impl Device {
         match key {
             // We can self-serve the private key from the input json wallet file
             // Once transformed to Montgomery form
-            // I think I can call set_key with device.config.cgrodt_private_key
+            // I think I can call set_key with device.config.rodt_private_key
             "private_key" => match val.parse::<KeyBytes>() {
                 Ok(key_bytes) => {
                     // This is the pattern to follow when getting the key as text from a file
@@ -1025,22 +1012,17 @@ impl Device {
                 let string = format!("{:02X?}", key_str);
                     // Dumping the private key that is associated with the device in HEX format
                     tracing::info!(message = "Debugging:Private_key FN api_set_internal: {}", string);
-                    // This call needs to read the key from the cgrodt instead of key_bytes
+                    // This call needs to read the key from the rodt instead of key_bytes
                     self.set_key(x25519::StaticSecret::from(key_bytes.0))
                     }
                 Err(_) => return,
                 },
-            "listen_port" => {
-                let listenport_str = &self.config.cgrodt.metadata.listenport;
-                let listenport = listenport_str.parse::<u16>();
-                if let Ok(parsed_listenport) = listenport {
-                    if let Err(_) = self.open_listen_socket(parsed_listenport) {
-                        return;
-                    }
-                } else {
-                    return;
-                }
-                return;
+            "listen_port" => match self.config.rodt.metadata.listenport.parse::<u16>() {
+                Ok(port) => match self.open_listen_socket(port) {
+                    Ok(()) => {}
+                    Err(_) => return,
+                },
+                Err(_) => return,
             },
                 #[cfg(any(
                 target_os = "android",
@@ -1085,12 +1067,13 @@ impl Device {
         let preshared_key = None;
         let mut allowed_ips: Vec<AllowedIP> = vec![];
 
-        let ip: IpAddr = self.config.cgrodt.metadata.endpoint.parse().expect("Invalid IP address");
-        let port: u16 = self.config.cgrodt.metadata.listenport.parse().expect("Invalid port");
+        // CG: Assigning IP config from rodt
+        let ip: IpAddr = self.config.rodt.metadata.endpoint.parse().expect("Invalid IP address");
+        let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Invalid port");
         let endpoint_listenport = SocketAddr::new(ip,port);      
         println!("Setting Server IP and port {}", endpoint_listenport);        
         // Cidrblock is allowed_ip, it FAILS if the cidr format is not followed
-        let allowed_ip_str = &self.config.cgrodt.metadata.cidrblock;
+        let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
         println!("Setting own assigned IP? {}", allowed_ip_str);
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
         println!("Setting allowed IP {:?}", allowed_ip);

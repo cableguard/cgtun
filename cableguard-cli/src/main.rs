@@ -1,6 +1,13 @@
 // Copyright (c) 2023 Cableguard, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
+use cableguard::device::drop_privileges::drop_privileges;
+use cableguard::device::{DeviceConfig, DeviceHandle};
+use cableguard::device::api::nearorg_rpc_tokens_for_owner;
+use cableguard::device::api::nearorg_rpc_state;
+use cableguard::device::api::Rodt;
+use cableguard::device::ed2x_private_key_bytes;
+use cableguard::device::skx2pkx;
 use clap::{Arg, Command};
 use daemonize::Daemonize;
 use std::os::unix::net::UnixDatagram;
@@ -11,13 +18,6 @@ use std::io::Read;
 use std::env;
 use tracing::Level;
 use serde_json::Value;
-use cableguard::device::drop_privileges::drop_privileges;
-use cableguard::device::{DeviceConfig, DeviceHandle};
-use cableguard::device::api::nearorg_rpc_tokens_for_owner;
-use cableguard::device::api::nearorg_rpc_state;
-use cableguard::device::api::Cgrodt;
-use cableguard::device::ed2x_private_key_bytes;
-use cableguard::device::skx2pkx;
 use hex::{FromHex};
 use base64::encode as base64encode;
 use crate::constants::SMART_CONTRACT;
@@ -94,6 +94,8 @@ fn main() {
 
     #[cfg(target_os = "linux")]
     let uapi_fd: i32 = matches.value_of_t("uapi-fd").unwrap_or_else(|e| e.exit());
+    let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
+    let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
 
     // Extract the public key from the file with the accountId
     let accountfile_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
@@ -136,7 +138,7 @@ fn main() {
     let xnet = BLOCKCHAIN_ENV;
 
     // Initialize a RODT object
-    let cgrodt: Cgrodt;
+    let rodt: Rodt;
     
     println!("ROTD Directory: {}", "NEAR.ORG");
     println!("Operating in network: {}", xnet);
@@ -159,7 +161,7 @@ fn main() {
     let account_idargs = "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
     match nearorg_rpc_tokens_for_owner(xnet, smart_contract, smart_contract, "nft_tokens_for_owner", &account_idargs) {
         Ok(result) => {
-            cgrodt = result;
+            rodt = result;
         }
         Err(err) => {
             // Handle the error
@@ -170,7 +172,7 @@ fn main() {
 
     // Create an Interface Name derived from the token_id ULID,
     // with a max length of 15 characters, by default utun+last 11 of ULID for operating systems compatibility, 
-    let tun_name = format!("utun{}", &cgrodt.token_id[cgrodt.token_id.len() - 11..]);
+    let tun_name = format!("utun{}", &rodt.token_id[rodt.token_id.len() - 11..]);
     
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
     let ed25519_private_key_bytes = bs58::decode(private_key_base58)
@@ -188,9 +190,6 @@ fn main() {
     let curve25519_public_direct_key_u832 = skx2pkx(server_xprivate_key_ss.clone());
     let curve25519_public_direct_key_b64 = hex_to_base64(&curve25519_public_direct_key_u832);
     println!("X25519 Public Key Base64 from X25519 Private Key: {}", curve25519_public_direct_key_b64);
-
-    let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
-    let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
     
     // Create a socketpair to communicate between forked processes
     let (sock1, sock2) = UnixDatagram::pair().unwrap();
@@ -238,7 +237,7 @@ fn main() {
                 // Perform an action when the daemon process exits
                 let mut b = [0u8; 1];
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
-                    println!("CableGuard opened a sock successfully");
+                    println!("CableGuard started successfully");
                 } else {
                     eprintln!("CableGuard failed to start. Check if the capabilities are set and you are running with enough privileges.");
                     exit(1);
@@ -247,7 +246,7 @@ fn main() {
     
         // Start the daemon process
         match daemonize.start() {
-            Ok(_) => println!("CableGuard daemonized successfully"),
+            Ok(_) => tracing::info!("CableGuard started successfully"),
             Err(e) => {
                 tracing::error!(error = ?e);
                 exit(1);
@@ -263,15 +262,15 @@ fn main() {
     
     // Configure the device with the RODT
     let config = DeviceConfig {
-        cgrodt,
-        cgrodt_private_key:*curve25519_private_key_bytes,
-        cgrodt_public_key:curve25519_public_direct_key_u832,
         n_threads,
         #[cfg(target_os = "linux")]
         uapi_fd,
         use_connected_socket: !matches.is_present("disable-connected-udp"),
         #[cfg(target_os = "linux")]
         use_multi_queue: !matches.is_present("disable-multi-queue"),
+        rodt,
+        rodt_private_key:*curve25519_private_key_bytes,
+        rodt_public_key:curve25519_public_direct_key_u832,
     };
     
     // Initialize the device handle with the specified tunnel name and configuration
@@ -298,7 +297,7 @@ fn main() {
     sock1.send(&[1]).unwrap();
     drop(sock1);
     
-    println!("CableGuard will hand over to device handle");
+    tracing::info!("CableGuard will hand over to device handle");
     
     // Wait for the device handle to finish processing
     device_handle.wait();    

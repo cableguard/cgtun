@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Cgrodt {
+pub struct Rodt {
     pub token_id: String,
     pub owner_id: String,
     pub metadata: CgrodtMetadata,
@@ -29,9 +29,9 @@ pub struct Cgrodt {
     pub royalty: serde_json::Value,
 }
 
-impl Default for Cgrodt {
+impl Default for Rodt {
     fn default() -> Self {
-        Cgrodt {
+        Rodt {
             token_id: String::default(),
             owner_id: String::default(),
             metadata: CgrodtMetadata::default(),
@@ -86,7 +86,7 @@ pub fn nearorg_rpc_tokens_for_owner(
     account_id: &str,
     method_name: &str,
     args: &str,
-) -> Result<Cgrodt, Box<dyn std::error::Error>> {
+) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc.".to_string() + &xnet + "near.org";
     tracing::info!("Debugging: Is this testnet? {}",xnet);
@@ -127,7 +127,7 @@ pub fn nearorg_rpc_tokens_for_owner(
         
     let result_string = core::str::from_utf8(&result_slice).unwrap();
     
-    let result_struct: Vec<Cgrodt> = match serde_json::from_str(result_string) {
+    let result_struct: Vec<Rodt> = match serde_json::from_str(result_string) {
         Ok(value) => value,
         Err(err) => {
             tracing::error!("Error: can't handle struct {:?}",result_string);
@@ -136,7 +136,7 @@ pub fn nearorg_rpc_tokens_for_owner(
         }
     };
     
-    let mut result_iter = match serde_json::from_str::<Vec<Cgrodt>>(result_string) {
+    let mut result_iter = match serde_json::from_str::<Vec<Rodt>>(result_string) {
         Ok(value) => value.into_iter(),
         Err(err) => {
             tracing::error!("Error: can't handle iter  {}",result_string);
@@ -145,29 +145,29 @@ pub fn nearorg_rpc_tokens_for_owner(
         }
     };
     
-    if let Some(cgrodt) = result_iter.next() {
-        for cgrodt in result_struct {
-            tracing::info!("token_id: {}", cgrodt.token_id);
-            tracing::info!("owner_id: {}", cgrodt.owner_id);
-            tracing::info!("title: {}", cgrodt.metadata.title);
-            tracing::info!("description: {}", cgrodt.metadata.description);
-            tracing::info!("notafter: {}", cgrodt.metadata.notafter);
-            tracing::info!("notbefore: {}", cgrodt.metadata.notbefore);
-            tracing::info!("cidrblock: {}", cgrodt.metadata.cidrblock);
-            tracing::info!("dns: {}", cgrodt.metadata.dns);
-            tracing::info!("postup: {}", cgrodt.metadata.postup);
-            tracing::info!("postdown: {}", cgrodt.metadata.postdown);
-            tracing::info!("allowedips: {}", cgrodt.metadata.allowedips);
-            tracing::info!("endpoint: {}", cgrodt.metadata.endpoint);
-            tracing::info!("authornftcontractid: {}", cgrodt.metadata.authornftcontractid);
-            tracing::info!("authorsignature: {}", cgrodt.metadata.authorsignature);
-            tracing::info!("kbpersecond: {}", cgrodt.metadata.kbpersecond);
+    if let Some(rodt) = result_iter.next() {
+        for rodt in result_struct {
+            tracing::info!("token_id: {}", rodt.token_id);
+            tracing::info!("owner_id: {}", rodt.owner_id);
+            tracing::info!("title: {}", rodt.metadata.title);
+            tracing::info!("description: {}", rodt.metadata.description);
+            tracing::info!("notafter: {}", rodt.metadata.notafter);
+            tracing::info!("notbefore: {}", rodt.metadata.notbefore);
+            tracing::info!("cidrblock: {}", rodt.metadata.cidrblock);
+            tracing::info!("dns: {}", rodt.metadata.dns);
+            tracing::info!("postup: {}", rodt.metadata.postup);
+            tracing::info!("postdown: {}", rodt.metadata.postdown);
+            tracing::info!("allowedips: {}", rodt.metadata.allowedips);
+            tracing::info!("endpoint: {}", rodt.metadata.endpoint);
+            tracing::info!("authornftcontractid: {}", rodt.metadata.authornftcontractid);
+            tracing::info!("authorsignature: {}", rodt.metadata.authorsignature);
+            tracing::info!("kbpersecond: {}", rodt.metadata.kbpersecond);
         }
-     // Return the first Cgrodt instance as the result
-        return Ok(cgrodt.clone());
+     // Return the first Rodt instance as the result
+        return Ok(rodt.clone());
      } else {
-     // If no Cgrodt instance is available, return an error
-        return Err("No Cgrodt instance found".into());
+     // If no Rodt instance is available, return an error
+        return Err("No Rodt instance found".into());
     }
 }
 
@@ -176,7 +176,7 @@ pub fn nearorg_rpc_token(
     id: &str,
     method_name: &str,
     args: &str,
-) -> Result<Cgrodt, Box<dyn std::error::Error>> {
+) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc.".to_string() + &xnet + "near.org";
     tracing::info!("Debugging: Is this testnet? {}",xnet);
@@ -216,9 +216,9 @@ pub fn nearorg_rpc_token(
 
     let result_string = String::from_utf8(result_slice.to_vec()).unwrap();
 
-    let cgrodt: Cgrodt = serde_json::from_str(&result_string).unwrap();
+    let rodt: Rodt = serde_json::from_str(&result_string).unwrap();
 
-    Ok(cgrodt.clone())
+    Ok(rodt.clone())
 }
 
 pub fn nearorg_rpc_state(
@@ -337,7 +337,7 @@ impl Device {
                         // Only two commands are legal according to the protocol, get=1 and set=1.
                         "get=1" => api_get(&mut writerbufferdevice, thisnetworkdevice),
                         // We are switching from api_set to api_set_internal 
-                        // This means we are not taking commands
+                        // This means we are not taking commands alone
                         // from wg anymore, we are self-serving configuration
                         "set=1" => api_set(&mut readerbufferdevice, thisnetworkdevice),
                         _ => EIO,
@@ -473,7 +473,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 let string = format!("{:02X?}", key_str);
                                 // Dumping the private key that is associated with the device in HEX format
                                 tracing::info!(message = "Debugging:Private_key FN api_set: {}", string);
-                                // This call needs to read the key from the cgrodt instead of key_bytes
+                                // This call needs to read the key from the rodt instead of key_bytes
                                 device.set_key(x25519::StaticSecret::from(key_bytes.0))
                             }
                             Err(_) => return EINVAL,
