@@ -232,7 +232,6 @@ impl Tai64N {
 }
 
 // Parameters used by the noise protocol
-// CG: First we need to check that we can exchange extra info, then that we can use the extra info inserted
 struct NoiseParams {
     // Our static public key
     static_public: x25519::PublicKey,
@@ -801,9 +800,9 @@ impl Handshake {
     // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
     // rodt_id: &str[64]
     // rodt_signature_with_pk[128] 
-    // CG: Perform the checks of matching fields to verify the client belongs to the server and vice versa
-    // CG: Read of owner_id (pk) of the rodt_id and check that the signature matches
-    // CG: If it matches, add the peer_static_public to the list of peers
+    // Perform the checks of matching fields to verify the client belongs to the server and vice versa
+    // Read of owner_id (pk) of the rodt_id and check that the signature matches
+    // If it matches, add the peer_static_public to the list of peers
 
         hash = b2s_hash(&hash, self.params.peer_static_public.as_bytes());
         

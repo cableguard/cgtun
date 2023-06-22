@@ -562,13 +562,13 @@ impl Device {
 
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
-        println!(message = "Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key: {}", string);
+        println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key: {}", string);
         
         let key_pair = Some((private_key.clone(), public_key));
         
         let tenpbytes = private_key.to_bytes();
         let stringp = encode(&tenpbytes);
-        println!(message = "Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key: {}", stringp);
+        println!("{} {}","Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key: {}", stringp);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.
