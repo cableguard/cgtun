@@ -553,7 +553,7 @@ impl Device {
     fn set_key(&mut self, mut private_key: x25519::StaticSecret) {
         let mut bad_peers = vec![];
 
-        // CG: Now we are going to set public_key with the RODT private key
+        // CG: Now we are going to set public_key with the RODT private key, the input from command line will be ignored
         let public_key = x25519::PublicKey::from(self.config.rodt_private_key);
  
         // Now we are going to set public_key to the rodt value, discarding the passed parameter
@@ -562,13 +562,13 @@ impl Device {
 
         let tenbytes = public_key.to_bytes();
         let string = encode(&tenbytes);
-        tracing::info!(message = "Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key: {}", string);
+        println!(message = "Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key: {}", string);
         
         let key_pair = Some((private_key.clone(), public_key));
         
         let tenpbytes = private_key.to_bytes();
         let stringp = encode(&tenpbytes);
-        tracing::info!(message = "Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key: {}", stringp);
+        println!(message = "Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key: {}", stringp);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.
