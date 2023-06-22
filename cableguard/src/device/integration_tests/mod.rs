@@ -418,7 +418,7 @@ mod tests {
             ret
         }
 
-        /// Assign a listen_port to the interface
+        // CG: Assign a listen_port to the interface
         fn wg_set_port(&self, port: u16) -> String {
             // CG: This is the internal way to set parameters for each interface
             // CG: So we can input the whole RODT parameters with a series of self.wg_set commands
