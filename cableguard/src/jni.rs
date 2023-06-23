@@ -71,7 +71,7 @@ pub unsafe extern "C" fn generate_public_key1(
     }
 }
 
-/// Converts x25519 key to hex string.
+/// Converts x25519 key to Hex string.
 #[no_mangle]
 #[export_name = "Java_com_cloudflare_app_boringtun_BoringTunJNI_x25519_1key_1to_1hex"]
 pub unsafe extern "C" fn convert_x25519_key_to_hex(

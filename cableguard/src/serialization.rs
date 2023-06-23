@@ -16,13 +16,13 @@ pub (crate) fn keybytes_to_hex_string(key_bytes: &KeyBytes) -> String {
 impl std::str::FromStr for KeyBytes {
     type Err = &'static str;
 
-    /// Can parse a secret key from a hex or base64 encoded string.
+    // CG From Hex or base64 to KeyBytes ~ [u8;32] 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut internal = [0u8; 32];
 
         match s.len() {
             64 => {
-                // Try to parse as hex
+                // Try to parse as Hex
                 for i in 0..32 {
                     internal[i] = u8::from_str_radix(&s[i * 2..=i * 2 + 1], 16)
                         .map_err(|_| "Illegal character in key")?;

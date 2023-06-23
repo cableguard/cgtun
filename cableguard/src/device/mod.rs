@@ -354,7 +354,7 @@ impl Device {
         let device_key_pair = self
         .key_pair
         .as_ref()
-        .expect("Private key must be set first");
+        .expect("Self private key must be set before adding peers");
     
         // CG: Snooping the keys 
         let pub_peer_key_str = pub_peer_key.encode_hex::<String>();

@@ -128,8 +128,8 @@ fn main() {
     let account_id = json["account_id"].as_str().expect("Invalid account_id value");
 
     // Extract the value of the "private_key" field, include it in a json string and encode it as Base58
-    let private_key_base58 = json["private_key"].as_str().expect("Invalid private_key value");   
-    let private_key_base58 = private_key_base58.trim_start_matches("ed25519:");
+    let own_static_base58_private_ed25519_key = json["private_key"].as_str().expect("Invalid private_key value");   
+    let own_static_base58_private_ed25519_key = own_static_base58_private_ed25519_key.trim_start_matches("ed25519:");
 
     // Set the account where is the rodt smart contract
     let smart_contract = constants::SMART_CONTRACT;
@@ -175,13 +175,13 @@ fn main() {
     let tun_name = format!("utun{}", &rodt.token_id[rodt.token_id.len() - 11..]);
     
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
-    let ed25519_private_key_bytes = bs58::decode(private_key_base58)
+    let own_static_bytes_private_ed25519_key = bs58::decode(own_static_base58_private_ed25519_key)
         .into_vec()
         .expect("Failed to decode the private key from Base58");
-    assert_eq!(ed25519_private_key_bytes.len(), 64);
+    assert_eq!(own_static_bytes_private_ed25519_key.len(), 64);
 
     // Create a X25519 private key from a Private Key Ed25519 of 64 bytes
-    let server_xprivate_key_ss = ed2x_private_key_bytes(ed25519_private_key_bytes.try_into().unwrap());
+    let server_xprivate_key_ss = ed2x_private_key_bytes(own_static_bytes_private_ed25519_key.try_into().unwrap());
     let curve25519_private_key_bytes = server_xprivate_key_ss.as_bytes();  
     let curve25519_private_key_b64 = hex_to_base64(&curve25519_private_key_bytes);
     println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",curve25519_private_key_b64);

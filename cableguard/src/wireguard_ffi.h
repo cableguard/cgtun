@@ -49,7 +49,7 @@ struct x25519_key x25519_secret_key();
 struct x25519_key x25519_public_key(struct x25519_key private_key);
 // Encodes a public or private x25519 key to base64. Must be freed with x25519_key_to_str_free.
 const char *x25519_key_to_base64(struct x25519_key key);
-// Encodes a public or private x25519 key to hex. Must be freed with x25519_key_to_str_free.
+// Encodes a public or private x25519 key to Hex. Must be freed with x25519_key_to_str_free.
 const char *x25519_key_to_hex(struct x25519_key key);
 // Free string pointer obtained from either x25519_key_to_base64 or x25519_key_to_hex
 void x25519_key_to_str_free(const char *key_str);
