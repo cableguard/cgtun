@@ -3,8 +3,6 @@ pub(crate) struct KeyBytes(pub [u8; 32]);
 
 // CG: I can't see how this improves the handling for keys,
 // strong candidate for removal
-
-// Following function converts KeyBytes to String for tracing purposes
 pub (crate) fn keybytes_to_hex_string(key_bytes: &KeyBytes) -> String {
     let bytes = &key_bytes.0;
     let hex_digits: Vec<String> = bytes.iter()

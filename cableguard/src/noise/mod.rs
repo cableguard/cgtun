@@ -235,16 +235,16 @@ impl Tunn {
     /// Update the private key and clear existing sessions
     pub fn set_static_private(
         &mut self,
-        static_private: x25519::StaticSecret,
-        static_public: x25519::PublicKey,
+        own_staticsecret_private_key: x25519::StaticSecret,
+        own_publickey_public_key: x25519::PublicKey,
         rate_limiter: Option<Arc<RateLimiter>>,
     ) -> Result<(), WireGuardError> {
         self.timers.should_reset_rr = rate_limiter.is_none();
         self.rate_limiter = rate_limiter.unwrap_or_else(|| {
-            Arc::new(RateLimiter::new(&static_public, PEER_HANDSHAKE_RATE_LIMIT))
+            Arc::new(RateLimiter::new(&own_publickey_public_key, PEER_HANDSHAKE_RATE_LIMIT))
         });
         self.handshake
-            .set_static_private(static_private, static_public)?;
+            .set_static_private(own_staticsecret_private_key, own_publickey_public_key)?;
         for s in &mut self.sessions {
             *s = None;
         }
@@ -606,30 +606,30 @@ mod tests {
     use rand_core::{OsRng, RngCore};
 
     fn create_two_tuns() -> (Tunn, Tunn) {
-        let my_secret_key = x25519::StaticSecret::random_from_rng(OsRng);
-        let my_public_key = x25519::PublicKey::from(&my_secret_key);
+        let own_staticsecret_private_key = x25519::StaticSecret::random_from_rng(OsRng);
+        let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
         let my_idx = OsRng.next_u32();
 
-        let their_secret_key = x25519::StaticSecret::random_from_rng(OsRng);
-        let their_public_key = x25519::PublicKey::from(&their_secret_key);
+        let their_staticsecret_private_key = x25519::StaticSecret::random_from_rng(OsRng);
+        let their_publickey_public_key = x25519::PublicKey::from(&their_secret_key);
         let their_idx = OsRng.next_u32();
 
         // Convert the keys to strings
-        let my_secret_key_str = encode(my_secret_key.to_bytes());
-        let my_public_key_str = encode(my_public_key.as_bytes());
-        let their_secret_key_str = encode(their_secret_key.to_bytes());
-        let their_public_key_str = encode(their_public_key.as_bytes());
+        let own_string_private_key = encode(own_staticsecret_private_key.to_bytes());
+        let own_string_public_key = encode(own_publickey_public_key.as_bytes());
+        let their_string_private_key = encode(their_staticsecret_private_key.to_bytes());
+        let their_string_public_key = encode(their_publickey_public_key.as_bytes());
 
         // Display the converted values in the trace
-        tracing::info!("Debugging: my_secret_key: {}, my_public_key: {}, their_secret_key: {}, their_public_key: {} in fn create_two_tuns",
-            my_secret_key_str,
-            my_public_key_str,
-            their_secret_key_str,
-            their_public_key_str
+        tracing::info!("Debugging: own_staticsecret_private_key: {}, own_publickey_public_key: {}, their_secret_key: {}, their_public_key: {} in fn create_two_tuns",
+            own_string_private_key,
+            own_string_public_key,
+            their_string_private_key,
+            their_string_public_key
         );
 
-        let my_tun = Tunn::new(my_secret_key, their_public_key, None, None, my_idx, None).unwrap();
-        let their_tun = Tunn::new(their_secret_key, my_public_key, None, None, their_idx, None).unwrap();
+        let my_tun = Tunn::new(own_staticsecret_private_key, their_publickey_public_key, None, None, my_idx, None).unwrap();
+        let their_tun = Tunn::new(their_staticsecret_private_key, own_publickey_public_key, None, None, their_idx, None).unwrap();
 
         (my_tun, their_tun)
     }

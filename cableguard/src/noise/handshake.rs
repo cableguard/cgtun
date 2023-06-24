@@ -372,17 +372,17 @@ pub fn parse_handshake_anon(
     )?;
 
     // Convert the keys to strings
-    let static_private_str = static_private.to_bytes().encode_hex::<String>();
-    let static_public_str = static_public.as_bytes().encode_hex::<String>();
-    let peer_ephemeral_public_str = peer_ephemeral_public.as_bytes().encode_hex::<String>();
-    let peer_static_public_str = peer_static_public.encode_hex::<String>();
+    let own_static_string_private_key = static_private.to_bytes().encode_hex::<String>();
+    let own_static_string_public_key = static_public.as_bytes().encode_hex::<String>();
+    let peer_ephemeral_string_public_key = peer_ephemeral_public.as_bytes().encode_hex::<String>();
+    let peer_static_string_public_key = peer_static_public.encode_hex::<String>();
 
     // Display the converted values in the trace
     tracing::info!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
-        static_private_str,
-        static_public_str,
-        peer_ephemeral_public_str,
-        peer_static_public_str
+        own_static_string_private_key,
+        own_static_string_public_key,
+        peer_ephemeral_string_public_key,
+        peer_static_string_public_key
     );
 
     Ok(HalfHandshake {
@@ -432,14 +432,14 @@ impl NoiseParams {
         assert_eq!(check_key.as_bytes(), static_public.as_bytes());
 
         // Convert static_private and static_public to strings
-        let static_private_str = static_private.to_bytes().encode_hex::<String>();
-        let static_public_str = static_public.as_bytes().encode_hex::<String>();
+        let own_static_string_private_key = static_private.to_bytes().encode_hex::<String>();
+        let own_static_string_public_key = static_public.as_bytes().encode_hex::<String>();
 
         // Display the converted values in the trace
         error!(
             "Debugging: static_private: {}, static_public: {} fn set_static_private",
-            static_private_str,
-            static_public_str
+            own_static_string_private_key,
+            own_static_string_public_key
         );
 
         self.static_private = static_private;

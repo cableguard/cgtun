@@ -573,11 +573,11 @@ impl Device {
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.
-        if Some(&own_publickey_private_key) == self.key_pair.as_ref().map(|p| &p.1) {
+        if Some(&own_publickey_public_key) == self.key_pair.as_ref().map(|p| &p.1) {
             return;
         }
 
-        let rate_limiter = Arc::new(RateLimiter::new(&own_publickey_private_key, HANDSHAKE_RATE_LIMIT));
+        let rate_limiter = Arc::new(RateLimiter::new(&own_publickey_public_key, HANDSHAKE_RATE_LIMIT));
 
         for peer in self.peers.values_mut() {
             let mut peer_mut = peer.lock();
@@ -586,14 +586,14 @@ impl Device {
                 .tunnel
                 .set_static_private(
                     own_staticsecret_private_key.clone(),
-                    own_publickey_private_key,
+                    own_publickey_public_key,
                     Some(Arc::clone(&rate_limiter)),
                 )
                 .is_err()
             {
                 // Convert private_key and public_key to strings
                 let own_string_private_key = own_staticsecret_private_key.encode_hex::<String>();
-                let own_string_public_key = own_publickey_private_key.encode_hex::<String>();
+                let own_string_public_key = own_publickey_public_key.encode_hex::<String>();
         
                 // Display the converted values in the trace
                 tracing::info!("Debugging: private_key: {}, public_key: {} in fn set_key",
