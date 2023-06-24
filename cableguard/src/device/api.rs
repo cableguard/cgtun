@@ -477,7 +477,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 // let own_static_b64_private_key = hex_to_base64(&own_static_string_private_key);
                                 tracing::info!(message = "Debugging:Private_key FN api_set: {}",own_static_string_private_key);
                                 // CG: Does this call need to read the key from the rodt?
-                                device.set_key(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
+                                device.set_key_pair(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
                             }
                             Err(_) => return EINVAL,
                         },

@@ -466,7 +466,7 @@ impl Device {
         }
 
         // CG: Proactively setting the Static Private Key for the device
-        device.set_key(x25519::StaticSecret::from(device.config.rodt_private_key));
+        device.set_key_pair(x25519::StaticSecret::from(device.config.rodt_private_key));
 
         // CG: We set a fictional peer to be ready for handshakes
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {
@@ -550,25 +550,23 @@ impl Device {
         Ok(())
     }
 
-    fn set_key(&mut self, own_staticsecret_private_key: x25519::StaticSecret) {
+    fn set_key_pair(&mut self, own_staticsecret_private_key: x25519::StaticSecret) {
         let mut bad_peers = vec![];
 
-        let rodt_string_private_key: &str = &hex::encode(self.config.rodt_private_key);
-        println!("Debugging: RODT Private Key, fn set_key: {}", rodt_string_private_key);
-
         // CG: Set public_key with the RODT private key
-        // let own_publickey_public_key = x25519::PublicKey::from(self.config.rodt_private_key);
-        // own_staticsecret_private_key = x25519::StaticSecret::from(self.config.rodt_private_key);
+        let rodt_string_private_key: &str = &hex::encode(self.config.rodt_private_key);
+        println!("Debugging: RODT Private Key, fn set_key_pair: {}", rodt_string_private_key);
 
-        let own_publickey_public_key: x25519::PublicKey = (&own_staticsecret_private_key).into();
+        // let own_publickey_public_key: x25519::PublicKey = (&own_staticsecret_private_key).into();
+        let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
 
         let own_bytes_public_key = own_publickey_public_key.to_bytes();
         let own_string_public_key = encode(&own_bytes_public_key);
-        println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key: {}", own_string_public_key);
+        println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key_pair: {}", own_string_public_key);
         
         let own_bytes_private_key = own_staticsecret_private_key.to_bytes();
         let own_string_private_key = encode(&own_bytes_private_key);
-        println!("{} {}","Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key: {}", own_string_private_key);
+        println!("{} {}","Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key_pair: {}", own_string_private_key);
 
         // CG: We are using the input value of the function instead of value from the RODT
         let own_key_pair = Some((own_staticsecret_private_key.clone(), own_publickey_public_key));
@@ -598,7 +596,7 @@ impl Device {
                 let own_string_public_key = own_publickey_public_key.encode_hex::<String>();
         
                 // Display the converted values in the trace
-                tracing::info!("Debugging: private_key: {}, public_key: {} in fn set_key",
+                tracing::info!("Debugging: private_key: {}, public_key: {} in fn set_key_pair",
                     own_string_private_key,
                     own_string_public_key
                 );
@@ -1003,7 +1001,7 @@ impl Device {
 
         match option {
             // We can self-serve the private key from the input json wallet file
-            // I think I can call set_key with device.config.rodt_private_key
+            // I think I can call set_key_pair with device.config.rodt_private_key
             "private_key" => match value.parse::<KeyBytes>() {
                 Ok(own_keybytes_private_key) => {
                     // CG: When add private key from command line, this is how it goes it
@@ -1013,7 +1011,7 @@ impl Device {
                     // Dumping the private key that is associated with the device in HEX format
                     tracing::info!(message = "Debugging:Private_key FN api_set_internal: {}", own_hex_private_key);
                     // This call needs to read the key from the rodt instead of key_bytes
-                    self.set_key(x25519::StaticSecret::from(own_keybytes_private_key.0))
+                    self.set_key_pair(x25519::StaticSecret::from(own_keybytes_private_key.0))
                     }
                 Err(_) => return,
                 },
