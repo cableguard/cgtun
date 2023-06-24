@@ -550,26 +550,28 @@ impl Device {
         Ok(())
     }
 
-    fn set_key(&mut self, mut own_staticsecret_private_key: x25519::StaticSecret) {
+    fn set_key(&mut self, own_staticsecret_private_key: x25519::StaticSecret) {
         let mut bad_peers = vec![];
 
-        // CG: Now we are going to set public_key with the RODT private key, the input from command line will be ignored
-        let own_publickey_public_key = x25519::PublicKey::from(self.config.rodt_private_key);
- 
-        // Now we are going to set public_key to the rodt value, discarding the passed parameter
-        // CG: For tests purposes let's take the IO wg inputs and not the RODT inputs
+        let rodt_string_private_key: &str = &hex::encode(self.config.rodt_private_key);
+        println!("Debugging: RODT Private Key, fn set_key: {}", rodt_string_private_key);
+
+        // CG: Set public_key with the RODT private key
+        // let own_publickey_public_key = x25519::PublicKey::from(self.config.rodt_private_key);
         // own_staticsecret_private_key = x25519::StaticSecret::from(self.config.rodt_private_key);
+
+        let own_publickey_public_key: x25519::PublicKey = (&own_staticsecret_private_key).into();
 
         let own_bytes_public_key = own_publickey_public_key.to_bytes();
         let own_string_public_key = encode(&own_bytes_public_key);
         println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key: {}", own_string_public_key);
         
-        // CG: We are using the input value of the function instead of value from the RODT
-        let own_key_pair = Some((own_staticsecret_private_key.clone(), own_publickey_public_key));
-        
         let own_bytes_private_key = own_staticsecret_private_key.to_bytes();
         let own_string_private_key = encode(&own_bytes_private_key);
         println!("{} {}","Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key: {}", own_string_private_key);
+
+        // CG: We are using the input value of the function instead of value from the RODT
+        let own_key_pair = Some((own_staticsecret_private_key.clone(), own_publickey_public_key));
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.

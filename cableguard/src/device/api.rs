@@ -18,6 +18,7 @@ use base64::{URL_SAFE_NO_PAD};
 use reqwest::blocking::Client;
 use serde_json::{Value};
 use serde::{Deserialize, Serialize};
+use hex::{FromHex};
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -473,7 +474,8 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 let own_static_hex_private_key = serialization::keybytes_to_hex_string(&own_static_bytes_key_pair);
                                 let own_static_string_private_key = format!("{:02X?}", own_static_hex_private_key);
                                 // Dumping the private key that is associated with the device in HEX format
-                                tracing::info!(message = "Debugging:Private_key FN api_set: {}", own_static_string_private_key);
+                                // let own_static_b64_private_key = hex_to_base64(&own_static_string_private_key);
+                                tracing::info!(message = "Debugging:Private_key FN api_set: {}",own_static_string_private_key);
                                 // CG: Does this call need to read the key from the rodt?
                                 device.set_key(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
                             }

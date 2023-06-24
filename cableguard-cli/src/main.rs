@@ -173,7 +173,8 @@ fn main() {
     // Create an Interface Name derived from the token_id ULID,
     // with a max length of 15 characters, by default utun+last 11 of ULID for operating systems compatibility, 
     let tun_name = format!("utun{}", &rodt.token_id[rodt.token_id.len() - 11..]);
-    
+    println!("TUN Name: {}", tun_name);
+
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
     let own_static_bytes_private_ed25519_key = bs58::decode(own_static_base58_private_ed25519_key)
         .into_vec()
