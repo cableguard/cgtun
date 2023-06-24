@@ -177,12 +177,23 @@ struct ThreadData {
 }
 
 impl DeviceHandle {
-    pub fn new(name: &str, config: DeviceConfig) -> Result<DeviceHandle, Error> {
+    pub fn new(name: &str, config: &DeviceConfig) -> Result<DeviceHandle, Error> {
         let n_threads = config.n_threads;
-        let mut wg_interface = Device::new(name, config)?;
-        let port = 0; // CG: Server probable should start listening in 
+        let mut wg_interface = Device::new(name, config.clone())?;
+        // CG: Server probable should start listening in 
         // specific por, 0 is the correct value if we want to listen on a random port
-        wg_interface.open_listen_socket(port)?;
+
+        match config.rodt.metadata.listenport.parse::<u16>() {
+            Ok(port) => match wg_interface.open_listen_socket(port) {
+                Ok(()) => {
+                    tracing::info!("Debugging:Port FN api_set_internal: {}", port);
+                    tracing::info!("Debugging:Rodt Port  FN api_set_internal: {}", config.rodt.metadata.listenport);
+                }
+                Err(_) => ()
+            }
+            Err(_) => ()
+        }
+
         let interface_lock = Arc::new(Lock::new(wg_interface));
         let mut threads = vec![];
 
@@ -449,10 +460,7 @@ impl Device {
         // CG: Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.rodt_private_key));
 
-        device.api_set_internal("listen_port", "this parameter is not used for this option");
-
-        /* 455 CG: SHUTDOWN FOR TESTING
-
+        /* CG: SHUTDOWN ADDING PEERS FOR TESTING
         // CG: We set a fictional peer to be ready for handshakes
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {
             tracing::info!("Debugging: This is a server");
@@ -485,7 +493,7 @@ impl Device {
         let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
         let rando_own_string_public_key: &str = &hex::encode(rando_public_key_u832);
         device.api_set_internal("set_peer_public_key", &rando_own_string_public_key);
-        503 CG shutdown for testing */
+        CG shutdown for testing */
 
         Ok(device)
     }
@@ -1001,7 +1009,10 @@ impl Device {
                 },
             "listen_port" => match self.config.rodt.metadata.listenport.parse::<u16>() {
                 Ok(port) => match self.open_listen_socket(port) {
-                    Ok(()) => {}
+                    Ok(()) => {
+                        tracing::info!("Debugging:Port FN api_set_internal: {}", port);
+                        tracing::info!("Debugging:Rodt Port  FN api_set_internal: {}", self.config.rodt.metadata.listenport);
+                    }
                     Err(_) => return,
                 },
                 Err(_) => return,

@@ -275,7 +275,7 @@ fn main() {
     };
     
     // Initialize the device handle with the specified tunnel name and configuration
-    let mut device_handle: DeviceHandle = match DeviceHandle::new(&tun_name, config) {
+    let mut device_handle: DeviceHandle = match DeviceHandle::new(&tun_name, &config) {
         Ok(d) => d,
         Err(e) => {
             // Notify parent that tunnel initialization failed
