@@ -1,23 +1,50 @@
 // Copyright (c) 2023 cableguard, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
-use tracing::error;
 pub mod allowed_ips;
 pub mod api;
-mod dev_lock;
 pub mod drop_privileges;
-
-#[cfg(test)]
-mod integration_tests;
-
 pub mod peer;
-use std::process::Command;
+mod dev_lock;
+use tracing::error;
 use api::nearorg_rpc_token;
-use crate::serialization::{KeyBytes, self};
 use std::convert::TryInto;
+use std::process::Command;
+use std::collections::HashMap;
+use std::io::{self, Write as _};
+use std::mem::MaybeUninit;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::os::unix::io::AsRawFd;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use std::thread;
+use std::thread::JoinHandle;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
 use hex::{encode};
 use hex::ToHex; 
+use allowed_ips::AllowedIps;
+use parking_lot::Mutex;
+use peer::{AllowedIP, Peer};
+use poll::{EventPoll, EventRef, WaitResult};
+use rand_core::{OsRng, RngCore};
+use socket2::{Domain, Protocol, Type};
+use tun::TunSocket;
+use dev_lock::{Lock, LockReadGuard};
+use crate::x25519;
+use crate::x25519::PublicKey;
+use crate::x25519::StaticSecret;
+use crate::serialization::{KeyBytes, self};
+use crate::device::api::Rodt;
+use crate::noise::errors::WireGuardError;
+use crate::noise::handshake::parse_handshake_anon;
+use crate::noise::rate_limiter::RateLimiter;
+use crate::noise::{Packet, Tunn, TunnResult};
+const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
+const MAX_UDP_SIZE: usize = (1 << 16) - 1;
+const MAX_ITR: usize = 100; // Number of packets to handle per handler call
+
+#[cfg(test)]
+mod integration_tests;
 
 // CG: This is an embarrasing bit: I am reimplementing this because I don't know how to import it
 const SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
@@ -39,35 +66,6 @@ pub mod tun;
 #[cfg(target_os = "linux")]
 #[path = "tun_linux.rs"]
 pub mod tun;
-
-use std::collections::HashMap;
-use std::io::{self, Write as _};
-use std::mem::MaybeUninit;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
-use std::os::unix::io::AsRawFd;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Arc;
-use std::thread;
-use std::thread::JoinHandle;
-use crate::noise::errors::WireGuardError;
-use crate::noise::handshake::parse_handshake_anon;
-use crate::noise::rate_limiter::RateLimiter;
-use crate::noise::{Packet, Tunn, TunnResult};
-use crate::x25519;
-use crate::x25519::PublicKey;
-use allowed_ips::AllowedIps;
-use parking_lot::Mutex;
-use peer::{AllowedIP, Peer};
-use poll::{EventPoll, EventRef, WaitResult};
-use rand_core::{OsRng, RngCore};
-use socket2::{Domain, Protocol, Type};
-use tun::TunSocket;
-use dev_lock::{Lock, LockReadGuard};
-use crate::device::api::Rodt;
-use crate::x25519::StaticSecret;
-const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
-const MAX_UDP_SIZE: usize = (1 << 16) - 1;
-const MAX_ITR: usize = 100; // Number of packets to handle per handler call
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -137,15 +135,15 @@ pub struct DeviceConfig {
 impl Default for DeviceConfig {
     fn default() -> Self {
         DeviceConfig {
-            rodt: Rodt::default(),
-            rodt_private_key:[0;32],
-            rodt_public_key:[0;32],
             n_threads: 4,
             use_connected_socket: true,
             #[cfg(target_os = "linux")]
             use_multi_queue: true,
             #[cfg(target_os = "linux")]
             uapi_fd: -1,
+            rodt: Rodt::default(),
+            rodt_private_key:[0;32],
+            rodt_public_key:[0;32],
         }
     }
 }
@@ -153,28 +151,20 @@ impl Default for DeviceConfig {
 pub struct Device {
     key_pair: Option<(x25519::StaticSecret, x25519::PublicKey)>,
     queue: Arc<EventPoll<Handler>>,
-
     listen_port: u16,
     fwmark: Option<u32>,
-
     iface: Arc<TunSocket>,
     udp4: Option<socket2::Socket>,
     udp6: Option<socket2::Socket>,
-
     yield_notice: Option<EventRef>,
     exit_notice: Option<EventRef>,
-
     peers: HashMap<x25519::PublicKey, Arc<Mutex<Peer>>>,
     peers_by_ip: AllowedIps<Arc<Mutex<Peer>>>,
     peers_by_idx: HashMap<u32, Arc<Mutex<Peer>>>,
     next_index: IndexLfsr,
-
     config: DeviceConfig,
-
     cleanup_paths: Vec<String>,
-
     mtu: AtomicUsize,
-
     rate_limiter: Option<Arc<RateLimiter>>,
 
     #[cfg(target_os = "linux")]
@@ -194,9 +184,7 @@ impl DeviceHandle {
         let port = 0; // CG: Server probable should start listening in 
         // specific por, 0 is the correct value if we want to listen on a random port
         wg_interface.open_listen_socket(port)?;
-
         let interface_lock = Arc::new(Lock::new(wg_interface));
-
         let mut threads = vec![];
 
         for i in 0..n_threads {
@@ -205,7 +193,6 @@ impl DeviceHandle {
                 thread::spawn(move || DeviceHandle::event_loop(i, &dev))
             });
         }
-
         Ok(DeviceHandle {
             device: interface_lock,
             threads,
@@ -326,7 +313,6 @@ impl Device {
         }
     }
 
-    // This is the single place where new peer is added, apparently
     #[allow(clippy::too_many_arguments)]
     fn update_peer(
         &mut self,
@@ -378,7 +364,6 @@ impl Device {
         
         // CG: Creation and insertion of a peer
         let peer = Peer::new(tunn, next_index, endpoint, allowed_ips, preshared_key);
-
         let peer = Arc::new(Mutex::new(peer));
         self.peers.insert(peer_publickey_public_key, Arc::clone(&peer));
         self.peers_by_idx.insert(next_index, Arc::clone(&peer));
@@ -447,16 +432,13 @@ impl Device {
         // CG: We are adding here addtional device building:
         // Add IPs, set private key, add initial peer
         // We are only leaving out bringing the device UP
-        /* 449 CG: SHUTDOWN FOR TESTING
         // CG: Adding an ip to the interface with "sudo ip addr add cidrblock dev tun_name"
         let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ name;
-    
         let output = Command::new("bash")
             .arg("-c")
             .arg(command)
             .output()
             .expect("Failed to execute command");
-        
         if output.status.success() {
             let _stdout = String::from_utf8_lossy(&output.stdout);
             tracing::info!("Debugging: Ip addr add command executed successfully:\n{}",device.config.rodt.metadata.cidrblock);
@@ -467,6 +449,8 @@ impl Device {
 
         // CG: Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.rodt_private_key));
+
+        /* 455 CG: SHUTDOWN FOR TESTING
 
         // CG: We set a fictional peer to be ready for handshakes
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {

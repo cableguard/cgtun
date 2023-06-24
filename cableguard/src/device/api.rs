@@ -7,7 +7,6 @@ use super::{AllowedIP, Device, Error, SocketAddr};
 use crate::device::Action;
 use crate::serialization::{KeyBytes, self};
 use crate::x25519;
-use hex::encode as encode_hex;
 use libc::*;
 use std::fs::{create_dir, remove_file};
 use std::io::{BufRead, BufReader, BufWriter, Write};
@@ -19,13 +18,14 @@ use reqwest::blocking::Client;
 use serde_json::{Value};
 use serde::{Deserialize, Serialize};
 use hex::{FromHex};
+use hex::encode as encode_hex;
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Rodt {
     pub token_id: String,
     pub owner_id: String,
-    pub metadata: CgrodtMetadata,
+    pub metadata: RodtMetadata,
     pub approved_account_ids: serde_json::Value,
     pub royalty: serde_json::Value,
 }
@@ -35,7 +35,7 @@ impl Default for Rodt {
         Rodt {
             token_id: String::default(),
             owner_id: String::default(),
-            metadata: CgrodtMetadata::default(),
+            metadata: RodtMetadata::default(),
             approved_account_ids: serde_json::Value::Null,
             royalty: serde_json::Value::Null,
         }
@@ -43,7 +43,7 @@ impl Default for Rodt {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct CgrodtMetadata {
+pub struct RodtMetadata {
     pub title: String,
     pub description: String,
     pub notafter: String,
@@ -60,9 +60,9 @@ pub struct CgrodtMetadata {
     pub kbpersecond: String,
 }
 
-impl Default for CgrodtMetadata {
+impl Default for RodtMetadata {
     fn default() -> Self {
-        CgrodtMetadata {
+        RodtMetadata {
             title: String::default(),
             description: String::default(),
             notafter: String::default(),
@@ -154,6 +154,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::info!("description: {}", rodt.metadata.description);
             tracing::info!("notafter: {}", rodt.metadata.notafter);
             tracing::info!("notbefore: {}", rodt.metadata.notbefore);
+            // CG: Listen port
             tracing::info!("cidrblock: {}", rodt.metadata.cidrblock);
             tracing::info!("dns: {}", rodt.metadata.dns);
             tracing::info!("postup: {}", rodt.metadata.postup);
@@ -328,7 +329,6 @@ impl Device {
             io_file.as_raw_fd(),
             Box::new(move |thisnetworkdevice, _| {
                 // This is the closure that listens on the api file descriptor
-
                 let mut readerbufferdevice = BufReader::new(&io_file);
                 let mut writerbufferdevice = BufWriter::new(&io_file);
                 let mut cmd = String::new();
@@ -337,7 +337,7 @@ impl Device {
                     let status = match cmd.as_ref() {
                         // Only two commands are legal according to the protocol, get=1 and set=1.
                         "get=1" => api_get(&mut writerbufferdevice, thisnetworkdevice),
-                        // We are switching from api_set to api_set_internal 
+                        // CG: We are switching from api_set to api_set_internal 
                         // This means we are not taking commands alone
                         // from wg anymore, we are self-serving configuration
                         "set=1" => api_set(&mut readerbufferdevice, thisnetworkdevice),
@@ -350,7 +350,6 @@ impl Device {
                     thisnetworkdevice.trigger_exit();
                     return Action::Exit;
                 }
-
                 Action::Continue // Indicates the worker thread should continue as normal
             }),
         )?;
