@@ -6,7 +6,6 @@ pub mod drop_privileges;
 pub mod peer;
 mod dev_lock;
 use tracing::error;
-use api::nearorg_rpc_token;
 use std::convert::TryInto;
 use std::process::Command;
 use std::collections::HashMap;
@@ -799,7 +798,7 @@ impl Device {
                             if p.is_allowed_ip(addr) {
                                 t.iface.write6(packet);
                             }
-                        }
+                        } 
                     };
 
                     if flush {
