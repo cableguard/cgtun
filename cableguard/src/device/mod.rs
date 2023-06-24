@@ -554,17 +554,18 @@ impl Device {
         let mut bad_peers = vec![];
 
         // CG: Now we are going to set public_key with the RODT private key, the input from command line will be ignored
-        let own_publickey_private_key = x25519::PublicKey::from(self.config.rodt_private_key);
+        let own_publickey_public_key = x25519::PublicKey::from(self.config.rodt_private_key);
  
         // Now we are going to set public_key to the rodt value, discarding the passed parameter
         // CG: For tests purposes let's take the IO wg inputs and not the RODT inputs
         // own_staticsecret_private_key = x25519::StaticSecret::from(self.config.rodt_private_key);
 
-        let own_bytes_public_key = own_publickey_private_key.to_bytes();
+        let own_bytes_public_key = own_publickey_public_key.to_bytes();
         let own_string_public_key = encode(&own_bytes_public_key);
         println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key: {}", own_string_public_key);
         
-        let own_key_pair = Some((own_staticsecret_private_key.clone(), own_publickey_private_key));
+        // CG: We are using the input value of the function instead of value from the RODT
+        let own_key_pair = Some((own_staticsecret_private_key.clone(), own_publickey_public_key));
         
         let own_bytes_private_key = own_staticsecret_private_key.to_bytes();
         let own_string_private_key = encode(&own_bytes_private_key);
@@ -1039,8 +1040,8 @@ impl Device {
                       Err(_) => return,
                     },
             "set_peer_public_key" => match value.parse::<KeyBytes>() {
-                // CG: This may be or not fully correct, is 0 the index for the public or the private key?
                 // CG: To research why serialization::keybytes_to_hex_string does not work here
+                // CG: This section is not very useful with RODT as peers are only added dinamically
                 Ok(peer_keybytes_key) => {
                     let peer_b58_public_key = encode(peer_keybytes_key.0);
                     tracing::info!("Debugging: Peer Public Key FN api_set_internal {:?}", peer_b58_public_key);
