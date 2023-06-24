@@ -449,6 +449,8 @@ impl Device {
         // CG: Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.rodt_private_key));
 
+        device.api_set_internal("listen_port", "this parameter is not used for this option");
+
         /* 455 CG: SHUTDOWN FOR TESTING
 
         // CG: We set a fictional peer to be ready for handshakes
@@ -483,7 +485,6 @@ impl Device {
         let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
         let rando_own_string_public_key: &str = &hex::encode(rando_public_key_u832);
         device.api_set_internal("set_peer_public_key", &rando_own_string_public_key);
-        device.api_set_internal("listen_port", "this parameter is not used for this option");
         503 CG shutdown for testing */
 
         Ok(device)
