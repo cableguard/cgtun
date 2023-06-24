@@ -311,8 +311,8 @@ impl Device {
         self.next_index.next()
     }
 
-    fn remove_peer(&mut self, pub_peer_key: &x25519::PublicKey) {
-        if let Some(peer) = self.peers.remove(pub_peer_key) {
+    fn remove_peer(&mut self, peer_publickey_public_key: &x25519::PublicKey) {
+        if let Some(peer) = self.peers.remove(peer_publickey_public_key) {
             // Found a peer to remove, now purge all references to it:
             {
                 let p = peer.lock();
@@ -330,7 +330,7 @@ impl Device {
     #[allow(clippy::too_many_arguments)]
     fn update_peer(
         &mut self,
-        pub_peer_key: x25519::PublicKey,
+        peer_publickey_public_key: x25519::PublicKey,
         remove: bool,
         _replace_ips: bool,
         endpoint: Option<SocketAddr>,
@@ -341,11 +341,11 @@ impl Device {
         //CG: If it wasn't for keeping compability, I would remove the silly logic
         if remove {
             // Completely remove a peer
-            return self.remove_peer(&pub_peer_key);
+            return self.remove_peer(&peer_publickey_public_key);
         }
 
         // Update an existing peer
-        if self.peers.get(&pub_peer_key).is_some() {
+        if self.peers.get(&peer_publickey_public_key).is_some() {
             tracing::info!("Debugging: Peers are dinamically added and removed so it makes no sense to update them. No actions have been performed");
             return
         }
@@ -357,18 +357,18 @@ impl Device {
         .expect("Self private key must be set before adding peers");
     
         // CG: Snooping the keys 
-        let pub_peer_key_str = pub_peer_key.encode_hex::<String>();
-        let private_key_str = device_key_pair.0.encode_hex::<String>();
-        let public_key_str = device_key_pair.1.encode_hex::<String>();
-        tracing::info!("Debugging:pub_peer_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
-            pub_peer_key_str,
-            private_key_str,
-            public_key_str
+        let peer_string_public_key = peer_publickey_public_key.encode_hex::<String>();
+        let own_string_private_key = device_key_pair.0.encode_hex::<String>();
+        let own_string_public_key = device_key_pair.1.encode_hex::<String>();
+        tracing::info!("Debugging:peer_publickey_public_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
+            peer_string_public_key,
+            own_string_private_key,
+            own_string_public_key
         );
     
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Passing on only the X25519 private key
-            pub_peer_key,
+            peer_publickey_public_key,
             preshared_key,
             keepalive,
             next_index,
@@ -380,7 +380,7 @@ impl Device {
         let peer = Peer::new(tunn, next_index, endpoint, allowed_ips, preshared_key);
 
         let peer = Arc::new(Mutex::new(peer));
-        self.peers.insert(pub_peer_key, Arc::clone(&peer));
+        self.peers.insert(peer_publickey_public_key, Arc::clone(&peer));
         self.peers_by_idx.insert(next_index, Arc::clone(&peer));
 
         for AllowedIP { addr, cidr } in allowed_ips {
@@ -498,8 +498,8 @@ impl Device {
         let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
         let randopublic_key: PublicKey = (&randoprivate_key).into();   
         let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
-        let rando_public_key_str: &str = &hex::encode(rando_public_key_u832);
-        device.api_set_internal("set_peer_public_key", &rando_public_key_str);
+        let rando_own_string_public_key: &str = &hex::encode(rando_public_key_u832);
+        device.api_set_internal("set_peer_public_key", &rando_own_string_public_key);
         device.api_set_internal("listen_port", "this parameter is not used for this option");
         503 CG shutdown for testing */
 
@@ -550,33 +550,33 @@ impl Device {
         Ok(())
     }
 
-    fn set_key(&mut self, mut private_key: x25519::StaticSecret) {
+    fn set_key(&mut self, mut own_staticsecret_private_key: x25519::StaticSecret) {
         let mut bad_peers = vec![];
 
         // CG: Now we are going to set public_key with the RODT private key, the input from command line will be ignored
-        let public_key = x25519::PublicKey::from(self.config.rodt_private_key);
+        let own_publickey_private_key = x25519::PublicKey::from(self.config.rodt_private_key);
  
         // Now we are going to set public_key to the rodt value, discarding the passed parameter
         // CG: For tests purposes let's take the IO wg inputs and not the RODT inputs
-        // private_key = x25519::StaticSecret::from(self.config.rodt_private_key);
+        // own_staticsecret_private_key = x25519::StaticSecret::from(self.config.rodt_private_key);
 
-        let tenbytes = public_key.to_bytes();
-        let string = encode(&tenbytes);
-        println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key: {}", string);
+        let own_bytes_public_key = own_publickey_private_key.to_bytes();
+        let own_string_public_key = encode(&own_bytes_public_key);
+        println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key: {}", own_string_public_key);
         
-        let key_pair = Some((private_key.clone(), public_key));
+        let own_key_pair = Some((own_staticsecret_private_key.clone(), own_publickey_private_key));
         
-        let tenpbytes = private_key.to_bytes();
-        let stringp = encode(&tenpbytes);
-        println!("{} {}","Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key: {}", stringp);
+        let own_bytes_private_key = own_staticsecret_private_key.to_bytes();
+        let own_string_private_key = encode(&own_bytes_private_key);
+        println!("{} {}","Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key: {}", own_string_private_key);
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
         // If the public keys are the same, then the private keys are the same.
-        if Some(&public_key) == self.key_pair.as_ref().map(|p| &p.1) {
+        if Some(&own_publickey_private_key) == self.key_pair.as_ref().map(|p| &p.1) {
             return;
         }
 
-        let rate_limiter = Arc::new(RateLimiter::new(&public_key, HANDSHAKE_RATE_LIMIT));
+        let rate_limiter = Arc::new(RateLimiter::new(&own_publickey_private_key, HANDSHAKE_RATE_LIMIT));
 
         for peer in self.peers.values_mut() {
             let mut peer_mut = peer.lock();
@@ -584,20 +584,20 @@ impl Device {
             if peer_mut
                 .tunnel
                 .set_static_private(
-                    private_key.clone(),
-                    public_key,
+                    own_staticsecret_private_key.clone(),
+                    own_publickey_private_key,
                     Some(Arc::clone(&rate_limiter)),
                 )
                 .is_err()
             {
                 // Convert private_key and public_key to strings
-                let private_key_str = private_key.encode_hex::<String>();
-                let public_key_str = public_key.encode_hex::<String>();
+                let own_string_private_key = own_staticsecret_private_key.encode_hex::<String>();
+                let own_string_public_key = own_publickey_private_key.encode_hex::<String>();
         
                 // Display the converted values in the trace
                 tracing::info!("Debugging: private_key: {}, public_key: {} in fn set_key",
-                    private_key_str,
-                    public_key_str
+                    own_string_private_key,
+                    own_string_public_key
                 );
         
                 // In case we encounter an error, we will remove that peer
@@ -606,7 +606,7 @@ impl Device {
             }
         }
 
-        self.key_pair = key_pair;
+        self.key_pair = own_key_pair;
         self.rate_limiter = Some(rate_limiter);
 
         // Remove all the bad peers
@@ -736,7 +736,7 @@ impl Device {
             Box::new(move |d, t| {
                 // Handler that handles anonymous packets over UDP
                 let mut iter = MAX_ITR;
-                let (private_key, public_key) = d.key_pair.as_ref().expect("Key not set");
+                let (own_bytes_private_key, own_bytes_public_key) = d.key_pair.as_ref().expect("Key not set");
 
                 let rate_limiter = d.rate_limiter.as_ref().unwrap();
 
@@ -764,17 +764,17 @@ impl Device {
                     
                     let peer = match &parsed_packet {
                         Packet::HandshakeInit(p) => {
-                            parse_handshake_anon(private_key, public_key, p)
+                            parse_handshake_anon(own_bytes_private_key, own_bytes_public_key, p)
                                 .ok()
                                 .and_then(|hh| {
-                                    let private_key_str = private_key.encode_hex::<String>();
-                                    let public_key_str = public_key.encode_hex::<String>();
+                                    let own_string_private_key = own_bytes_private_key.encode_hex::<String>();
+                                    let own_string_public_key = own_bytes_public_key.encode_hex::<String>();
                                     let peer_static_public_str = hh.peer_static_public.encode_hex::<String>();
                     
                                     // Display the converted values in the trace
-                                    tracing::info!("Debugging: private_key: {}, public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
-                                        private_key_str,
-                                        public_key_str,
+                                    tracing::info!("Debugging: own_bytes_private_key: {}, own_bytes_public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
+                                        own_string_private_key,
+                                        own_string_public_key,
                                         peer_static_public_str
                                     );
                     
@@ -985,7 +985,7 @@ impl Device {
     }
 
     // This version of api_set operates internally, not talking to wg
-    pub fn api_set_internal(&mut self, key: &str, val: &str) {
+    pub fn api_set_internal(&mut self, option: &str, value: &str) {
     // Check if both sides have all these properly configured to be able to connect
     // with the Noise procotol that has not been modified yet
     // Usage: wg set <interface>
@@ -998,19 +998,19 @@ impl Device {
     // [persistent-keepalive <interval seconds>] 
     // [allowed-ips <ip1>/<cidr1>[,<ip2>/<cidr2>]...] ]...
 
-        match key {
+        match option {
             // We can self-serve the private key from the input json wallet file
-            // Once transformed to Montgomery form
             // I think I can call set_key with device.config.rodt_private_key
-            "private_key" => match val.parse::<KeyBytes>() {
-                Ok(key_bytes) => {
-                    // This is the pattern to follow when getting the key as text from a file
-                let key_str = serialization::keybytes_to_hex_string(&key_bytes);
-                let string = format!("{:02X?}", key_str);
+            "private_key" => match value.parse::<KeyBytes>() {
+                Ok(own_keybytes_private_key) => {
+                    // CG: When add private key from command line, this is how it goes it
+                    // CG: but this is not an option in user when using RODT, may be removed
+                let own_string_private_key = serialization::keybytes_to_hex_string(&own_keybytes_private_key);
+                let own_hex_private_key = format!("{:02X?}", own_string_private_key);
                     // Dumping the private key that is associated with the device in HEX format
-                    tracing::info!(message = "Debugging:Private_key FN api_set_internal: {}", string);
+                    tracing::info!(message = "Debugging:Private_key FN api_set_internal: {}", own_hex_private_key);
                     // This call needs to read the key from the rodt instead of key_bytes
-                    self.set_key(x25519::StaticSecret::from(key_bytes.0))
+                    self.set_key(x25519::StaticSecret::from(own_keybytes_private_key.0))
                     }
                 Err(_) => return,
                 },
@@ -1026,24 +1026,26 @@ impl Device {
                 target_os = "fuchsia",
                 target_os = "linux"
                 ))]
-            "fwmark" => match val.parse::<u32>() {
+            "fwmark" => match value.parse::<u32>() {
                 Ok(mark) => match self.set_fwmark(mark) {
                     Ok(()) => {}
                        Err(_) => return,
                     },
                 Err(_) => return,
                 },
-            "replace_peers" => match val.parse::<bool>() {
+            "replace_peers" => match value.parse::<bool>() {
                 Ok(true) => self.clear_peers(),
                     Ok(false) => {}
                       Err(_) => return,
                     },
-            "set_peer_public_key" => match val.parse::<KeyBytes>() {
-                Ok(key_bytes) => {
-                    let key_bytes_encoded = encode(key_bytes.0);
-                    tracing::info!("Debugging: Peer Public Key FN api_set_internal {:?}", key_bytes_encoded);
+            "set_peer_public_key" => match value.parse::<KeyBytes>() {
+                // CG: This may be or not fully correct, is 0 the index for the public or the private key?
+                // CG: To research why serialization::keybytes_to_hex_string does not work here
+                Ok(peer_keybytes_key) => {
+                    let peer_b58_public_key = encode(peer_keybytes_key.0);
+                    tracing::info!("Debugging: Peer Public Key FN api_set_internal {:?}", peer_b58_public_key);
                         return self.api_set_peer_internal(
-                            x25519::PublicKey::from(key_bytes.0),
+                            x25519::PublicKey::from(peer_keybytes_key.0),
                         )
                     }
                     Err(_) => return,
@@ -1052,7 +1054,7 @@ impl Device {
             }
     }
 
-    fn api_set_peer_internal(&mut self, pub_peer_key: x25519::PublicKey) {
+    fn api_set_peer_internal(&mut self, peer_publickey_public_key: x25519::PublicKey) {
     // cidrblock is allowed-ips
     // allowedips  is part of postup / postdown commands)
 
@@ -1060,7 +1062,7 @@ impl Device {
         let replace_ips = false;
         // let mut endpoint = None;
         let keepalive = None;
-        let public_key_ofthepeer = pub_peer_key;
+        let clone_peer_publickey_public_key = peer_publickey_public_key;
         let preshared_key = None;
         let mut allowed_ips: Vec<AllowedIP> = vec![];
 
@@ -1079,7 +1081,7 @@ impl Device {
         // Create or update peer
         allowed_ips.push(allowed_ip);
         self.update_peer(
-            public_key_ofthepeer,
+            clone_peer_publickey_public_key,
             remove,
             replace_ips,
             Some(endpoint_listenport),
@@ -1141,7 +1143,6 @@ impl Default for IndexLfsr {
 }
 
 // This function takes a Ed25519 public key in Hex of 32 bytes and creates a matching X25519 key
-// as a <KeyBytes> of 32 bytes
 pub fn ed2x_public_key_hex(key: &str) -> [u8; 32] {
     // Parse the input key string as a hex-encoded Ed25519 public key
     let ed25519_pub_bytes = hex::decode(key).expect("Invalid hexadecimal string");
@@ -1155,26 +1156,26 @@ pub fn ed2x_public_key_hex(key: &str) -> [u8; 32] {
     x25519_pub_key
 }
 
-pub fn ed2x_private_key_bytes(ed25519_sk: [u8; 64]) -> x25519::StaticSecret {
-    let mut curve25519_sk: [u8; 32] = [0; 32];
-    let mut hasher = Sha512::new();
-    hasher.update(ed25519_sk.as_ref());
-    let result = hasher.finalize();
-    curve25519_sk.copy_from_slice(&result[..32]);
-    let sk = StaticSecret::from(curve25519_sk);
-    curve25519_sk.iter_mut().zeroize();
-    sk
+pub fn ed2x_private_key_bytes(some_bytes_ed25519_private_key: [u8; 64]) -> x25519::StaticSecret {
+    let mut some_bytes_x25519_private_key: [u8; 32] = [0; 32];
+    let mut some_hasher = Sha512::new();
+    some_hasher.update(some_bytes_ed25519_private_key.as_ref());
+    let result_hasher = some_hasher.finalize();
+    some_bytes_x25519_private_key.copy_from_slice(&result_hasher[..32]);
+    let output_staticsecret_x25519_private_key = StaticSecret::from(some_bytes_x25519_private_key);
+    some_bytes_x25519_private_key.iter_mut().zeroize();
+    output_staticsecret_x25519_private_key
 }
 
-pub fn skx2pkx(static_private: x25519::StaticSecret) -> [u8; 32] {
-    let static_public = x25519::PublicKey::from(&static_private);
-    let static_public = convert_to_u8_array(static_public);
-    static_public
+pub fn skx2pkx(some_staticsecrety_private_key: x25519::StaticSecret) -> [u8; 32] {
+    let output_publickey_private_key = x25519::PublicKey::from(&some_staticsecrety_private_key);
+    let output_bytes_private_key = convert_to_u8_array(output_publickey_private_key);
+    output_bytes_private_key
 }
 
-pub fn convert_to_u8_array(public_key: PublicKey) -> [u8; 32] {
-    let public_key_bytes = public_key.as_bytes();
-    let mut result = [0u8; 32];
-    result.copy_from_slice(&public_key_bytes[..32]);
-    result
+pub fn convert_to_u8_array(some_publickey_public_key: PublicKey) -> [u8; 32] {
+    let some_bytes_public_key = some_publickey_public_key.as_bytes();
+    let mut output_bytes_public_key = [0u8; 32];
+    output_bytes_public_key.copy_from_slice(&some_bytes_public_key[..32]);
+    output_bytes_public_key
 }

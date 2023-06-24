@@ -227,9 +227,9 @@ mod tests {
                         return response;
                     }
 
-                    let (key, val) = (parsed_line[0], parsed_line[1]);
+                    let (key, value) = (parsed_line[0], parsed_line[1]);
                     if key.to_lowercase() == "content-length" {
-                        len = match val.trim().parse() {
+                        len = match value.trim().parse() {
                             Err(_) => return response,
                             Ok(len) => len,
                         };

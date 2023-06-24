@@ -181,15 +181,15 @@ fn main() {
     assert_eq!(own_static_bytes_private_ed25519_key.len(), 64);
 
     // Create a X25519 private key from a Private Key Ed25519 of 64 bytes
-    let server_xprivate_key_ss = ed2x_private_key_bytes(own_static_bytes_private_ed25519_key.try_into().unwrap());
-    let curve25519_private_key_bytes = server_xprivate_key_ss.as_bytes();  
-    let curve25519_private_key_b64 = hex_to_base64(&curve25519_private_key_bytes);
-    println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",curve25519_private_key_b64);
+    let own_staticsecret_private_x25519_key = ed2x_private_key_bytes(own_static_bytes_private_ed25519_key.try_into().unwrap());
+    let own_static_bytes_private_x25519_key = own_staticsecret_private_x25519_key.as_bytes();  
+    let own_static_b64_private_x25519_key = hex_to_base64(&own_static_bytes_private_x25519_key);
+    println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",own_static_b64_private_x25519_key);
 
     // Generate the X25519 public key from the X25519 private key of 32 bytes
-    let curve25519_public_direct_key_u832 = skx2pkx(server_xprivate_key_ss.clone());
-    let curve25519_public_direct_key_b64 = hex_to_base64(&curve25519_public_direct_key_u832);
-    println!("X25519 Public Key Base64 from X25519 Private Key: {}", curve25519_public_direct_key_b64);
+    let own_static_bytes_public_x25519_key = skx2pkx(own_staticsecret_private_x25519_key.clone());
+    let own_static_b64_public_x25519_key = hex_to_base64(&own_static_bytes_public_x25519_key);
+    println!("X25519 Public Key Base64 from X25519 Private Key: {}", own_static_b64_public_x25519_key);
     
     // Create a socketpair to communicate between forked processes
     let (sock1, sock2) = UnixDatagram::pair().unwrap();
@@ -269,8 +269,8 @@ fn main() {
         #[cfg(target_os = "linux")]
         use_multi_queue: !matches.is_present("disable-multi-queue"),
         rodt,
-        rodt_private_key:*curve25519_private_key_bytes,
-        rodt_public_key:curve25519_public_direct_key_u832,
+        rodt_private_key:*own_static_bytes_private_x25519_key,
+        rodt_public_key:own_static_bytes_public_x25519_key,
     };
     
     // Initialize the device handle with the specified tunnel name and configuration

@@ -400,9 +400,9 @@ impl Device {
 #[allow(unused_must_use)]
 fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &Device) -> i32 {
     // get command requires an empty line, but there is no reason to be religious about it
-    if let Some(ref k) = thisnetworkdevice.key_pair {
-        writeln!(writerbufferdevice, "own_public_key={}", encode_hex(k.1.as_bytes()));
-        writeln!(writerbufferdevice, "own_private_key={}", encode_hex(k.0.as_bytes()));
+    if let Some(ref own_static_key_pair) = thisnetworkdevice.key_pair {
+        writeln!(writerbufferdevice, "own_public_key={}", encode_hex(own_static_key_pair.1.as_bytes()));
+        writeln!(writerbufferdevice, "own_private_key={}", encode_hex(own_static_key_pair.0.as_bytes()));
     }
 
     if thisnetworkdevice.listen_port != 0 {
@@ -413,32 +413,32 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
         writeln!(writerbufferdevice, "fwmark={}", fwmark);
     }
 
-    for (k, p) in thisnetworkdevice.peers.iter() {
-        let p = p.lock();
-        writeln!(writerbufferdevice, "public_key={}", encode_hex(k.as_bytes()));
+    for (own_static_key_pair, peer) in thisnetworkdevice.peers.iter() {
+        let peer = peer.lock();
+        writeln!(writerbufferdevice, "public_key={}", encode_hex(own_static_key_pair.as_bytes()));
 
-        if let Some(ref key) = p.preshared_key() {
-            writeln!(writerbufferdevice, "preshared_key={}", encode_hex(key));
+        if let Some(ref peer_preshared_key) = peer.preshared_key() {
+            writeln!(writerbufferdevice, "preshared_key={}", encode_hex(peer_preshared_key));
         }
 
-        if let Some(keepalive) = p.persistent_keepalive() {
+        if let Some(keepalive) = peer.persistent_keepalive() {
             writeln!(writerbufferdevice, "persistent_keepalive_interval={}", keepalive);
         }
 
-        if let Some(ref addr) = p.endpoint().addr {
+        if let Some(ref addr) = peer.endpoint().addr {
             writeln!(writerbufferdevice, "endpoint={}", addr);
         }
 
-        for (ip, cidr) in p.allowed_ips() {
+        for (ip, cidr) in peer.allowed_ips() {
             writeln!(writerbufferdevice, "allowed_ip={}/{}", ip, cidr);
         }
 
-        if let Some(time) = p.time_since_last_handshake() {
+        if let Some(time) = peer.time_since_last_handshake() {
             writeln!(writerbufferdevice, "last_handshake_time_sec={}", time.as_secs());
             writeln!(writerbufferdevice, "last_handshake_time_nsec={}", time.subsec_nanos());
         }
 
-        let (_, tx_bytes, rx_bytes, ..) = p.tunnel.stats();
+        let (_, tx_bytes, rx_bytes, ..) = peer.tunnel.stats();
 
         writeln!(writerbufferdevice, "rx_bytes={}", rx_bytes);
         writeln!(writerbufferdevice, "tx_bytes={}", tx_bytes);
@@ -465,21 +465,21 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                         return EPROTO;
                     }
 
-                    let (key, val) = (parsed_cmd[0], parsed_cmd[1]);
+                    let (option, value) = (parsed_cmd[0], parsed_cmd[1]);
 
-                    match key {
-                        "private_key" => match val.parse::<KeyBytes>() {
-                            Ok(key_bytes) => {
-                                let key_str = serialization::keybytes_to_hex_string(&key_bytes);
-                                let string = format!("{:02X?}", key_str);
+                    match option {
+                        "private_key" => match value.parse::<KeyBytes>() {
+                            Ok(own_static_bytes_key_pair) => {
+                                let own_static_hex_private_key = serialization::keybytes_to_hex_string(&own_static_bytes_key_pair);
+                                let own_static_string_private_key = format!("{:02X?}", own_static_hex_private_key);
                                 // Dumping the private key that is associated with the device in HEX format
-                                tracing::info!(message = "Debugging:Private_key FN api_set: {}", string);
-                                // This call needs to read the key from the rodt instead of key_bytes
-                                device.set_key(x25519::StaticSecret::from(key_bytes.0))
+                                tracing::info!(message = "Debugging:Private_key FN api_set: {}", own_static_string_private_key);
+                                // CG: Does this call need to read the key from the rodt?
+                                device.set_key(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
                             }
                             Err(_) => return EINVAL,
                         },
-                        "listen_port" => match val.parse::<u16>() {
+                        "listen_port" => match value.parse::<u16>() {
                             Ok(port) => match device.open_listen_socket(port) {
                                 Ok(()) => {}
                                 Err(_) => return EADDRINUSE,
@@ -491,24 +491,24 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                             target_os = "fuchsia",
                             target_os = "linux"
                         ))]
-                        "fwmark" => match val.parse::<u32>() {
+                        "fwmark" => match value.parse::<u32>() {
                             Ok(mark) => match device.set_fwmark(mark) {
                                 Ok(()) => {}
                                 Err(_) => return EADDRINUSE,
                             },
                             Err(_) => return EINVAL,
                         },
-                        "replace_peers" => match val.parse::<bool>() {
+                        "replace_peers" => match value.parse::<bool>() {
                             Ok(true) => device.clear_peers(),
                             Ok(false) => {}
                             Err(_) => return EINVAL,
                         },
-                        "public_key" => match val.parse::<KeyBytes>() {
-                            Ok(key_bytes) => {
+                        "public_key" => match value.parse::<KeyBytes>() {
+                            Ok(own_static_bytes_key_pair) => {
                                 return api_set_peer(
                                     readerbufferdevice,
                                     device,
-                                    x25519::PublicKey::from(key_bytes.0),
+                                    x25519::PublicKey::from(own_static_bytes_key_pair.0),
                                 )
                             }
                             Err(_) => return EINVAL,
@@ -527,7 +527,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
 fn api_set_peer(
     readerbufferdevice: &mut BufReader<&UnixStream>,
     thisnetworkdevice: &mut Device,
-    pub_peer_key: x25519::PublicKey,
+    peer_publickey_public_key: x25519::PublicKey,
 ) -> i32 {
     let mut cmd = String::new();
 
@@ -535,14 +535,14 @@ fn api_set_peer(
     let mut replace_ips = false;
     let mut endpoint = None;
     let mut keepalive = None;
-    let mut public_key = pub_peer_key;
+    let mut clone_peer_publickey_public_key = peer_publickey_public_key;
     let mut preshared_key = None;
     let mut allowed_ips: Vec<AllowedIP> = vec![];
     while readerbufferdevice.read_line(&mut cmd).is_ok() {
         cmd.pop(); // remove newline if any
         if cmd.is_empty() {
             thisnetworkdevice.update_peer(
-                public_key,
+                clone_peer_publickey_public_key,
                 remove,
                 replace_ips,
                 endpoint,
@@ -558,31 +558,31 @@ fn api_set_peer(
             if parsed_cmd.len() != 2 {
                 return EPROTO;
             }
-            let (key, val) = (parsed_cmd[0], parsed_cmd[1]);
-            match key {
-                "remove" => match val.parse::<bool>() {
+            let (option, value) = (parsed_cmd[0], parsed_cmd[1]);
+            match option {
+                "remove" => match value.parse::<bool>() {
                     Ok(true) => remove = true,
                     Ok(false) => remove = false,
                     Err(_) => return EINVAL,
                 },
-                "preshared_key" => match val.parse::<KeyBytes>() {
-                    Ok(key_bytes) => preshared_key = Some(key_bytes.0),
+                "preshared_key" => match value.parse::<KeyBytes>() {
+                    Ok(own_static_bytes_key_pair) => preshared_key = Some(own_static_bytes_key_pair.0),
                     Err(_) => return EINVAL,
                 },
-                "endpoint" => match val.parse::<SocketAddr>() {
+                "endpoint" => match value.parse::<SocketAddr>() {
                     Ok(addr) => endpoint = Some(addr),
                     Err(_) => return EINVAL,
                 },
-                "persistent_keepalive_interval" => match val.parse::<u16>() {
+                "persistent_keepalive_interval" => match value.parse::<u16>() {
                     Ok(interval) => keepalive = Some(interval),
                     Err(_) => return EINVAL,
                 },
-                "replace_allowed_ips" => match val.parse::<bool>() {
+                "replace_allowed_ips" => match value.parse::<bool>() {
                     Ok(true) => replace_ips = true,
                     Ok(false) => replace_ips = false,
                     Err(_) => return EINVAL,
                 },
-                "allowed_ip" => match val.parse::<AllowedIP>() {
+                "allowed_ip" => match value.parse::<AllowedIP>() {
                     Ok(ip) => allowed_ips.push(ip),
                     Err(_) => return EINVAL,
                 },
@@ -590,7 +590,7 @@ fn api_set_peer(
                     // Indicates a new peer section.
                     // Commit changes for current peer, and continue to next peer
                     thisnetworkdevice.update_peer(
-                        public_key,
+                        clone_peer_publickey_public_key,
                         remove,
                         replace_ips,
                         endpoint,
@@ -599,12 +599,12 @@ fn api_set_peer(
                         preshared_key,
                     );
                     allowed_ips.clear(); //clear the vector content after update
-                    match val.parse::<KeyBytes>() {
-                        Ok(key_bytes) => public_key = key_bytes.0.into(),
+                    match value.parse::<KeyBytes>() {
+                        Ok(own_static_bytes_key_pair) => clone_peer_publickey_public_key = own_static_bytes_key_pair.0.into(),
                         Err(_) => return EINVAL,
                     }
                 }
-                "protocol_version" => match val.parse::<u32>() {
+                "protocol_version" => match value.parse::<u32>() {
                     Ok(1) => {}
                     _ => return EINVAL,
                 },
