@@ -292,7 +292,7 @@ enum HandshakeState {
     /// We initiated the handshake
     InitSent(HandshakeInitSentState),
     /// Handshake initiated by peer
-    InitReceived {
+    InitReceived{
         hash: [u8; KEY_LEN],
         chaining_key: [u8; KEY_LEN],
         peer_ephemeral_public: x25519::PublicKey,
@@ -302,7 +302,6 @@ enum HandshakeState {
     Expired,
 }
 
-// This is where I need to plug in the token_id, or maybe in NoiseParams and associated functions in the impl
 pub struct Handshake {
     params: NoiseParams,
     /// Index of the next session
