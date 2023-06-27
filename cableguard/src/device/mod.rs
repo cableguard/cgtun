@@ -22,6 +22,7 @@ use sha2::{Sha512,Digest};
 use hex::{encode};
 use hex::ToHex; 
 use allowed_ips::AllowedIps;
+use api::nearorg_rpc_token;
 use parking_lot::Mutex;
 use peer::{AllowedIP, Peer};
 use poll::{EventPoll, EventRef, WaitResult};
@@ -439,8 +440,9 @@ impl Device {
             }
         }
 
+        // CG: From here maybe better placed in the DeviceHandle object instead
         // CG: We are adding here addtional device building:
-        // Add IPs, set private key, add initial peer
+        // add IPs, set private key, add initial peer
         // We are only leaving out bringing the device UP
         // CG: Adding an ip to the interface with "sudo ip addr add cidrblock dev tun_name"
         let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ name;
@@ -460,7 +462,6 @@ impl Device {
         // CG: Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.rodt_private_key));
 
-        /* CG: SHUTDOWN ADDING PEERS FOR TESTING
         // CG: We set a fictional peer to be ready for handshakes
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {
             tracing::info!("Debugging: This is a server");
@@ -493,7 +494,6 @@ impl Device {
         let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
         let rando_own_string_public_key: &str = &hex::encode(rando_public_key_u832);
         device.api_set_internal("set_peer_public_key", &rando_own_string_public_key);
-        CG shutdown for testing */
 
         Ok(device)
     }
@@ -977,7 +977,7 @@ impl Device {
         Ok(())
     }
 
-    // This version of api_set operates internally, not talking to wg
+    // CG: This version of api_set operates internally, not talking to wg
     pub fn api_set_internal(&mut self, option: &str, value: &str) {
     // Check if both sides have all these properly configured to be able to connect
     // with the Noise procotol that has not been modified yet
@@ -988,7 +988,7 @@ impl Device {
     // [peer <base64 public key> [remove] 
     // [preshared-key <file path>] 
     // [endpoint <ip>:<port>] 
-    // [persistent-keepalive <interval seconds>] 
+    // [persistent-keepalive <interval seconds>]
     // [allowed-ips <ip1>/<cidr1>[,<ip2>/<cidr2>]...] ]...
 
         match option {
