@@ -298,7 +298,7 @@ fn main() {
     sock1.send(&[1]).unwrap();
     drop(sock1);
     
-    tracing::info!("CableGuard will hand over to device handle");
+    tracing::info!("CableGuard will hand over to TUN handle");
     
     // Wait for the device handle to finish processing
     device_handle.wait();    
