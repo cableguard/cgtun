@@ -237,7 +237,10 @@ struct NoiseParams {
     static_public: x25519::PublicKey,
     // Our static private key
     static_private: x25519::StaticSecret,
-    // Static public key of the other party
+    // CG: We don't know the Static public key of the other party
+    // before initiating handshake. This can affect handshake states
+    // It is possible that we need one round to add the peer
+    // to the peer index
     peer_static_public: x25519::PublicKey,
     static_shared: x25519::SharedSecret,
     // A pre-computation of HASH("mac1----", peer_static_public) for this peer
@@ -246,9 +249,9 @@ struct NoiseParams {
     preshared_key: Option<[u8; KEY_LEN]>,
     // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
     // This needs a known length, we can use 64 (KEY_LEN*2) or 128 (KEY_LEN*4) as a limit to accomodate a full RODT ID
-    peer_rodtid: Option<[u8; KEY_LEN*2]>,
+    rodtid: Option<[u8; KEY_LEN*2]>,
     // CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
-    peer_rodtid_signature: Option<[u8; KEY_LEN*2]>,
+    rodtid_signature: Option<[u8; KEY_LEN*2]>,
     // A shared key = DH(static_private, peer_static_public)
 }
 
@@ -377,7 +380,7 @@ pub fn parse_handshake_anon(
     let peer_static_string_public_key = peer_static_public.encode_hex::<String>();
 
     // Display the converted values in the trace
-    tracing::info!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
+    rodtid!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
         own_static_string_private_key,
         own_static_string_public_key,
         peer_ephemeral_string_public_key,
@@ -397,8 +400,8 @@ impl NoiseParams {
         static_public: x25519::PublicKey,
         peer_static_public: x25519::PublicKey, 
         preshared_key: Option<[u8; 32]>,
-        peer_rodtid: Option<[u8; KEY_LEN*2]>,
-        peer_rodtid_signature: Option<[u8; KEY_LEN*2]>,
+        rodtid: Option<[u8; KEY_LEN*2]>,
+        rodtid_signature: Option<[u8; KEY_LEN*2]>,
     ) -> Result<NoiseParams, WireGuardError> {
         let static_shared = static_private.diffie_hellman(&peer_static_public);
 
@@ -411,8 +414,8 @@ impl NoiseParams {
             static_shared,
             sending_mac1_key: initial_sending_mac_key,
             preshared_key,
-            peer_rodtid,
-            peer_rodtid_signature,
+            rodtid,
+            rodtid_signature,
         })
     }
 
@@ -454,16 +457,16 @@ impl Handshake {
         peer_static_public: x25519::PublicKey,
         global_idx: u32,
         preshared_key: Option<[u8; 32]>,
-        peer_rodtid: Option<[u8; KEY_LEN*2]>,
-        peer_rodtid_signature: Option<[u8; KEY_LEN*2]>,
+        rodtid: Option<[u8; KEY_LEN*2]>,
+        rodtid_signature: Option<[u8; KEY_LEN*2]>,
     ) -> Result<Handshake, WireGuardError> {
         let params = NoiseParams::new(
             static_private,
             static_public,
             peer_static_public,
             preshared_key,
-            peer_rodtid,
-            peer_rodtid_signature,
+            rodtid,
+            rodtid_signature,
         )?;
 
         Ok(Handshake {
@@ -522,7 +525,7 @@ impl Handshake {
     self.params.set_static_private(private_key, public_key)
     }
 
-    // This is where we receive the token_id, so
+    // CG: This is where we receive the token_id, so
     // we can cross check with the blockchain that there is a match
     // between token_id declared and controlling peer public key
     // also we need to check one of:
@@ -587,8 +590,8 @@ impl Handshake {
         .map_err(|_| WireGuardError::WrongKey)?;
 
         // CG: For the time being we just display the extra parameters exchanged
-        tracing::info!("Debugging: ROTID of the Peer {:?}",self.params.peer_rodtid);
-        tracing::info!("Debugging: Signature of the ROTID of the Peer with the Peer's signature {:?}",self.params.peer_rodtid_signature);
+        rodtid!("Debugging: ROTID {:?}",self.params.rodtid);
+        rodtid!("Debugging: Signature of the ROTID {:?}",self.params.rodtid_signature);
 
         // initiator.hash = HASH(initiator.hash || msg.encrypted_static)
         hash = b2s_hash(&hash, packet.encrypted_static);
@@ -801,13 +804,6 @@ impl Handshake {
         
         // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         let mut hash = INITIAL_CHAIN_HASH;
-        
-    // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
-    // rodt_id: &str[64]
-    // rodt_signature_with_pk[128] 
-    // Perform the checks of matching fields to verify the client belongs to the server and vice versa
-    // Read of owner_id (pk) of the rodt_id and check that the signature matches
-    // If it matches, add the peer_static_public to the list of peers
 
         hash = b2s_hash(&hash, self.params.peer_static_public.as_bytes());
         

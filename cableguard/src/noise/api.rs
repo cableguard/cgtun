@@ -537,8 +537,8 @@ fn api_set_peer(
     let mut keepalive = None;
     let mut clone_peer_publickey_public_key = peer_publickey_public_key;
     let mut preshared_key = None;
-    let rodtid = None;
-    let rodtid_signature = None;
+    let mut rodtid = None;
+    let mut rodtid_signature = None;
     let mut allowed_ips: Vec<AllowedIP> = vec![];
     while readerbufferdevice.read_line(&mut cmd).is_ok() {
         cmd.pop(); // remove newline if any
