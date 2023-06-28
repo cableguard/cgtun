@@ -43,6 +43,9 @@ const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
 
+// FROM HANDSHAKE.RS
+const KEY_LEN: usize = 32;
+
 #[cfg(test)]
 mod integration_tests;
 
@@ -334,6 +337,8 @@ impl Device {
         allowed_ips: &[AllowedIP],
         keepalive: Option<u16>,
         preshared_key: Option<[u8; 32]>,
+        peer_rodtid: Option<[u8; KEY_LEN*2]>,
+        peer_rodtid_signature: Option<[u8; KEY_LEN*2]>,
     ) {
         //CG: If it wasn't for keeping compability, I would remove the silly logic
         if remove {
@@ -367,6 +372,8 @@ impl Device {
             device_key_pair.0.clone(), // Passing on only the X25519 private key
             peer_publickey_public_key,
             preshared_key,
+            peer_rodtid,
+            peer_rodtid_signature,
             keepalive,
             next_index,
             None,
@@ -1074,6 +1081,12 @@ impl Device {
         println!("Setting allowed IP {:?}", allowed_ip);
 //            let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
 //            let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
+
+        let rotd_id_slice: &[u8] = self.config.rodt.token_id.as_bytes();
+        let mut rotd_id: [u8; 64] = [0; 64];
+        rotd_id[..rotd_id_slice.len()].copy_from_slice(rotd_id_slice);
+//        let rotidsignature
+
         // Create or update peer
         allowed_ips.push(allowed_ip);
         self.update_peer(
@@ -1084,6 +1097,8 @@ impl Device {
             &allowed_ips,
             keepalive,
             preshared_key,
+            Some(rotd_id),
+            Some(rotd_id), //CG: SIGNATURE OF ROTDID
             );                    
         allowed_ips.clear();
     }

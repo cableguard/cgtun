@@ -245,10 +245,10 @@ struct NoiseParams {
     // An optional preshared key
     preshared_key: Option<[u8; KEY_LEN]>,
     // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
-    // This needs a known lengh, we can use 64 or 128 as a limit to accomodate full RODT ID
-//    rodt_id: Option<[u8; KEY_LEN]>,
+    // This needs a known length, we can use 64 (KEY_LEN*2) or 128 (KEY_LEN*4) as a limit to accomodate a full RODT ID
+    peer_rodtid: Option<[u8; KEY_LEN*2]>,
     // CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
-//    rodt_signature_with_pk: Option<[u8; 2*KEY_LEN]>,
+    peer_rodtid_signature: Option<[u8; KEY_LEN*2]>,
     // A shared key = DH(static_private, peer_static_public)
 }
 
@@ -390,18 +390,15 @@ pub fn parse_handshake_anon(
     })
 }
 
-// This is where the token_id parameters plug themselves into the protocol
 impl NoiseParams {
-    /// New noise params struct from our secret key, peers public key, and optional preshared key
-    fn new(
-        static_private: x25519::StaticSecret, // This is coming from the ROTD
-        static_public: x25519::PublicKey, // This is coming from the ROTD
-        
-        // This comes from the blockchain BUT after we handshake, not before
-        peer_static_public: x25519::PublicKey, 
 
-        // We are not going to be using preshared
+    fn new(
+        static_private: x25519::StaticSecret,
+        static_public: x25519::PublicKey,
+        peer_static_public: x25519::PublicKey, 
         preshared_key: Option<[u8; 32]>,
+        peer_rodtid: Option<[u8; KEY_LEN*2]>,
+        peer_rodtid_signature: Option<[u8; KEY_LEN*2]>,
     ) -> Result<NoiseParams, WireGuardError> {
         let static_shared = static_private.diffie_hellman(&peer_static_public);
 
@@ -414,8 +411,8 @@ impl NoiseParams {
             static_shared,
             sending_mac1_key: initial_sending_mac_key,
             preshared_key,
-//            rodt_id,
-//            rodt_signature_with_pk,
+            peer_rodtid,
+            peer_rodtid_signature,
         })
     }
 
@@ -457,12 +454,16 @@ impl Handshake {
         peer_static_public: x25519::PublicKey,
         global_idx: u32,
         preshared_key: Option<[u8; 32]>,
+        peer_rodtid: Option<[u8; KEY_LEN*2]>,
+        peer_rodtid_signature: Option<[u8; KEY_LEN*2]>,
     ) -> Result<Handshake, WireGuardError> {
         let params = NoiseParams::new(
             static_private,
             static_public,
             peer_static_public,
             preshared_key,
+            peer_rodtid,
+            peer_rodtid_signature,
         )?;
 
         Ok(Handshake {
@@ -578,11 +579,16 @@ impl Handshake {
             &hash,
         )?;
 
+        // CG: This is where we compare if we have seen this peer public key
         ring::constant_time::verify_slices_are_equal(
             self.params.peer_static_public.as_bytes(),
             &peer_static_public_decrypted,
         )
         .map_err(|_| WireGuardError::WrongKey)?;
+
+        // CG: For the time being we just display the extra parameters exchanged
+        tracing::info!("Debugging: ROTID of the Peer {:?}",self.params.peer_rodtid);
+        tracing::info!("Debugging: Signature of the ROTID of the Peer with the Peer's signature {:?}",self.params.peer_rodtid_signature);
 
         // initiator.hash = HASH(initiator.hash || msg.encrypted_static)
         hash = b2s_hash(&hash, packet.encrypted_static);

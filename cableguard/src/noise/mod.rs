@@ -21,6 +21,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use hex::encode;
 
+// FROM HANDSHAKE.RS
+const KEY_LEN: usize = 32;
+
 /// The default value to use for rate limiting, when no other rate limiter is defined
 const PEER_HANDSHAKE_RATE_LIMIT: u64 = 10;
 
@@ -196,6 +199,8 @@ impl Tunn {
         static_private: x25519::StaticSecret,
         peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
+        peer_rodtid: Option<[u8; KEY_LEN*2]>,
+        peer_rodtid_signature: Option<[u8; KEY_LEN*2]>,
         persistent_keepalive: Option<u16>,
         index: u32,
         rate_limiter: Option<Arc<RateLimiter>>,
@@ -214,6 +219,9 @@ impl Tunn {
                 peer_static_public,
                 index << 8,
                 preshared_key,
+                // CG: THIS HERE NOW
+                peer_rodtid,
+                peer_rodtid_signature,
             )
             .map_err(|_| "Invalid parameters")?,
             sessions: Default::default(),

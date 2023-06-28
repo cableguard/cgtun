@@ -17,7 +17,6 @@ use base64::{URL_SAFE_NO_PAD};
 use reqwest::blocking::Client;
 use serde_json::{Value};
 use serde::{Deserialize, Serialize};
-use hex::{FromHex};
 use hex::encode as encode_hex;
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
@@ -538,6 +537,8 @@ fn api_set_peer(
     let mut keepalive = None;
     let mut clone_peer_publickey_public_key = peer_publickey_public_key;
     let mut preshared_key = None;
+    let mut peer_rodtid = None;
+    let mut peer_rodtid_signature = None;
     let mut allowed_ips: Vec<AllowedIP> = vec![];
     while readerbufferdevice.read_line(&mut cmd).is_ok() {
         cmd.pop(); // remove newline if any
@@ -550,6 +551,8 @@ fn api_set_peer(
                 allowed_ips.as_slice(),
                 keepalive,
                 preshared_key,
+                peer_rodtid,
+                peer_rodtid_signature,
             );
             allowed_ips.clear(); //clear the vector content after update
             return 0; // Done
@@ -598,6 +601,8 @@ fn api_set_peer(
                         allowed_ips.as_slice(),
                         keepalive,
                         preshared_key,
+                        peer_rodtid,
+                        peer_rodtid_signature,
                     );
                     allowed_ips.clear(); //clear the vector content after update
                     match value.parse::<KeyBytes>() {
