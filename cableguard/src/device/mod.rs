@@ -190,8 +190,8 @@ impl DeviceHandle {
         match config.rodt.metadata.listenport.parse::<u16>() {
             Ok(port) => match wg_interface.open_listen_socket(port) {
                 Ok(()) => {
-                    tracing::info!("Debugging:Port FN api_set_internal: {}", port);
-                    tracing::info!("Debugging:Rodt Port  FN api_set_internal: {}", config.rodt.metadata.listenport);
+                    tracing::debug!("Debugging:Port FN api_set_internal: {}", port);
+                    tracing::debug!("Debugging:Rodt Port  FN api_set_internal: {}", config.rodt.metadata.listenport);
                 }
                 Err(_) => ()
             }
@@ -348,7 +348,7 @@ impl Device {
 
         // Update an existing peer
         if self.peers.get(&peer_publickey_public_key).is_some() {
-            tracing::info!("Debugging: Peers are dinamically added and removed so it makes no sense to update them. No actions have been performed");
+            tracing::debug!("Debugging: Peers are dinamically added and removed so it makes no sense to update them. No actions have been performed");
             return
         }
 
@@ -362,7 +362,7 @@ impl Device {
         let peer_string_public_key = peer_publickey_public_key.encode_hex::<String>();
         let own_string_private_key = device_key_pair.0.encode_hex::<String>();
         let own_string_public_key = device_key_pair.1.encode_hex::<String>();
-        tracing::info!("Debugging:peer_publickey_public_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
+        tracing::debug!("Debugging:peer_publickey_public_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
             peer_string_public_key,
             own_string_private_key,
             own_string_public_key
@@ -390,7 +390,7 @@ impl Device {
             self.peers_by_ip
                 .insert(*addr, *cidr as _, Arc::clone(&peer));
         }
-        tracing::info!("Debugging: Peer added");
+        tracing::debug!("Debugging: Peer added");
     }
 
     pub fn new(name: &str, config: DeviceConfig) -> Result<Device, Error> {
@@ -460,10 +460,10 @@ impl Device {
             .expect("Failed to execute command");
         if output.status.success() {
             let _stdout = String::from_utf8_lossy(&output.stdout);
-            tracing::info!("Debugging: Ip addr add command executed successfully:\n{}",device.config.rodt.metadata.cidrblock);
+            tracing::debug!("Debugging: Ip addr add command executed successfully:\n{}",device.config.rodt.metadata.cidrblock);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            tracing::info!("Debugging: Ip addr add command failed to execute:\n{}", stderr);
+            tracing::debug!("Debugging: Ip addr add command failed to execute:\n{}", stderr);
         }
 
         // CG: Proactively setting the Static Private Key for the device
@@ -471,23 +471,23 @@ impl Device {
 
         // CG: We set a fictional peer to be ready for handshakes
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {
-            tracing::info!("Debugging: This is a server");
+            tracing::debug!("Debugging: This is a server");
         }
         else{
             // CG: If we are a client, find the server and check if
             // IsTrusted(rodt.metadata.authornftcontractid);
             // ,checking if the Issuer smart contract has published a TXT 
             // entry with the token_id of the server
-            tracing::info!("Debugging: This is a client");    
+            tracing::debug!("Debugging: This is a client");    
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.rodt.metadata.authornftcontractid + "\"}";
-                tracing::info!("account idargs: {:?}", account_idargs);
+                tracing::debug!("account idargs: {:?}", account_idargs);
             match nearorg_rpc_token(Self::xnet,
                 Self::smart_contract,
                 "nft_token",&account_idargs) {
                 Ok(result) => {
                     let server_rodt = result;
-                    tracing::info!("Server RODT Owner: {:?}", server_rodt.owner_id);
+                    tracing::debug!("Server RODT Owner: {:?}", server_rodt.owner_id);
                 }
                 Err(err) => {
                     tracing::error!("Error: There is no server RODT associated with the account: {}", err);
@@ -595,7 +595,7 @@ impl Device {
                 let own_string_public_key = own_publickey_public_key.encode_hex::<String>();
         
                 // Display the converted values in the trace
-                tracing::info!("Debugging: private_key: {}, public_key: {} in fn set_key_pair",
+                tracing::debug!("Debugging: private_key: {}, public_key: {} in fn set_key_pair",
                     own_string_private_key,
                     own_string_public_key
                 );
@@ -772,7 +772,7 @@ impl Device {
                                     let peer_static_public_str = hh.peer_static_public.encode_hex::<String>();
                     
                                     // Display the converted values in the trace
-                                    tracing::info!("Debugging: own_bytes_private_key: {}, own_bytes_public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
+                                    tracing::debug!("Debugging: own_bytes_private_key: {}, own_bytes_public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
                                         own_string_private_key,
                                         own_string_public_key,
                                         peer_static_public_str
@@ -1008,7 +1008,7 @@ impl Device {
                 let own_string_private_key = serialization::keybytes_to_hex_string(&own_keybytes_private_key);
                 let own_hex_private_key = format!("{:02X?}", own_string_private_key);
                     // Dumping the private key that is associated with the device in HEX format
-                    tracing::info!(message = "Debugging:Private_key FN api_set_internal: {}", own_hex_private_key);
+                    tracing::debug!(message = "Debugging:Private_key FN api_set_internal: {}", own_hex_private_key);
                     // This call needs to read the key from the rodt instead of key_bytes
                     self.set_key_pair(x25519::StaticSecret::from(own_keybytes_private_key.0))
                     }
@@ -1017,8 +1017,8 @@ impl Device {
             "listen_port" => match self.config.rodt.metadata.listenport.parse::<u16>() {
                 Ok(port) => match self.open_listen_socket(port) {
                     Ok(()) => {
-                        tracing::info!("Debugging:Port FN api_set_internal: {}", port);
-                        tracing::info!("Debugging:Rodt Port  FN api_set_internal: {}", self.config.rodt.metadata.listenport);
+                        tracing::debug!("Debugging:Port FN api_set_internal: {}", port);
+                        tracing::debug!("Debugging:Rodt Port  FN api_set_internal: {}", self.config.rodt.metadata.listenport);
                     }
                     Err(_) => return,
                 },
@@ -1046,7 +1046,7 @@ impl Device {
                 // CG: This section is not very useful with RODT as peers are only added dinamically
                 Ok(peer_keybytes_key) => {
                     let peer_b58_public_key = encode(peer_keybytes_key.0);
-                    tracing::info!("Debugging: Peer Public Key FN api_set_internal {:?}", peer_b58_public_key);
+                    tracing::debug!("Debugging: Peer Public Key FN api_set_internal {:?}", peer_b58_public_key);
                         return self.api_set_peer_internal(
                             x25519::PublicKey::from(peer_keybytes_key.0),
                         )

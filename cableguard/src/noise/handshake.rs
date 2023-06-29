@@ -379,7 +379,7 @@ pub fn parse_handshake_anon(
     let peer_static_string_public_key = peer_static_public.encode_hex::<String>();
 
     // Display the converted values in the trace
-    tracing::info!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
+    tracing::debug!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
         own_static_string_private_key,
         own_static_string_public_key,
         peer_ephemeral_string_public_key,
@@ -549,8 +549,8 @@ impl Handshake {
         dst: &'a mut [u8],
     ) -> Result<(&'a mut [u8], Session), WireGuardError> {
 
-        tracing::info!("Debugging: RODT ID received as packet init {:?}",packet.rodtid);        
-        tracing::info!("Debugging: RODT ID Signature received as packet init {:?}",packet.rodtid_signature);
+        tracing::debug!("Debugging: RODT ID received as packet init {:?}",packet.rodtid);        
+        tracing::debug!("Debugging: RODT ID Signature received as packet init {:?}",packet.rodtid_signature);
 
         // initiator.chaining_key = HASH(CONSTRUCTION)
         let mut chaining_key = INITIAL_CHAIN_KEY;
@@ -598,8 +598,8 @@ impl Handshake {
         .map_err(|_| WireGuardError::WrongKey)?;
 
         // CG: For the time being we just display the extra parameters exchanged
-        tracing::info!("Debugging: ROTID {:?}",self.params.rodtid);
-        tracing::info!("Debugging: Signature of the ROTID {:?}",self.params.rodtid_signature);
+        tracing::debug!("Debugging: ROTID {:?}",self.params.rodtid);
+        tracing::debug!("Debugging: Signature of the ROTID {:?}",self.params.rodtid_signature);
 
         // initiator.hash = HASH(initiator.hash || msg.encrypted_static)
         hash = b2s_hash(&hash, packet.encrypted_static);

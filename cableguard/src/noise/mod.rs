@@ -235,8 +235,8 @@ impl Tunn {
 
         let static_public_string = encode(static_public);
         let peer_static_public_string =  encode(peer_static_public);
-        tracing::info!("Debugging: static_public = {} in fn new/Tunn", static_public_string);
-        tracing::info!("Debugging: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
+        tracing::debug!("Debugging: static_public = {} in fn new/Tunn", static_public_string);
+        tracing::debug!("Debugging: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
 
         let tunn = Tunn {
             handshake: Handshake::new(
@@ -655,7 +655,7 @@ mod tests {
         let their_string_public_key = encode(their_publickey_public_key.as_bytes());
 
         // Display the converted values in the trace
-        tracing::info!("Debugging: own_staticsecret_private_key: {}, own_publickey_public_key: {}, their_secret_key: {}, their_public_key: {} in fn create_two_tuns",
+        tracing::debug!("Debugging: own_staticsecret_private_key: {}, own_publickey_public_key: {}, their_secret_key: {}, their_public_key: {} in fn create_two_tuns",
             own_string_private_key,
             own_string_public_key,
             their_string_private_key,
