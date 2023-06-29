@@ -1082,9 +1082,11 @@ impl Device {
 //            let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
 //            let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
 
-        let rotd_id_slice: &[u8] = self.config.rodt.token_id.as_bytes();
-        let mut rotd_id: [u8; 64] = [0; 64];
-        rotd_id[..rotd_id_slice.len()].copy_from_slice(rotd_id_slice);
+        // CG: Leaving setting the rotd for later
+        let rodt_id = [0;64]; 
+        // let rodt_id_slice: &[u8] = self.config.rodt.token_id.as_bytes();
+        // let mut rodt_id: [u8; 64] = [0; 64];
+        // rodt_id[..rodt_id_slice.len()].copy_from_slice(rodt_id_slice);
 //        let rotidsignature
 
         // Create or update peer
@@ -1097,8 +1099,8 @@ impl Device {
             &allowed_ips,
             keepalive,
             preshared_key,
-            Some(rotd_id),
-            Some(rotd_id), //CG: SIGNATURE OF ROTDID
+            Some(rodt_id),
+            Some(rodt_id), //CG: SIGNATURE OF ROTDID
             );                    
         allowed_ips.clear();
     }
