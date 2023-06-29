@@ -548,6 +548,10 @@ impl Handshake {
         packet: HandshakeInit,
         dst: &'a mut [u8],
     ) -> Result<(&'a mut [u8], Session), WireGuardError> {
+
+        tracing::info!("Debugging: RODT ID received as packet init {:?}",packet.rodtid);        
+        tracing::info!("Debugging: RODT ID Signature received as packet init {:?}",packet.rodtid_signature);
+
         // initiator.chaining_key = HASH(CONSTRUCTION)
         let mut chaining_key = INITIAL_CHAIN_KEY;
         let mut hash = INITIAL_CHAIN_HASH;
@@ -796,9 +800,9 @@ impl Handshake {
         let (sender_index, rest) = rest.split_at_mut(4);
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_static, rest) = rest.split_at_mut(32 + 16);
-        let (encrypted_timestamp, _) = rest.split_at_mut(12 + 16);
+        let (encrypted_timestamp, rest) = rest.split_at_mut(12 + 16);
         // CG: Two fields have been added to the initilization packet, with 64 bytes size each
-        let (rodtid, _) = rest.split_at_mut(64);
+        let (rodtid, rest) = rest.split_at_mut(64);
         let (rodtid_signature, _) = rest.split_at_mut(64);
 
         // CG: NOW HERE, building the rest of the packet with the modified structure
@@ -872,6 +876,10 @@ impl Handshake {
         // initiator.hash = HASH(initiator.hash || msg.encrypted_timestamp)
         hash = b2s_hash(&hash, encrypted_timestamp);
 
+        // CG: Adding a fix value to check if it travels on the wire
+        rodtid.fill(1);
+        rodtid_signature.fill(2);
+
         let time_now = Instant::now();
         self.previous = std::mem::replace(
             &mut self.state,
@@ -912,9 +920,9 @@ impl Handshake {
         let (sender_index, rest) = rest.split_at_mut(4);
         let (receiver_index, rest) = rest.split_at_mut(4);
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
-        let (encrypted_nothing, _) = rest.split_at_mut(16);
+        let (encrypted_nothing, rest) = rest.split_at_mut(16);
         // CG: The response also has 2 additional fields so both sides can authenticate each other
-        let (rodtid, _) = rest.split_at_mut(64);
+        let (rodtid, rest) = rest.split_at_mut(64);
         let (rodtid_signature, _) = rest.split_at_mut(64);
 
         // responder.ephemeral_private = DH_GENERATE()
