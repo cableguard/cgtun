@@ -538,8 +538,6 @@ fn api_set_peer(
     let mut clone_peer_publickey_public_key = peer_publickey_public_key;
     let mut preshared_key = None;
     // The following two parameters are not really used and are there just to keep several update_peer functions variable similar
-    let rodtid = None;
-    let rodtid_signature = None;
     let mut allowed_ips: Vec<AllowedIP> = vec![];
     while readerbufferdevice.read_line(&mut cmd).is_ok() {
         cmd.pop(); // remove newline if any
@@ -552,8 +550,6 @@ fn api_set_peer(
                 allowed_ips.as_slice(),
                 keepalive,
                 preshared_key,
-                rodtid,
-                rodtid_signature,
             );
             allowed_ips.clear(); //clear the vector content after update
             return 0; // Done
@@ -602,8 +598,6 @@ fn api_set_peer(
                         allowed_ips.as_slice(),
                         keepalive,
                         preshared_key,
-                        rodtid,
-                        rodtid_signature,
                     );
                     allowed_ips.clear(); //clear the vector content after update
                     match value.parse::<KeyBytes>() {

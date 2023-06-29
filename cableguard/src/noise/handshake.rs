@@ -877,8 +877,8 @@ impl Handshake {
         hash = b2s_hash(&hash, encrypted_timestamp);
 
         // CG: the values to transfer over the wire
-        rodtid = self.rodtid;
-        rodtid_signature = self.rodtid_signature;
+        rodtid.copy_from_slice(&self.params.rodtid);
+        rodtid_signature.copy_from_slice(&self.params.rodtid_signature);
 
         let time_now = Instant::now();
         self.previous = std::mem::replace(

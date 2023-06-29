@@ -336,9 +336,7 @@ impl Device {
         endpoint: Option<SocketAddr>,
         allowed_ips: &[AllowedIP],
         keepalive: Option<u16>,
-        preshared_key: [u8; 32],
-        peer_rodtid: [u8; KEY_LEN*2],
-        peer_rodtid_signature: Option<[u8; KEY_LEN*2]>,
+        preshared_key: Option<[u8; 32]>,
     ) {
         //CG: If it wasn't for keeping compability, I would remove the silly logic
         if remove {
@@ -372,8 +370,8 @@ impl Device {
             device_key_pair.0.clone(), // Passing on only the X25519 private key
             peer_publickey_public_key,
             preshared_key,
-            peer_rodtid,
-            peer_rodtid_signature,
+            hex_to_u864_array(self.config.rodt.owner_id.clone()),
+            hex_to_u864_array(self.config.rodt.owner_id.clone()),
             keepalive,
             next_index,
             None,
@@ -1083,8 +1081,8 @@ impl Device {
 //            let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
 
         // CG: Leaving setting the rodt for later
-        let rodtid = self.config.rodt.metadata.owner_id;
-        let rodtid_signature = self.config.rodt.metadata.owner_id;
+        let rodtid = &self.config.rodt.owner_id;
+        let rodtid_signature = &self.config.rodt.owner_id;
         // let rodt_id_slice: &[u8] = self.config.rodt.token_id.as_bytes();
         // let mut rodt_id: [u8; 64] = [0; 64];
         // rodt_id[..rodt_id_slice.len()].copy_from_slice(rodt_id_slice);
@@ -1100,8 +1098,6 @@ impl Device {
             &allowed_ips,
             keepalive,
             preshared_key,
-            rodtid,
-            rodtid_signature), //CG: SIGNATURE OF RODTID
             );                    
         allowed_ips.clear();
     }
@@ -1183,13 +1179,20 @@ pub fn ed2x_private_key_bytes(some_bytes_ed25519_private_key: [u8; 64]) -> x2551
 
 pub fn skx2pkx(some_staticsecrety_private_key: x25519::StaticSecret) -> [u8; 32] {
     let output_publickey_private_key = x25519::PublicKey::from(&some_staticsecrety_private_key);
-    let output_bytes_private_key = convert_to_u8_array(output_publickey_private_key);
+    let output_bytes_private_key = convert_to_u832_array(output_publickey_private_key);
     output_bytes_private_key
 }
 
-pub fn convert_to_u8_array(some_publickey_public_key: PublicKey) -> [u8; 32] {
+pub fn convert_to_u832_array(some_publickey_public_key: PublicKey) -> [u8; 32] {
     let some_bytes_public_key = some_publickey_public_key.as_bytes();
     let mut output_bytes_public_key = [0u8; 32];
     output_bytes_public_key.copy_from_slice(&some_bytes_public_key[..32]);
+    output_bytes_public_key
+}
+
+pub fn hex_to_u864_array(some_hex_key: String) -> [u8; 64] {
+    let some_bytes_key = some_hex_key.as_bytes();
+    let mut output_bytes_public_key = [0u8; 64];
+    output_bytes_public_key.copy_from_slice(&some_bytes_key[..64]);
     output_bytes_public_key
 }
