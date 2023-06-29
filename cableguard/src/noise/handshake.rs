@@ -248,9 +248,9 @@ struct NoiseParams {
     preshared_key: Option<[u8; KEY_LEN]>,
     // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
     // This needs a known length, we can use 64 (KEY_LEN*2) or 128 (KEY_LEN*4) as a limit to accomodate a full RODT ID
-    rodtid: Option<[u8; KEY_LEN*2]>,
+    rodtid: [u8; KEY_LEN*2],
     // CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
-    rodtid_signature: Option<[u8; KEY_LEN*2]>,
+    rodtid_signature: [u8; KEY_LEN*2],
     // A shared key = DH(static_private, peer_static_public)
 }
 
@@ -399,8 +399,8 @@ impl NoiseParams {
         static_public: x25519::PublicKey,
         peer_static_public: x25519::PublicKey, 
         preshared_key: Option<[u8; 32]>,
-        rodtid: Option<[u8; KEY_LEN*2]>,
-        rodtid_signature: Option<[u8; KEY_LEN*2]>,
+        rodtid: [u8; KEY_LEN*2],
+        rodtid_signature: [u8; KEY_LEN*2],
     ) -> Result<NoiseParams, WireGuardError> {
 
         // CG: This is an obstable, as static_private is known
@@ -461,8 +461,8 @@ impl Handshake {
         peer_static_public: x25519::PublicKey,
         global_idx: u32,
         preshared_key: Option<[u8; 32]>,
-        rodtid: Option<[u8; KEY_LEN*2]>,
-        rodtid_signature: Option<[u8; KEY_LEN*2]>,
+        rodtid: [u8; KEY_LEN*2],
+        rodtid_signature: [u8; KEY_LEN*2],
     ) -> Result<Handshake, WireGuardError> {
         let params = NoiseParams::new(
             static_private,

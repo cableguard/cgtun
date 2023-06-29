@@ -336,8 +336,8 @@ impl Device {
         endpoint: Option<SocketAddr>,
         allowed_ips: &[AllowedIP],
         keepalive: Option<u16>,
-        preshared_key: Option<[u8; 32]>,
-        peer_rodtid: Option<[u8; KEY_LEN*2]>,
+        preshared_key: [u8; 32],
+        peer_rodtid: [u8; KEY_LEN*2],
         peer_rodtid_signature: Option<[u8; KEY_LEN*2]>,
     ) {
         //CG: If it wasn't for keeping compability, I would remove the silly logic
@@ -1082,8 +1082,9 @@ impl Device {
 //            let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
 //            let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
 
-        // CG: Leaving setting the rotd for later
-        let rodt_id = [0;64]; 
+        // CG: Leaving setting the rodt for later
+        let rodtid = self.config.rodt.metadata.owner_id;
+        let rodtid_signature = self.config.rodt.metadata.owner_id;
         // let rodt_id_slice: &[u8] = self.config.rodt.token_id.as_bytes();
         // let mut rodt_id: [u8; 64] = [0; 64];
         // rodt_id[..rodt_id_slice.len()].copy_from_slice(rodt_id_slice);
@@ -1099,8 +1100,8 @@ impl Device {
             &allowed_ips,
             keepalive,
             preshared_key,
-            Some(rodt_id),
-            Some(rodt_id), //CG: SIGNATURE OF ROTDID
+            rodtid,
+            rodtid_signature), //CG: SIGNATURE OF RODTID
             );                    
         allowed_ips.clear();
     }
