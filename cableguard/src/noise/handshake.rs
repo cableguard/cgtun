@@ -149,7 +149,6 @@ fn aead_chacha20_open_inner(
 
     let mut inner_buffer = data.to_owned();
 
-    // CG: token_id this is where we obtain the public key of the peer decrypted
     let plaintext = key.open_in_place(
         Nonce::assume_unique_for_key(nonce),
         Aad::from(aad),
@@ -380,7 +379,7 @@ pub fn parse_handshake_anon(
     let peer_static_string_public_key = peer_static_public.encode_hex::<String>();
 
     // Display the converted values in the trace
-    rodtid!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
+    tracing::info!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
         own_static_string_private_key,
         own_static_string_public_key,
         peer_ephemeral_string_public_key,
@@ -403,6 +402,11 @@ impl NoiseParams {
         rodtid: Option<[u8; KEY_LEN*2]>,
         rodtid_signature: Option<[u8; KEY_LEN*2]>,
     ) -> Result<NoiseParams, WireGuardError> {
+
+        // CG: This is an obstable, as static_private is known
+        // but peer_static_public is not known unless it is the server's
+        // It is not ideal to prime the clients with the server public key
+        // as it could change
         let static_shared = static_private.diffie_hellman(&peer_static_public);
 
         let initial_sending_mac_key = b2s_hash(LABEL_MAC1, peer_static_public.as_bytes());
@@ -590,8 +594,8 @@ impl Handshake {
         .map_err(|_| WireGuardError::WrongKey)?;
 
         // CG: For the time being we just display the extra parameters exchanged
-        rodtid!("Debugging: ROTID {:?}",self.params.rodtid);
-        rodtid!("Debugging: Signature of the ROTID {:?}",self.params.rodtid_signature);
+        tracing::info!("Debugging: ROTID {:?}",self.params.rodtid);
+        tracing::info!("Debugging: Signature of the ROTID {:?}",self.params.rodtid_signature);
 
         // initiator.hash = HASH(initiator.hash || msg.encrypted_static)
         hash = b2s_hash(&hash, packet.encrypted_static);
@@ -775,7 +779,6 @@ impl Handshake {
         Ok(dst)
     }
 
-    // token_id this is the function that creates the handshake initiation packet
     // CG: This is where we need to plug additional fields:
     // One is the RODT ID
     // The other is the digital signature of the RODT ID
@@ -787,16 +790,18 @@ impl Handshake {
     ) -> Result<&'a mut [u8], WireGuardError> {
         if dst.len() < super::HANDSHAKE_INIT_SZ {
             return Err(WireGuardError::DestinationBufferTooSmall);
-        }
-        // message_type comes from dst
+        }    
+
         let (message_type, rest) = dst.split_at_mut(4);
-        // sender_index comes from rest
         let (sender_index, rest) = rest.split_at_mut(4);
-        // unencrypted ephemeral and the rest also comes from rest
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_static, rest) = rest.split_at_mut(32 + 16);
         let (encrypted_timestamp, _) = rest.split_at_mut(12 + 16);
+        // CG: Two fields have been added to the initilization packet, with 64 bytes size each
+        let (rodtid, _) = rest.split_at_mut(64);
+        let (rodtid_signature, _) = rest.split_at_mut(64);
 
+        // CG: NOW HERE, building the rest of the packet with the modified structure
         let local_index = self.inc_index();
 
         // initiator.chaining_key = HASH(CONSTRUCTION)
@@ -805,6 +810,7 @@ impl Handshake {
         // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         let mut hash = INITIAL_CHAIN_HASH;
 
+        // CG: As we don't know self.params.peer_static_public yet, we need to set it to a fix value
         hash = b2s_hash(&hash, self.params.peer_static_public.as_bytes());
         
         // initiator.ephemeral_private = DH_GENERATE()
@@ -907,6 +913,9 @@ impl Handshake {
         let (receiver_index, rest) = rest.split_at_mut(4);
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_nothing, _) = rest.split_at_mut(16);
+        // CG: The response also has 2 additional fields so both sides can authenticate each other
+        let (rodtid, _) = rest.split_at_mut(64);
+        let (rodtid_signature, _) = rest.split_at_mut(64);
 
         // responder.ephemeral_private = DH_GENERATE()
         let ephemeral_private = x25519::ReusableSecret::random_from_rng(OsRng);

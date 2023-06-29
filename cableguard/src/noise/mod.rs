@@ -83,8 +83,9 @@ const HANDSHAKE_RESP: MessageType = 2;
 const COOKIE_REPLY: MessageType = 3;
 const DATA: MessageType = 4;
 
-const HANDSHAKE_INIT_SZ: usize = 148;
-const HANDSHAKE_RESP_SZ: usize = 92;
+// CG: These sizes need to be increased by 128 bytes to accommodate for the rodtid and signature
+const HANDSHAKE_INIT_SZ: usize = 148+128;
+const HANDSHAKE_RESP_SZ: usize = 92+128;
 const COOKIE_REPLY_SZ: usize = 64;
 const DATA_OVERHEAD_SZ: usize = 32;
 
@@ -92,8 +93,12 @@ const DATA_OVERHEAD_SZ: usize = 32;
 pub struct HandshakeInit<'a> {
     sender_idx: u32,
     unencrypted_ephemeral: &'a [u8; 32],
+    // CG: It is entirely possible that these parameters go her and not in NoiseParams,
+    // or perhaps they need to be in both places
     encrypted_static: &'a [u8],
     encrypted_timestamp: &'a [u8],
+    rodtid: &'a [u8; KEY_LEN*2],
+    rodtid_signature: &'a [u8; KEY_LEN*2],
 }
 
 #[derive(Debug)]
@@ -102,6 +107,8 @@ pub struct HandshakeResponse<'a> {
     pub receiver_idx: u32,
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_nothing: &'a [u8],
+    rodtid: &'a [u8; KEY_LEN*2],
+    rodtid_signature: &'a [u8; KEY_LEN*2],
 }
 
 #[derive(Debug)]
@@ -138,19 +145,38 @@ impl Tunn {
         let packet_type = u32::from_le_bytes(src[0..4].try_into().unwrap());
 
         Ok(match (packet_type, src.len()) {
-            (HANDSHAKE_INIT, HANDSHAKE_INIT_SZ) => Packet::HandshakeInit(HandshakeInit {
-                sender_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()),
-                unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[8..40])
+                (HANDSHAKE_INIT, HANDSHAKE_INIT_SZ) => Packet::HandshakeInit(HandshakeInit {
+                //    u32 sender_index
+                //    u8 unencrypted_ephemeral[32]
+                //    u8 encrypted_static[AEAD_LEN(32)]
+                //    u8 encrypted_timestamp[AEAD_LEN(12)]
+                //} TOTAL SIZE WAS 148 (with MAC), now plus 128
+                sender_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()), // SIZE u32 = 4 times 8, 8-4 = 4 bytes
+                unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[8..40]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("length already checked above"),
-                encrypted_static: &src[40..88],
-                encrypted_timestamp: &src[88..116],
-            }),
-            (HANDSHAKE_RESP, HANDSHAKE_RESP_SZ) => Packet::HandshakeResponse(HandshakeResponse {
-                sender_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()),
-                receiver_idx: u32::from_le_bytes(src[8..12].try_into().unwrap()),
-                unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44])
+                encrypted_static: &src[40..88], // SIZE u8;32, 88-40 = 48 bytes, seems too big for the spec (32)
+                encrypted_timestamp: &src[88..116], // SIZE u8;12, 116-88 = 28 bytes, seems too big for the spec (12)
+                rodtid: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[116..180])
+                    .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
+                rodtid_signature: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[180..244])
+                    .expect("length already checked above"), // SIZE u8;64, 244-180 = 64 bytes
+                }),
+                (HANDSHAKE_RESP, HANDSHAKE_RESP_SZ) => Packet::HandshakeResponse(HandshakeResponse {
+                //    u32 sender_index
+                //    u32 receiver_index
+                //    u8 unencrypted_ephemeral[32]
+                //    u8 encrypted_nothing[AEAD_LEN(0)]
+                //} TOTAL SIZE WAS 92 (with MAC), now plus 128
+                sender_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()), // SIZE u32 = 4 times 8, 8-4 = 4 bytes
+                receiver_idx: u32::from_le_bytes(src[8..12].try_into().unwrap()), // SIZE u32 = 4 times 8, 12-8 = 4 bytes
+                unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("length already checked above"),
-                encrypted_nothing: &src[44..60],
+                encrypted_nothing: &src[44..60], // SIZE 60-44 = 16 bytes
+                // CG: THIS HERE N
+                rodtid: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[60..124])
+                    .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
+                rodtid_signature: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[124..188])
+                    .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
             }),
             (COOKIE_REPLY, COOKIE_REPLY_SZ) => Packet::PacketCookieReply(PacketCookieReply {
                 receiver_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()),
