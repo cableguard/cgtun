@@ -537,6 +537,7 @@ fn api_set_peer(
     let mut keepalive = None;
     let mut clone_peer_publickey_public_key = peer_publickey_public_key;
     let mut preshared_key = None;
+    // The following two parameters are not really used and are there just to keep several update_peer functions variable similar
     let rodtid = None;
     let rodtid_signature = None;
     let mut allowed_ips: Vec<AllowedIP> = vec![];

@@ -245,7 +245,6 @@ impl Tunn {
                 peer_static_public,
                 index << 8,
                 preshared_key,
-                // CG: THIS HERE NOW
                 peer_rodtid,
                 peer_rodtid_signature,
             )
