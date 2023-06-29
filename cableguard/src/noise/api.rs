@@ -89,7 +89,7 @@ pub fn nearorg_rpc_tokens_for_owner(
 ) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc.".to_string() + &xnet + "near.org";
-    tracing::info!("Debugging: Is this testnet? {}",xnet);
+    tracing::debug!("Debugging: Is this testnet? {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -147,22 +147,22 @@ pub fn nearorg_rpc_tokens_for_owner(
     
     if let Some(rodt) = result_iter.next() {
         for rodt in result_struct {
-            tracing::info!("token_id: {}", rodt.token_id);
-            tracing::info!("owner_id: {}", rodt.owner_id);
-            tracing::info!("title: {}", rodt.metadata.title);
-            tracing::info!("description: {}", rodt.metadata.description);
-            tracing::info!("notafter: {}", rodt.metadata.notafter);
-            tracing::info!("notbefore: {}", rodt.metadata.notbefore);
+            tracing::debug!("token_id: {}", rodt.token_id);
+            tracing::debug!("owner_id: {}", rodt.owner_id);
+            tracing::debug!("title: {}", rodt.metadata.title);
+            tracing::debug!("description: {}", rodt.metadata.description);
+            tracing::debug!("notafter: {}", rodt.metadata.notafter);
+            tracing::debug!("notbefore: {}", rodt.metadata.notbefore);
             // CG: Listen port
-            tracing::info!("cidrblock: {}", rodt.metadata.cidrblock);
-            tracing::info!("dns: {}", rodt.metadata.dns);
-            tracing::info!("postup: {}", rodt.metadata.postup);
-            tracing::info!("postdown: {}", rodt.metadata.postdown);
-            tracing::info!("allowedips: {}", rodt.metadata.allowedips);
-            tracing::info!("endpoint: {}", rodt.metadata.endpoint);
-            tracing::info!("authornftcontractid: {}", rodt.metadata.authornftcontractid);
-            tracing::info!("authorsignature: {}", rodt.metadata.authorsignature);
-            tracing::info!("kbpersecond: {}", rodt.metadata.kbpersecond);
+            tracing::debug!("cidrblock: {}", rodt.metadata.cidrblock);
+            tracing::debug!("dns: {}", rodt.metadata.dns);
+            tracing::debug!("postup: {}", rodt.metadata.postup);
+            tracing::debug!("postdown: {}", rodt.metadata.postdown);
+            tracing::debug!("allowedips: {}", rodt.metadata.allowedips);
+            tracing::debug!("endpoint: {}", rodt.metadata.endpoint);
+            tracing::debug!("authornftcontractid: {}", rodt.metadata.authornftcontractid);
+            tracing::debug!("authorsignature: {}", rodt.metadata.authorsignature);
+            tracing::debug!("kbpersecond: {}", rodt.metadata.kbpersecond);
         }
      // Return the first Rodt instance as the result
         return Ok(rodt.clone());
@@ -180,7 +180,7 @@ pub fn nearorg_rpc_token(
 ) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc.".to_string() + &xnet + "near.org";
-    tracing::info!("Debugging: Is this testnet? {}",xnet);
+    tracing::debug!("Debugging: Is this testnet? {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -229,7 +229,7 @@ pub fn nearorg_rpc_state(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc.".to_string() + &xnet + "near.org";
-    tracing::info!("Debugging: Is this testnet? {}",xnet);
+    tracing::debug!("Debugging: Is this testnet? {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -473,7 +473,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 let own_static_string_private_key = format!("{:02X?}", own_static_hex_private_key);
                                 // Dumping the private key that is associated with the device in HEX format
                                 // let own_static_b64_private_key = hex_to_base64(&own_static_string_private_key);
-                                tracing::info!(message = "Debugging:Private_key FN api_set: {}",own_static_string_private_key);
+                                tracing::debug!(message = "Debugging:Private_key FN api_set: {}",own_static_string_private_key);
                                 // CG: Does this call need to read the key from the rodt?
                                 device.set_key_pair(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
                             }
@@ -537,8 +537,9 @@ fn api_set_peer(
     let mut keepalive = None;
     let mut clone_peer_publickey_public_key = peer_publickey_public_key;
     let mut preshared_key = None;
-    let mut rodtid = None;
-    let mut rodtid_signature = None;
+    // The following two parameters are not really used and are there just to keep several update_peer functions variable similar
+    let rodtid = None;
+    let rodtid_signature = None;
     let mut allowed_ips: Vec<AllowedIP> = vec![];
     while readerbufferdevice.read_line(&mut cmd).is_ok() {
         cmd.pop(); // remove newline if any
