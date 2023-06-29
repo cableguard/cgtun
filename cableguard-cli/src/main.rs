@@ -140,7 +140,7 @@ fn main() {
     // Initialize a RODT object
     let rodt: Rodt;
     
-    println!("ROTD Directory: {}", "NEAR.ORG");
+    println!("RODT Directory: {}", "NEAR.ORG");
     println!("Operating in network: {}", xnet);
     println!("Smart Contract Account in Base58: {}", SMART_CONTRACT);
     println!("RODT owner Account ID in Hex: {}", account_id);

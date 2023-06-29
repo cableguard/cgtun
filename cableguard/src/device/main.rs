@@ -140,7 +140,7 @@ fn main() {
     // Initialize a RODT object
     let rodt: Rodt;
     
-    println!("ROTD Directory: {}", "NEAR.ORG");
+    println!("RODT Directory: {}", "NEAR.ORG");
     println!("Operating in network: {}", xnet);
     println!("Smart Contract Account in Base58: {}", SMART_CONTRACT);
     println!("RODT owner Account ID in Hex: {}", account_id);
@@ -247,7 +247,7 @@ fn main() {
     
         // Start the daemon process
         match daemonize.start() {
-            Ok(_) => rodtid!("CableGuard started successfully"),
+            Ok(_) => tracing::info!("CableGuard started successfully"),
             Err(e) => {
                 tracing::error!(error = ?e);
                 exit(1);
@@ -298,7 +298,7 @@ fn main() {
     sock1.send(&[1]).unwrap();
     drop(sock1);
     
-    rodtid!("CableGuard will hand over to TUN handle");
+    tracing::info!("CableGuard will hand over to TUN handle");
     
     // Wait for the device handle to finish processing
     device_handle.wait();    
