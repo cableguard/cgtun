@@ -146,6 +146,7 @@ pub fn nearorg_rpc_tokens_for_owner(
     };
     
     if let Some(rodt) = result_iter.next() {
+        // CG: I don't understand what this is for
         for rodt in result_struct {
             tracing::debug!("token_id: {}", rodt.token_id);
             tracing::debug!("owner_id: {}", rodt.owner_id);
@@ -153,7 +154,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::debug!("description: {}", rodt.metadata.description);
             tracing::debug!("notafter: {}", rodt.metadata.notafter);
             tracing::debug!("notbefore: {}", rodt.metadata.notbefore);
-            // CG: Listen port
+            // CG: Add listen port
             tracing::debug!("cidrblock: {}", rodt.metadata.cidrblock);
             tracing::debug!("dns: {}", rodt.metadata.dns);
             tracing::debug!("postup: {}", rodt.metadata.postup);
@@ -467,6 +468,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                             Ok(own_static_bytes_key_pair) => {
                                 let own_static_hex_private_key = serialization::keybytes_to_hex_string(&own_static_bytes_key_pair);
                                 let own_static_string_private_key = format!("{:02X?}", own_static_hex_private_key);
+                                // CG: Do we need to display this private key?
                                 // Dumping the private key that is associated with the device in HEX format
                                 // let own_static_b64_private_key = hex_to_base64(&own_static_string_private_key);
                                 tracing::debug!(message = "Debugging:Private_key FN api_set: {}",own_static_string_private_key);

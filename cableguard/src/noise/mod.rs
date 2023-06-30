@@ -83,7 +83,7 @@ const HANDSHAKE_RESP: MessageType = 2;
 const COOKIE_REPLY: MessageType = 3;
 const DATA: MessageType = 4;
 
-// CG: These sizes are increased by 128 bytes to accommodate for the rodtid and signature
+// CG: These sizes are increased by 128 bytes to accommodate for the rodtid and signature of the same
 const HANDSHAKE_INIT_SZ: usize = 148+128;
 const HANDSHAKE_RESP_SZ: usize = 92+128;
 const COOKIE_REPLY_SZ: usize = 64;

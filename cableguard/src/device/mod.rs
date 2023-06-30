@@ -470,6 +470,7 @@ impl Device {
         }
 
         // CG: Proactively setting the Static Private Key for the device
+        // CG: May be worth it move this to DeviceConfig impl new
         device.set_key_pair(x25519::StaticSecret::from(device.config.rodt_private_key));
 
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {
@@ -493,18 +494,17 @@ impl Device {
                     std::process::exit(1);        }
             }
         }
-        // CG: rando just to prime the peers list
-        // Peers will be added via Cableguard AUTH dinamically
+        // CG: Prime the peers list with a fix vale to use it during handshaker
         let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
         let randopublic_key: PublicKey = (&randoprivate_key).into();   
         let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
         let rando_own_string_public_key: &str = &hex::encode(rando_public_key_u832);
         device.api_set_internal("set_peer_public_key", &rando_own_string_public_key);
 
-            // CG: Find the peer and check if
-            // IsTrusted(rodt.metadata.authornftcontractid);
-            // ,checking if the Issuer smart contract has published a TXT 
-            // entry with the token_id of the server
+        // CG: Find the peer and check if
+        // IsTrusted(rodt.metadata.authornftcontractid);
+        // ,checking if the Issuer smart contract has published a TXT 
+        // entry with the token_id of the server
 
         Ok(device)
     }
@@ -1072,10 +1072,6 @@ impl Device {
         // CG: Add IPv6
         //   let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
         //   let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
-
-        // CG: Leaving setting the rodt_signature for later
-        // let rodtid = &self.config.rodt.owner_id;
-        // let rodtid_signature = &self.config.rodt.owner_id;
 
         // Create or update peer
         allowed_ips.push(allowed_ip);

@@ -518,7 +518,7 @@ impl Handshake {
     self.params.set_static_private(private_key, public_key)
     }
 
-    // CG: This is where we receive the token_id, so
+    // CG: NOW HERE THIS This is where we receive the token_id, so
     // we can cross check with the blockchain that there is a match
     // between token_id declared and controlling peer public key
     // also we need to check one of:

@@ -146,7 +146,7 @@ fn main() {
     println!("RODT owner Account ID in Hex: {}", account_id);
 
     // Perform a RPC call with it and obtain the token_id
-    // CG: Show a warning if the account is not primed?
+    // CG: Show a warning if the account is not primed or the account has not RODT
     match nearorg_rpc_state(xnet, smart_contract, account_id) {
         Ok(result) => { result
         }
