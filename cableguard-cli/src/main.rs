@@ -182,7 +182,7 @@ fn main() {
     assert_eq!(own_static_bytes_private_ed25519_key.len(), 64);
 
     // Create a X25519 private key from a Private Key Ed25519 of 64 bytes
-    let own_staticsecret_private_x25519_key = ed2x_private_key_bytes(own_static_bytes_private_ed25519_key.try_into().unwrap());
+    let own_staticsecret_private_x25519_key = ed2x_private_key_bytes(own_static_bytes_private_ed25519_key.clone().try_into().unwrap());
     let own_static_bytes_private_x25519_key = own_staticsecret_private_x25519_key.as_bytes();  
     let own_static_b64_private_x25519_key = hex_to_base64(&own_static_bytes_private_x25519_key);
     println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",own_static_b64_private_x25519_key);
