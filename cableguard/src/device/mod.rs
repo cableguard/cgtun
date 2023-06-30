@@ -19,7 +19,7 @@ use std::thread;
 use std::thread::JoinHandle;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
-use hex::{encode,ToHex,FromHex};
+use hex::{encode,ToHex};
 use allowed_ips::AllowedIps;
 use api::nearorg_rpc_token;
 use parking_lot::Mutex;
@@ -367,10 +367,7 @@ impl Device {
         let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Invalid private key bytes");
 
-        let own_bytes_token_id = Vec::from_hex(&self.config.rodt.token_id)
-            .expect("Invalid hexadecimal string");
-
-        let rodtid_signature = own_keypair_ed25519_private_key.sign(&own_bytes_token_id);
+        let rodtid_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
         // CG: signature verification
         // let is_verified = keypair.verify(rodtid, &rodtid_signature);
 
