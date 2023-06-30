@@ -365,19 +365,17 @@ pub fn parse_handshake_anon(
         &hash,
     )?;
 
-    // Convert the keys to strings
-    let own_static_string_private_key = static_private.to_bytes().encode_hex::<String>();
-    let own_static_string_public_key = static_public.as_bytes().encode_hex::<String>();
-    let peer_ephemeral_string_public_key = peer_ephemeral_public.as_bytes().encode_hex::<String>();
-    let peer_static_string_public_key = peer_static_public.encode_hex::<String>();
-
-    // Display the converted values in the trace
-    tracing::debug!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
-        own_static_string_private_key,
-        own_static_string_public_key,
-        peer_ephemeral_string_public_key,
-        peer_static_string_public_key
-    );
+    // CG: Muting display the keys 
+    // let own_static_string_private_key = static_private.to_bytes().encode_hex::<String>();
+    // let own_static_string_public_key = static_public.as_bytes().encode_hex::<String>();
+    // let peer_ephemeral_string_public_key = peer_ephemeral_public.as_bytes().encode_hex::<String>();
+    // let peer_static_string_public_key = peer_static_public.encode_hex::<String>();
+    // tracing::debug!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
+    //    own_static_string_private_key,
+    //    own_static_string_public_key,
+    //    peer_ephemeral_string_public_key,
+    //    peer_static_string_public_key
+    //);
 
     Ok(HalfHandshake {
         peer_index,
@@ -581,7 +579,8 @@ impl Handshake {
             &hash,
         )?;
 
-        // CG: This is where we compare if we have seen this peer public key
+        // CG: This is where we compare if we have seen this peer public key,
+        // peer public key is set to a constant as we don't have a list of peers ahead of time
         // This will be spot where to check digital signatures and decide on trust
         ring::constant_time::verify_slices_are_equal(
             self.params.peer_static_public.as_bytes(),

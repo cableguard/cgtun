@@ -367,9 +367,6 @@ impl Tunn {
 
         let (packet, session) = self.handshake.receive_handshake_initialization(p, dst)?;
 
-        // CG: I need to tell peers from sessions, is it the same thing?
-        // CG: can I have sessions without having peers?
-        // Store new session in ring buffer
         let index = session.local_index();
         self.sessions[index % N_SESSIONS] = Some(session);
 

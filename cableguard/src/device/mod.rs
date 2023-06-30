@@ -1062,8 +1062,8 @@ impl Device {
         //   let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
 
         // CG: Leaving setting the rodt_signature for later
-        let rodtid = &self.config.rodt.owner_id;
-        let rodtid_signature = &self.config.rodt.owner_id;
+        // let rodtid = &self.config.rodt.owner_id;
+        // let rodtid_signature = &self.config.rodt.owner_id;
 
         // Create or update peer
         allowed_ips.push(allowed_ip);
