@@ -83,7 +83,7 @@ const HANDSHAKE_RESP: MessageType = 2;
 const COOKIE_REPLY: MessageType = 3;
 const DATA: MessageType = 4;
 
-// CG: These sizes need to be increased by 128 bytes to accommodate for the rodtid and signature
+// CG: These sizes are increased by 128 bytes to accommodate for the rodtid and signature
 const HANDSHAKE_INIT_SZ: usize = 148+128;
 const HANDSHAKE_RESP_SZ: usize = 92+128;
 const COOKIE_REPLY_SZ: usize = 64;
@@ -93,8 +93,6 @@ const DATA_OVERHEAD_SZ: usize = 32;
 pub struct HandshakeInit<'a> {
     sender_idx: u32,
     unencrypted_ephemeral: &'a [u8; 32],
-    // CG: It is entirely possible that these parameters go her and not in NoiseParams,
-    // or perhaps they need to be in both places
     encrypted_static: &'a [u8],
     encrypted_timestamp: &'a [u8],
     rodtid: &'a [u8; KEY_LEN*2],
@@ -172,7 +170,6 @@ impl Tunn {
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("length already checked above"),
                 encrypted_nothing: &src[44..60], // SIZE 60-44 = 16 bytes
-                // CG: THIS HERE N
                 rodtid: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[60..124])
                     .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
                 rodtid_signature: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[124..188])
@@ -667,9 +664,6 @@ mod tests {
         (my_tun, their_tun)
     }
     
-    
-    // CG: token_id we need to modify how the handshake initiation is created
-    // and match it on the receiving end
     fn create_handshake_init(tun: &mut Tunn) -> Vec<u8> {
         let mut dst = vec![0u8; 2048];
         let handshake_init = tun.format_handshake_initiation(&mut dst, false);
