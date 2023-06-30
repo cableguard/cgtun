@@ -638,6 +638,10 @@ impl Handshake {
             _ => return Err(WireGuardError::UnexpectedPacket),
         };
 
+        // CG: For the time being we just display the extra parameters exchanged
+        tracing::debug!("Debugging: ROTID {:?}",packet.rodtid);
+        tracing::debug!("Debugging: Signature of the ROTID {:?}",packet.rodtid_signature);
+
         let peer_index = packet.sender_idx;
         let local_index = state.local_index;
 
@@ -908,6 +912,10 @@ impl Handshake {
         // CG: The response also has 2 additional fields so both sides can authenticate each other
         let (rodtid, rest) = rest.split_at_mut(64);
         let (rodtid_signature, _) = rest.split_at_mut(64);
+
+        // CG: For the time being we just display the extra parameters exchanged
+        tracing::debug!("Debugging: ROTID {:?}",rodtid);
+        tracing::debug!("Debugging: Signature of the ROTID {:?}",rodtid_signature);
 
         // responder.ephemeral_private = DH_GENERATE()
         let ephemeral_private = x25519::ReusableSecret::random_from_rng(OsRng);

@@ -19,8 +19,7 @@ use std::thread;
 use std::thread::JoinHandle;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
-use hex::{encode};
-use hex::ToHex; 
+use hex::{encode,ToHex,FromHex};
 use allowed_ips::AllowedIps;
 use api::nearorg_rpc_token;
 use parking_lot::Mutex;
@@ -39,12 +38,10 @@ use crate::noise::errors::WireGuardError;
 use crate::noise::handshake::parse_handshake_anon;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
+use ed25519_dalek::{Keypair,Signer};
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
-
-// FROM HANDSHAKE.RS
-const KEY_LEN: usize = 32;
 
 #[cfg(test)]
 mod integration_tests;
@@ -131,6 +128,7 @@ pub struct DeviceConfig {
     #[cfg(target_os = "linux")]
     pub uapi_fd: i32,
     pub rodt: Rodt,
+    pub own_bytes_ed25519_private_key: [u8;64],
     pub rodt_private_key:[u8;32],
     pub rodt_public_key:[u8;32],
 }
@@ -145,6 +143,7 @@ impl Default for DeviceConfig {
             #[cfg(target_os = "linux")]
             uapi_fd: -1,
             rodt: Rodt::default(),
+            own_bytes_ed25519_private_key: [0;64],
             rodt_private_key:[0;32],
             rodt_public_key:[0;32],
         }
@@ -363,13 +362,24 @@ impl Device {
         //     own_string_private_key,
         //     own_string_public_key
         // );
-    
+
+        // Creating the signature of the rodtid
+        let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
+        .expect("Invalid private key bytes");
+
+        let own_bytes_token_id = Vec::from_hex(&self.config.rodt.token_id)
+            .expect("Invalid hexadecimal string");
+
+        let rodtid_signature = own_keypair_ed25519_private_key.sign(&own_bytes_token_id);
+        // CG: signature verification
+        // let is_verified = keypair.verify(rodtid, &rodtid_signature);
+
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Passing on only the X25519 private key
             peer_publickey_public_key,
             preshared_key,
             hex_to_u864_array(self.config.rodt.owner_id.clone()),
-            hex_to_u864_array(self.config.rodt.owner_id.clone()),
+            rodtid_signature.to_bytes(),
             keepalive,
             next_index,
             None,
