@@ -187,8 +187,9 @@ impl DeviceHandle {
             // port = 0 when the it is a random choice of port
             Ok(port) => match wg_interface.open_listen_socket(port) {
                 Ok(()) => {
-                    tracing::debug!("Debugging:Port FN api_set_internal: {}", port);
-                    tracing::debug!("Debugging:Rodt Port  FN api_set_internal: {}", config.rodt.metadata.listenport);
+                    // CG: Probably this is now unnecessary
+                    // tracing::debug!("Debugging:Port FN api_set_internal: {}", port);
+                    // tracing::debug!("Debugging:Rodt Port  FN api_set_internal: {}", config.rodt.metadata.listenport);
                 }
                 Err(_) => ()
             }
@@ -478,7 +479,8 @@ impl Device {
             tracing::debug!("Debugging: This is a client");    
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.rodt.metadata.authornftcontractid + "\"}";
-                tracing::debug!("account idargs: {:?}", account_idargs);
+                // CG: Reactivate this if necessary to debug the RPC call
+                // tracing::debug!("account idargs: {:?}", account_idargs);
             match nearorg_rpc_token(Self::xnet,
                 Self::smart_contract,
                 "nft_token",&account_idargs) {
@@ -556,17 +558,20 @@ impl Device {
 
         // CG: Set private_key from the RODT private key
         let rodt_string_private_key: &str = &hex::encode(self.config.rodt_private_key);
-        println!("Debugging: RODT Private Key, fn set_key_pair: {}", rodt_string_private_key);
+        // CG: Don't show the private key
+        // println!("Debugging: RODT Private Key, fn set_key_pair: {}", rodt_string_private_key);
 
         let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
 
         let own_bytes_public_key = own_publickey_public_key.to_bytes();
         let own_string_public_key = encode(&own_bytes_public_key);
-        println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key_pair: {}", own_string_public_key);
+        // CG: I don't think we need this anymore
+        // println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key_pair: {}", own_string_public_key);
         
         let own_bytes_private_key = own_staticsecret_private_key.to_bytes();
         let own_string_private_key = encode(&own_bytes_private_key);
-        println!("{} {}","Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key_pair: {}", own_string_private_key);
+        // CG: Don't show the private key
+        // println!("{} {}","Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key_pair: {}", own_string_private_key);
 
         // CG: We are using the input value of the function instead of value from the RODT
         let own_key_pair = Some((own_staticsecret_private_key.clone(), own_publickey_public_key));

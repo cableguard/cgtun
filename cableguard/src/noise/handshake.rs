@@ -580,7 +580,7 @@ impl Handshake {
         )?;
 
         // CG: This is where we compare if we have seen this peer public key,
-        // peer public key is set to a constant as we don't have a list of peers ahead of time
+        // NOW HERE THIS peer public key is set to a constant as we don't have a list of peers ahead of time
         // This will be spot where to check digital signatures and decide on trust
         ring::constant_time::verify_slices_are_equal(
             self.params.peer_static_public.as_bytes(),

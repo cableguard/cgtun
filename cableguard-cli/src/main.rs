@@ -140,8 +140,8 @@ fn main() {
     // Initialize a RODT object
     let rodt: Rodt;
     
-    println!("RODT Directory: {}", "NEAR.ORG");
-    println!("Operating in network: {}", xnet);
+    println!("RODT Blockchain Directory: {}", "NEAR.ORG");
+    println!("Blockchain Directory Network: {}", xnet);
     println!("Smart Contract Account in Base58: {}", SMART_CONTRACT);
     println!("RODT owner Account ID in Hex: {}", account_id);
 
@@ -172,7 +172,7 @@ fn main() {
 
     // Create an Interface Name derived from the token_id ULID,
     // with a max length of 15 characters, by default utun+last 11 of ULID for operating systems compatibility, 
-    let tun_name = format!("utun{}", &rodt.token_id[rodt.token_id.len() - 11..]);
+    let tun_name = format!("utun{}", &rodt.token_id[rodt.token_id.len() - 11..]).to_lowercase();
     println!("TUN Name: {}", tun_name);
 
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
@@ -185,7 +185,8 @@ fn main() {
     let own_staticsecret_private_x25519_key = ed2x_private_key_bytes(own_static_bytes_private_ed25519_key.clone().try_into().unwrap());
     let own_static_bytes_private_x25519_key = own_staticsecret_private_x25519_key.as_bytes();  
     let own_static_b64_private_x25519_key = hex_to_base64(&own_static_bytes_private_x25519_key);
-    println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",own_static_b64_private_x25519_key);
+    // CG: Don't show the private key
+    // println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",own_static_b64_private_x25519_key);
 
     // Generate the X25519 public key from the X25519 private key of 32 bytes
     let own_static_bytes_public_x25519_key = skx2pkx(own_staticsecret_private_x25519_key.clone());
@@ -198,7 +199,7 @@ fn main() {
     
     let _guard;
     
-    println!("To create or display available NEAR.ORG accounts use: \"./wallet/rodtwallet.sh\"");
+    println!("Help: To create or display available RODT Blockchain Directory accounts use: \"./wallet/rodtwallet.sh\"");
 
     if background {
         // Running in background mode
