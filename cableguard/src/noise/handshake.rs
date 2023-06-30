@@ -232,26 +232,19 @@ impl Tai64N {
 
 // Parameters used by the noise protocol
 struct NoiseParams {
-    // Our static public key
     static_public: x25519::PublicKey,
-    // Our static private key
     static_private: x25519::StaticSecret,
-    // CG: We don't know the Static public key of the other party
-    // before initiating handshake. This can affect handshake states
-    // It is possible that we need one round to add the peer
-    // to the peer index
+    // CG: As we don't know the Static public key of the other party
+    // before initiating handshake it needs to be set to a constant
     peer_static_public: x25519::PublicKey,
     static_shared: x25519::SharedSecret,
-    // A pre-computation of HASH("mac1----", peer_static_public) for this peer
     sending_mac1_key: [u8; KEY_LEN],
-    // An optional preshared key
     preshared_key: Option<[u8; KEY_LEN]>,
     // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
-    // This needs a known length, we can use 64 (KEY_LEN*2) or 128 (KEY_LEN*4) as a limit to accomodate a full RODT ID
+    // This needs a known length, 64 (KEY_LEN*2) as a limit to accomodate a full RODT ID
     rodtid: [u8; KEY_LEN*2],
     // CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
     rodtid_signature: [u8; KEY_LEN*2],
-    // A shared key = DH(static_private, peer_static_public)
 }
 
 impl std::fmt::Debug for NoiseParams {
@@ -403,10 +396,8 @@ impl NoiseParams {
         rodtid_signature: [u8; KEY_LEN*2],
     ) -> Result<NoiseParams, WireGuardError> {
 
-        // CG: This is an obstable, as static_private is known
-        // but peer_static_public is not known unless it is the server's
-        // It is not ideal to prime the clients with the server public key
-        // as it could change
+        // CG: As peer_static_public is not known ahead of time 
+        // we need to set it as a constant to keep the same handshaking mechanism
         let static_shared = static_private.diffie_hellman(&peer_static_public);
 
         let initial_sending_mac_key = b2s_hash(LABEL_MAC1, peer_static_public.as_bytes());
@@ -591,6 +582,7 @@ impl Handshake {
         )?;
 
         // CG: This is where we compare if we have seen this peer public key
+        // This will be spot where to check digital signatures and decide on trust
         ring::constant_time::verify_slices_are_equal(
             self.params.peer_static_public.as_bytes(),
             &peer_static_public_decrypted,
@@ -783,11 +775,6 @@ impl Handshake {
         Ok(dst)
     }
 
-    // CG: This is where we need to plug additional fields:
-    // One is the RODT ID
-    // The other is the digital signature of the RODT ID
-    // On the opposite side of initialization we can check possession of the RODT ID
-    // and accept the declared public key
     pub(super) fn format_handshake_initiation<'a>(
         &mut self,
         dst: &'a mut [u8],
@@ -801,11 +788,9 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_static, rest) = rest.split_at_mut(32 + 16);
         let (encrypted_timestamp, rest) = rest.split_at_mut(12 + 16);
-        // CG: Two fields have been added to the initilization packet, with 64 bytes size each
         let (rodtid, rest) = rest.split_at_mut(64);
         let (rodtid_signature, _) = rest.split_at_mut(64);
 
-        // CG: NOW HERE, building the rest of the packet with the modified structure
         let local_index = self.inc_index();
 
         // initiator.chaining_key = HASH(CONSTRUCTION)

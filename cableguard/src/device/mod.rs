@@ -184,10 +184,8 @@ impl DeviceHandle {
     pub fn new(name: &str, config: &DeviceConfig) -> Result<DeviceHandle, Error> {
         let n_threads = config.n_threads;
         let mut wg_interface = Device::new(name, config.clone())?;
-        // CG: Server probable should start listening in 
-        // specific por, 0 is the correct value if we want to listen on a random port
-
         match config.rodt.metadata.listenport.parse::<u16>() {
+            // port = 0 when the it is a random choice of port
             Ok(port) => match wg_interface.open_listen_socket(port) {
                 Ok(()) => {
                     tracing::debug!("Debugging:Port FN api_set_internal: {}", port);
@@ -338,7 +336,7 @@ impl Device {
         keepalive: Option<u16>,
         preshared_key: Option<[u8; 32]>,
     ) {
-        //CG: If it wasn't for keeping compability, I would remove the silly logic
+        // CG: If it wasn't for keeping compability, I would remove the silly logic
         if remove {
             // Completely remove a peer
             return self.remove_peer(&peer_publickey_public_key);
@@ -356,15 +354,15 @@ impl Device {
         .as_ref()
         .expect("Self private key must be set before adding peers");
     
-        // CG: Snooping the keys 
-        let peer_string_public_key = peer_publickey_public_key.encode_hex::<String>();
-        let own_string_private_key = device_key_pair.0.encode_hex::<String>();
-        let own_string_public_key = device_key_pair.1.encode_hex::<String>();
-        tracing::debug!("Debugging:peer_publickey_public_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
-            peer_string_public_key,
-            own_string_private_key,
-            own_string_public_key
-        );
+        // CG: Muting key snooping
+        // let peer_string_public_key = peer_publickey_public_key.encode_hex::<String>();
+        // let own_string_private_key = device_key_pair.0.encode_hex::<String>();
+        // let own_string_public_key = device_key_pair.1.encode_hex::<String>();
+        // tracing::debug!("Debugging:peer_publickey_public_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
+        //     peer_string_public_key,
+        //     own_string_private_key,
+        //     own_string_public_key
+        // );
     
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Passing on only the X25519 private key
@@ -449,7 +447,6 @@ impl Device {
         // CG: We are adding here addtional device building:
         // add IPs, set private key, add initial peer
         // We are only leaving out bringing the device UP
-        // CG: Adding an ip to the interface with "sudo ip addr add cidrblock dev tun_name"
         let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ name;
         let output = Command::new("bash")
             .arg("-c")
@@ -467,15 +464,10 @@ impl Device {
         // CG: Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.rodt_private_key));
 
-        // CG: We set a fictional peer to be ready for handshakes
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {
             tracing::debug!("Debugging: This is a server");
         }
         else{
-            // CG: If we are a client, find the server and check if
-            // IsTrusted(rodt.metadata.authornftcontractid);
-            // ,checking if the Issuer smart contract has published a TXT 
-            // entry with the token_id of the server
             tracing::debug!("Debugging: This is a client");    
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.rodt.metadata.authornftcontractid + "\"}";
@@ -499,6 +491,11 @@ impl Device {
         let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
         let rando_own_string_public_key: &str = &hex::encode(rando_public_key_u832);
         device.api_set_internal("set_peer_public_key", &rando_own_string_public_key);
+
+            // CG: Find the peer and check if
+            // IsTrusted(rodt.metadata.authornftcontractid);
+            // ,checking if the Issuer smart contract has published a TXT 
+            // entry with the token_id of the server
 
         Ok(device)
     }
@@ -550,11 +547,10 @@ impl Device {
     fn set_key_pair(&mut self, own_staticsecret_private_key: x25519::StaticSecret) {
         let mut bad_peers = vec![];
 
-        // CG: Set public_key with the RODT private key
+        // CG: Set private_key from the RODT private key
         let rodt_string_private_key: &str = &hex::encode(self.config.rodt_private_key);
         println!("Debugging: RODT Private Key, fn set_key_pair: {}", rodt_string_private_key);
 
-        // let own_publickey_public_key: x25519::PublicKey = (&own_staticsecret_private_key).into();
         let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
 
         let own_bytes_public_key = own_publickey_public_key.to_bytes();
@@ -982,32 +978,17 @@ impl Device {
         Ok(())
     }
 
-    // CG: This version of api_set operates internally, not talking to wg
+    // CG: This instance of api_set operates internally, not talking to wg
     pub fn api_set_internal(&mut self, option: &str, value: &str) {
-    // Check if both sides have all these properly configured to be able to connect
-    // with the Noise procotol that has not been modified yet
-    // Usage: wg set <interface>
-    // [private-key <file path>]
-    // [listen-port <port>]
-    // [fwmark <mark>] 
-    // [peer <base64 public key> [remove] 
-    // [preshared-key <file path>] 
-    // [endpoint <ip>:<port>] 
-    // [persistent-keepalive <interval seconds>]
-    // [allowed-ips <ip1>/<cidr1>[,<ip2>/<cidr2>]...] ]...
 
         match option {
-            // We can self-serve the private key from the input json wallet file
+            // CG: We can self-serve the private key from the input json wallet file
             // I think I can call set_key_pair with device.config.rodt_private_key
             "private_key" => match value.parse::<KeyBytes>() {
                 Ok(own_keybytes_private_key) => {
-                    // CG: When add private key from command line, this is how it goes it
-                    // CG: but this is not an option in user when using RODT, may be removed
-                let own_string_private_key = serialization::keybytes_to_hex_string(&own_keybytes_private_key);
-                let own_hex_private_key = format!("{:02X?}", own_string_private_key);
-                    // Dumping the private key that is associated with the device in HEX format
+                    let own_string_private_key = serialization::keybytes_to_hex_string(&own_keybytes_private_key);
+                    let own_hex_private_key = format!("{:02X?}", own_string_private_key);
                     tracing::debug!(message = "Debugging:Private_key FN api_set_internal: {}", own_hex_private_key);
-                    // This call needs to read the key from the rodt instead of key_bytes
                     self.set_key_pair(x25519::StaticSecret::from(own_keybytes_private_key.0))
                     }
                 Err(_) => return,
@@ -1040,8 +1021,6 @@ impl Device {
                       Err(_) => return,
                     },
             "set_peer_public_key" => match value.parse::<KeyBytes>() {
-                // CG: To research why serialization::keybytes_to_hex_string does not work here
-                // CG: This section is not very useful with RODT as peers are only added dinamically
                 Ok(peer_keybytes_key) => {
                     let peer_b58_public_key = encode(peer_keybytes_key.0);
                     tracing::debug!("Debugging: Peer Public Key FN api_set_internal {:?}", peer_b58_public_key);
@@ -1053,7 +1032,7 @@ impl Device {
                 },
               _ => return,     
             }
-    }
+        }
 
     fn api_set_peer_internal(&mut self, peer_publickey_public_key: x25519::PublicKey) {
     // cidrblock is allowed-ips
@@ -1067,26 +1046,24 @@ impl Device {
         let preshared_key = None;
         let mut allowed_ips: Vec<AllowedIP> = vec![];
 
-        // CG: Assigning IP config from rodt
         let ip: IpAddr = self.config.rodt.metadata.endpoint.parse().expect("Invalid IP address");
         let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Invalid port");
         let endpoint_listenport = SocketAddr::new(ip,port);      
-        println!("Setting Server IP and port {}", endpoint_listenport);        
+        println!("Setting Server IP and port {}", endpoint_listenport);     
+
         // Cidrblock is allowed_ip, it FAILS if the cidr format is not followed
         let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
         println!("Setting own assigned IP? {}", allowed_ip_str);
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
         println!("Setting allowed IP {:?}", allowed_ip);
-//            let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
-//            let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
 
-        // CG: Leaving setting the rodt for later
+        // CG: Add IPv6
+        //   let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
+        //   let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
+
+        // CG: Leaving setting the rodt_signature for later
         let rodtid = &self.config.rodt.owner_id;
         let rodtid_signature = &self.config.rodt.owner_id;
-        // let rodt_id_slice: &[u8] = self.config.rodt.token_id.as_bytes();
-        // let mut rodt_id: [u8; 64] = [0; 64];
-        // rodt_id[..rodt_id_slice.len()].copy_from_slice(rodt_id_slice);
-//        let rotidsignature
 
         // Create or update peer
         allowed_ips.push(allowed_ip);

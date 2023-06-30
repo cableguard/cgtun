@@ -153,7 +153,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::debug!("description: {}", rodt.metadata.description);
             tracing::debug!("notafter: {}", rodt.metadata.notafter);
             tracing::debug!("notbefore: {}", rodt.metadata.notbefore);
-            // CG: Listen port
+            // CG: Add listen port
             tracing::debug!("cidrblock: {}", rodt.metadata.cidrblock);
             tracing::debug!("dns: {}", rodt.metadata.dns);
             tracing::debug!("postup: {}", rodt.metadata.postup);
@@ -334,11 +334,7 @@ impl Device {
                 if readerbufferdevice.read_line(&mut cmd).is_ok() {
                     cmd.pop(); // pop the new line character
                     let status = match cmd.as_ref() {
-                        // Only two commands are legal according to the protocol, get=1 and set=1.
                         "get=1" => api_get(&mut writerbufferdevice, thisnetworkdevice),
-                        // CG: We are switching from api_set to api_set_internal 
-                        // This means we are not taking commands alone
-                        // from wg anymore, we are self-serving configuration
                         "set=1" => api_set(&mut readerbufferdevice, thisnetworkdevice),
                         _ => EIO,
                     };

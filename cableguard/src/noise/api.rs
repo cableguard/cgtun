@@ -336,9 +336,6 @@ impl Device {
                     let status = match cmd.as_ref() {
                         // Only two commands are legal according to the protocol, get=1 and set=1.
                         "get=1" => api_get(&mut writerbufferdevice, thisnetworkdevice),
-                        // CG: We are switching from api_set to api_set_internal 
-                        // This means we are not taking commands alone
-                        // from wg anymore, we are self-serving configuration
                         "set=1" => api_set(&mut readerbufferdevice, thisnetworkdevice),
                         _ => EIO,
                     };
@@ -352,7 +349,6 @@ impl Device {
                 Action::Continue // Indicates the worker thread should continue as normal
             }),
         )?;
-
         Ok(())
     }
 

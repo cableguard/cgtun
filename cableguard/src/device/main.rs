@@ -145,13 +145,12 @@ fn main() {
     println!("Smart Contract Account in Base58: {}", SMART_CONTRACT);
     println!("RODT owner Account ID in Hex: {}", account_id);
 
-    // Perform a RPC call with it and obtain the token_id
-    // CG: Show a warning if the account is not primed?
+    // CG: We have to show a warning if the account is not primed. To be tested
+    // Obtain the token_id with a RPC call
     match nearorg_rpc_state(xnet, smart_contract, account_id) {
         Ok(result) => { result
         }
         Err(err) => {
-            // CG: This is to be tested
             tracing::error!("Error: Account has no NEAR balance): {}", err);
             std::process::exit(1);
         }
