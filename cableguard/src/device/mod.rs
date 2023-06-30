@@ -303,8 +303,8 @@ impl Drop for DeviceHandle {
 
 impl Device {
     
-    const xnet:&str= BLOCKCHAIN_ENV;
-    const smart_contract:&str = SMART_CONTRACT;
+    const XNET:&str= BLOCKCHAIN_ENV;
+    const SMART_CONTRACT:&str = SMART_CONTRACT;
 
     fn next_index(&mut self) -> u32 {
         self.next_index.next()
@@ -463,10 +463,10 @@ impl Device {
             .expect("Failed to execute command");
         if output.status.success() {
             let _stdout = String::from_utf8_lossy(&output.stdout);
-            tracing::debug!("Debugging: Ip addr add command executed successfully:\n{}",device.config.rodt.metadata.cidrblock);
+            tracing::debug!("Debugging: Ip addr add command executed successfully: {}",device.config.rodt.metadata.cidrblock);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            tracing::debug!("Debugging: Ip addr add command failed to execute:\n{}", stderr);
+            tracing::debug!("Debugging: Ip addr add command failed to execute. {}", stderr);
         }
 
         // CG: Proactively setting the Static Private Key for the device
@@ -481,8 +481,8 @@ impl Device {
                 + &device.config.rodt.metadata.authornftcontractid + "\"}";
                 // CG: Reactivate this if necessary to debug the RPC call
                 // tracing::debug!("account idargs: {:?}", account_idargs);
-            match nearorg_rpc_token(Self::xnet,
-                Self::smart_contract,
+            match nearorg_rpc_token(Self::XNET,
+                Self::SMART_CONTRACT,
                 "nft_token",&account_idargs) {
                 Ok(result) => {
                     let server_rodt = result;
@@ -556,21 +556,21 @@ impl Device {
     fn set_key_pair(&mut self, own_staticsecret_private_key: x25519::StaticSecret) {
         let mut bad_peers = vec![];
 
-        // CG: Set private_key from the RODT private key
-        let rodt_string_private_key: &str = &hex::encode(self.config.rodt_private_key);
         // CG: Don't show the private key
+        // CG: Set private_key from the RODT private key
+        // let rodt_string_private_key: &str = &hex::encode(self.config.rodt_private_key);
         // println!("Debugging: RODT Private Key, fn set_key_pair: {}", rodt_string_private_key);
 
         let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
 
-        let own_bytes_public_key = own_publickey_public_key.to_bytes();
-        let own_string_public_key = encode(&own_bytes_public_key);
         // CG: I don't think we need this anymore
+        // let own_bytes_public_key = own_publickey_public_key.to_bytes();
+        // let own_string_public_key = encode(&own_bytes_public_key);
         // println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key_pair: {}", own_string_public_key);
-        
-        let own_bytes_private_key = own_staticsecret_private_key.to_bytes();
-        let own_string_private_key = encode(&own_bytes_private_key);
+
         // CG: Don't show the private key
+        // let own_bytes_private_key = own_staticsecret_private_key.to_bytes();
+        // let own_string_private_key = encode(&own_bytes_private_key);
         // println!("{} {}","Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key_pair: {}", own_string_private_key);
 
         // CG: We are using the input value of the function instead of value from the RODT
@@ -1061,13 +1061,13 @@ impl Device {
         let ip: IpAddr = self.config.rodt.metadata.endpoint.parse().expect("Invalid IP address");
         let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Invalid port");
         let endpoint_listenport = SocketAddr::new(ip,port);      
-        println!("Setting Server IP and port {}", endpoint_listenport);     
+        tracing:info!("Setting Server IP and port {}", endpoint_listenport);     
 
         // Cidrblock is allowed_ip, it FAILS if the cidr format is not followed
         let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
-        println!("Setting own assigned IP? {}", allowed_ip_str);
+        tracing:info!("Setting own assigned IP? {}", allowed_ip_str);
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
-        println!("Setting allowed IP {:?}", allowed_ip);
+        tracing:info!("Setting allowed IP {:?}", allowed_ip);
 
         // CG: Add IPv6
         //   let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
