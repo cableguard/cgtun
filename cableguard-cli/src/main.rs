@@ -260,7 +260,10 @@ fn main() {
             .with_max_level(log_level)
             .init();
     }
-    
+
+    let mut own_bytes_ed25519_private_key: [u8; 64] = [0; 64];
+    own_bytes_ed25519_private_key.copy_from_slice(&own_static_bytes_private_ed25519_key[..64]);
+
     // Configure the device with the RODT
     let config = DeviceConfig {
         n_threads,
@@ -270,8 +273,9 @@ fn main() {
         #[cfg(target_os = "linux")]
         use_multi_queue: !matches.is_present("disable-multi-queue"),
         rodt,
-        rodt_private_key:*own_static_bytes_private_x25519_key,
-        rodt_public_key:own_static_bytes_public_x25519_key,
+        own_bytes_ed25519_private_key,
+        rodt_private_key: *own_static_bytes_private_x25519_key,
+        rodt_public_key: own_static_bytes_public_x25519_key,
     };
     
     // Initialize the device handle with the specified tunnel name and configuration
