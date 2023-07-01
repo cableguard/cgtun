@@ -1,27 +1,20 @@
 // Copyright (c) 2023 Cableguard, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
+use clap::{Arg, Command};
+use tracing::Level;
+use serde_json::Value;
+use cableguard::device::{DeviceConfig, DeviceHandle,ed2x_private_key_bytes,skx2pkx};
+use cableguard::device::api::{nearorg_rpc_tokens_for_owner,nearorg_rpc_state,Rodt};
+use cableguard::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use cableguard::device::drop_privileges::drop_privileges;
-use cableguard::device::{DeviceConfig, DeviceHandle};
-use cableguard::device::api::nearorg_rpc_tokens_for_owner;
-use cableguard::device::api::nearorg_rpc_state;
-use cableguard::device::api::Rodt;
-use cableguard::device::ed2x_private_key_bytes;
-use cableguard::device::skx2pkx;
+use daemonize::Daemonize;
 use std::os::unix::net::UnixDatagram;
 use std::process::exit;
 use std::fs::{File, OpenOptions};
-use std::io::{self, ErrorKind};
-use std::io::Read;
-use std::env;
-use clap::{Arg, Command};
-use daemonize::Daemonize;
-use tracing::Level;
-use serde_json::Value;
+use std::io::{self, ErrorKind,Read};
 use hex::{FromHex};
 use base64::encode as base64encode;
-use cableguard::device::api::constants::SMART_CONTRACT;
-use cableguard::device::api::constants::BLOCKCHAIN_NETWORK;
 
 fn main() {
     let matches = Command::new("cableguard")
@@ -187,7 +180,7 @@ fn main() {
     
     let _guard;
     
-    println!("Help: To create or display available RODT Blockchain Directory accounts use: \"./wallet/rodtwallet.sh\"");
+    println!("Info: To create or display available RODT Blockchain Directory accounts use: \"./wallet/rodtwallet.sh\"");
 
     if background {
         // Running in background mode
@@ -227,9 +220,9 @@ fn main() {
                 // Perform an action when the daemon process exits
                 let mut b = [0u8; 1];
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
-                    println!("CableGuard started successfully");
+                    println!("Info: CableGuard started successfully");
                 } else {
-                    eprintln!("CableGuard failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                    eprintln!("Info: CableGuard failed to start. Check if the capabilities are set and you are running with enough privileges.");
                     exit(1);
                 };
             });
@@ -263,8 +256,8 @@ fn main() {
         use_multi_queue: !matches.is_present("disable-multi-queue"),
         rodt,
         own_bytes_ed25519_private_key,
-        rodt_private_key: *own_static_bytes_private_x25519_key,
-        rodt_public_key: own_static_bytes_public_x25519_key,
+        x25519_private_key: *own_static_bytes_private_x25519_key,
+        x25519_public_key: own_static_bytes_public_x25519_key,
     };
     
     // Initialize the device handle with the specified tunnel name and configuration

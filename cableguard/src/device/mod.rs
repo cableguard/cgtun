@@ -30,8 +30,7 @@ use socket2::{Domain, Protocol, Type};
 use tun::TunSocket;
 use dev_lock::{Lock, LockReadGuard};
 use crate::x25519;
-use crate::x25519::PublicKey;
-use crate::x25519::StaticSecret;
+use crate::x25519::{PublicKey,StaticSecret};
 use crate::serialization::{KeyBytes, self};
 use crate::device::api::Rodt;
 use crate::noise::errors::WireGuardError;
@@ -129,8 +128,8 @@ pub struct DeviceConfig {
     pub uapi_fd: i32,
     pub rodt: Rodt,
     pub own_bytes_ed25519_private_key: [u8;64],
-    pub rodt_private_key:[u8;32],
-    pub rodt_public_key:[u8;32],
+    pub x25519_private_key:[u8;32],
+    pub x25519_public_key:[u8;32],
 }
 
 impl Default for DeviceConfig {
@@ -144,8 +143,8 @@ impl Default for DeviceConfig {
             uapi_fd: -1,
             rodt: Rodt::default(),
             own_bytes_ed25519_private_key: [0;64],
-            rodt_private_key:[0;32],
-            rodt_public_key:[0;32],
+            x25519_private_key:[0;32],
+            x25519_public_key:[0;32],
         }
     }
 }
@@ -469,7 +468,7 @@ impl Device {
 
         // CG: Proactively setting the Static Private Key for the device
         // CG: May be worth it move this to DeviceConfig impl new
-        device.set_key_pair(x25519::StaticSecret::from(device.config.rodt_private_key));
+        device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {
             tracing::debug!("Debugging: This is a server");
@@ -492,12 +491,12 @@ impl Device {
                     std::process::exit(1);        }
             }
         }
-        // CG: Prime the peers list with a fix value
-        let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
-        let randopublic_key: PublicKey = (&randoprivate_key).into();   
-        let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
-        let rando_own_string_public_key: &str = &hex::encode(rando_public_key_u832);
-        device.api_set_internal("set_peer_public_key", &rando_own_string_public_key);
+        // CG: Don't Prime the peers list with a fix value
+        // let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
+        // let randopublic_key: PublicKey = (&randoprivate_key).into();   
+        // let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
+        // let rando_own_string_public_key: &str = &hex::encode(rando_public_key_u832);
+        // device.api_set_internal("set_peer_public_key", &rando_own_string_public_key);
 
         // CG: Find the peer and check if
         // IsTrusted(rodt.metadata.authornftcontractid);
@@ -556,7 +555,7 @@ impl Device {
 
         // CG: Don't show the private key
         // CG: Set private_key from the RODT private key
-        // let rodt_string_private_key: &str = &hex::encode(self.config.rodt_private_key);
+        // let rodt_string_private_key: &str = &hex::encode(self.config.x25519_private_key);
         // println!("Debugging: RODT Private Key, fn set_key_pair: {}", rodt_string_private_key);
 
         let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
@@ -994,7 +993,7 @@ impl Device {
 
         match option {
             // CG: We can self-serve the private key from the input json wallet file
-            // I think I can call set_key_pair with device.config.rodt_private_key
+            // I think I can call set_key_pair with device.config.x25519_private_key
             "private_key" => match value.parse::<KeyBytes>() {
                 Ok(own_keybytes_private_key) => {
                     let own_string_private_key = serialization::keybytes_to_hex_string(&own_keybytes_private_key);

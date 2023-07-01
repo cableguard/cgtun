@@ -581,7 +581,6 @@ impl Handshake {
                                     Ok(is_verified) => {
                                         // If the verification is successful, print the debugging message
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
-                                    
                                     }
                                     Err(_) => {
                                     // Err(PeerEd25519SingnatureVerificationFailed) => {

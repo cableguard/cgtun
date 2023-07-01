@@ -589,7 +589,7 @@ fn api_set_peer(
                     Err(_) => return EINVAL,
                 },
                 "public_key" => {
-                    // Indicates a new peer section.
+                    // Indicates a new peer section
                     // Commit changes for current peer, and continue to next peer
                     thisnetworkdevice.update_peer(
                         clone_peer_publickey_public_key,
