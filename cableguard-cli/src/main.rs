@@ -265,7 +265,7 @@ fn main() {
     let mut own_bytes_ed25519_private_key: [u8; 64] = [0; 64];
     own_bytes_ed25519_private_key.copy_from_slice(&own_static_bytes_private_ed25519_key[..64]);
 
-    // Configure the device with the RODT
+    // Configure the device with the RODT and the keys
     let config = DeviceConfig {
         n_threads,
         #[cfg(target_os = "linux")]

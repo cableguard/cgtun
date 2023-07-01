@@ -541,8 +541,9 @@ impl Handshake {
         // CG: We receive this and we have to use it to validate the peer
         println!("Debugging: RODT ID received as packet init {:?}",packet.rodtid);        
         println!("Debugging: RODT ID Signature received as packet init {:?}",packet.rodtid_signature);
-        // CG: Signature verification
-        let is_verified = keypair.verify(packet.rodtid, &packet.rodtid_signature));
+        // CG: Signature verification with public key of peer
+        // Public key to be retrieved from the blockchain
+        let is_verified = keypair.verify(packet.rodtid, &packet.rodtid_signature);
         println!("Debugging: Is Verified {:?}",is_verified);
 
         // initiator.chaining_key = HASH(CONSTRUCTION)
@@ -647,7 +648,7 @@ impl Handshake {
         tracing::debug!("Debugging: ROTID {:?}",packet.rodtid);
         tracing::debug!("Debugging: Signature of the ROTID {:?}",packet.rodtid_signature);
         // CG: Signature verification
-        let is_verified = keypair.verify(packet.rodtid, &packet.rodtid_signature));
+        let is_verified = keypair.verify(packet.rodtid, &packet.rodtid_signature);
         println!("Debugging: Is Response Verified {:?}",is_verified);
 
         let peer_index = packet.sender_idx;

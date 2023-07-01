@@ -1060,13 +1060,13 @@ impl Device {
         let ip: IpAddr = self.config.rodt.metadata.endpoint.parse().expect("Invalid IP address");
         let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Invalid port");
         let endpoint_listenport = SocketAddr::new(ip,port);      
-        tracing:info!("Setting Server IP and port {}", endpoint_listenport);     
+        tracing::info!("Setting Server IP and port {}", endpoint_listenport);     
 
         // Cidrblock is allowed_ip, it FAILS if the cidr format is not followed
         let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
-        tracing:info!("Setting own assigned IP? {}", allowed_ip_str);
+        tracing::info!("Setting own assigned IP? {}", allowed_ip_str);
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
-        tracing:info!("Setting allowed IP {:?}", allowed_ip);
+        tracing::info!("Setting allowed IP {:?}", allowed_ip);
 
         // CG: Add IPv6
         //   let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
