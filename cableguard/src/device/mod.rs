@@ -188,8 +188,8 @@ impl DeviceHandle {
             Ok(port) => match wg_interface.open_listen_socket(port) {
                 Ok(()) => {
                     // CG: Probably this is now unnecessary
-                    // tracing::debug!("Debugging:Port FN api_set_internal: {}", port);
-                    // tracing::debug!("Debugging:Rodt Port  FN api_set_internal: {}", config.rodt.metadata.listenport);
+                    // tracing::debug!("Debugging: Port FN api_set_internal: {}", port);
+                    // tracing::debug!("Debugging: Rodt Port  FN api_set_internal: {}", config.rodt.metadata.listenport);
                 }
                 Err(_) => ()
             }
@@ -287,7 +287,7 @@ impl DeviceHandle {
                         }
                         handler.cancel();
                     }
-                    WaitResult::Error(e) => tracing::error!(message = "Poll error", error = ?e),
+                    WaitResult::Error(e) => tracing::error!(message = "Error: Poll error", error = ?e),
                 }
             }
         }
@@ -321,7 +321,7 @@ impl Device {
             self.peers_by_ip
                 .remove(&|p: &Arc<Mutex<Peer>>| Arc::ptr_eq(&peer, p));
 
-            tracing::info!("Peer removed");
+            tracing::info!("Info: Peer removed");
         }
     }
 
@@ -485,7 +485,7 @@ impl Device {
                 "nft_token",&account_idargs) {
                 Ok(result) => {
                     let server_rodt = result;
-                    tracing::debug!("Issuer RODT Owner: {:?}", server_rodt.owner_id);
+                    tracing::debug!("Info: Issuer RODT Owner: {:?}", server_rodt.owner_id);
                 }
                 Err(err) => {
                     tracing::error!("Error: There is no server RODT associated with the account: {}", err);
@@ -698,7 +698,7 @@ impl Device {
                         TunnResult::Err(WireGuardError::ConnectionExpired) => {
                             p.shutdown_endpoint(); // close open udp socket
                         }
-                        TunnResult::Err(e) => tracing::error!(message = "Timer error", error = ?e),
+                        TunnResult::Err(e) => tracing::error!(message = "Error: Timer error", error = ?e),
                         TunnResult::WriteToNetwork(packet) => {
                             match endpoint_addr {
                                 SocketAddr::V4(_) => {
@@ -965,7 +965,7 @@ impl Device {
                     match peer.tunnel.encapsulate(src, &mut t.dst_buf[..]) {
                         TunnResult::Done => {}
                         TunnResult::Err(e) => {
-                            tracing::error!(message = "Encapsulate error", error = ?e)
+                            tracing::error!(message = "Error: Encapsulate error", error = ?e)
                         }
                         TunnResult::WriteToNetwork(packet) => {
                             let mut endpoint = peer.endpoint_mut();
@@ -999,7 +999,7 @@ impl Device {
                 Ok(own_keybytes_private_key) => {
                     let own_string_private_key = serialization::keybytes_to_hex_string(&own_keybytes_private_key);
                     let own_hex_private_key = format!("{:02X?}", own_string_private_key);
-                    tracing::debug!(message = "Debugging:Private_key FN api_set_internal: {}", own_hex_private_key);
+                    tracing::debug!(message = "Debugging: Private_key FN api_set_internal: {}", own_hex_private_key);
                     self.set_key_pair(x25519::StaticSecret::from(own_keybytes_private_key.0))
                     }
                 Err(_) => return,
@@ -1007,8 +1007,8 @@ impl Device {
             "listen_port" => match self.config.rodt.metadata.listenport.parse::<u16>() {
                 Ok(port) => match self.open_listen_socket(port) {
                     Ok(()) => {
-                        tracing::debug!("Debugging:Port FN api_set_internal: {}", port);
-                        tracing::debug!("Debugging:Rodt Port  FN api_set_internal: {}", self.config.rodt.metadata.listenport);
+                        tracing::debug!("Debugging: Port FN api_set_internal: {}", port);
+                        tracing::debug!("Debugging: Rodt Port  FN api_set_internal: {}", self.config.rodt.metadata.listenport);
                     }
                     Err(_) => return,
                 },
@@ -1060,13 +1060,13 @@ impl Device {
         let ip: IpAddr = self.config.rodt.metadata.endpoint.parse().expect("Invalid IP address");
         let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Invalid port");
         let endpoint_listenport = SocketAddr::new(ip,port);      
-        tracing::info!("Setting Server IP and port {}", endpoint_listenport);     
+        tracing::info!("Info: Setting Server IP and port {}", endpoint_listenport);     
 
         // Cidrblock is allowed_ip, it FAILS if the cidr format is not followed
         let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
-        tracing::info!("Setting own assigned IP? {}", allowed_ip_str);
+        tracing::info!("Info: Setting own assigned IP? {}", allowed_ip_str);
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
-        tracing::info!("Setting allowed IP {:?}", allowed_ip);
+        tracing::info!("Info: Setting allowed IP {:?}", allowed_ip);
 
         // CG: Add IPv6
         //   let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string

@@ -553,7 +553,7 @@ impl Handshake {
 
         let account_idargs = "{\"token_id\": \"".to_owned() 
         + &peer_string_rodtid+ "\"}";
-        tracing::debug!("account idargs: {:?}", account_idargs);
+        tracing::debug!("Info: account idargs: {:?}", account_idargs);
         match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
             Ok(result) => {
                 // If the function call is successful, execute this block
@@ -586,7 +586,7 @@ impl Handshake {
                                     Err(_) => {
                                     // Err(PeerEd25519SingnatureVerificationFailed) => {
                                         // If the verification fails, handle the error and propagate it
-                                        tracing::error!("PeerEd25519SingnatureVerificationFailed");
+                                        tracing::error!("Error: PeerEd25519SingnatureVerificationFailed");
                                         return Err(WireGuardError::PeerEd25519SingnatureVerificationFailed);
                                     }
                                 };
@@ -594,7 +594,7 @@ impl Handshake {
                             }
                             Err(_) => {
                                 // If the public key parsing fails, handle the error and propagate it
-                                tracing::error!("PeerEd25519PublicKeyParsingFailed");
+                                tracing::error!("Error: PeerEd25519PublicKeyParsingFailed");
                                 return Err(WireGuardError::PeerEd25519PublicKeyParsingFailed);
                             }
                         };
@@ -602,7 +602,7 @@ impl Handshake {
                     }
                     Err(_) => {
                         // If the signature parsing fails, handle the error and propagate it
-                        tracing::error!("PeerEd25519SingnatureParsingFailed");
+                        tracing::error!("Error: PeerEd25519SingnatureParsingFailed");
                         return Err(WireGuardError::PeerEd25519SingnatureParsingFailed);
                     }
                 };
@@ -724,7 +724,7 @@ impl Handshake {
 
         let account_idargs = "{\"token_id\": \"".to_owned() 
         + &peer_string_rodtid+ "\"}";
-        tracing::debug!("account idargs: {:?}", account_idargs);
+        tracing::debug!("Info: account idargs: {:?}", account_idargs);
         match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
             Ok(result) => {
                 // If the function call is successful, execute this block
@@ -751,11 +751,11 @@ impl Handshake {
                                 match peer_publickey_ed25519_public_key.verify(packet.rodtid, &signature) {
                                     Ok(is_verified) => {
                                         // If the verification is successful, print the debugging message
-                                        println!("Debugging: Is Response Verified {:?}", is_verified);
+                                        println!("Error: Debugging: Is Response Verified {:?}", is_verified);
                                     }
                                     Err(_) => {
                                         // If the verification fails, handle the error and propagate it
-                                        tracing::error!("PeerEd25519SingnatureVerificationFailed");
+                                        tracing::error!("Error: PeerEd25519SingnatureVerificationFailed");
                                         return Err(WireGuardError::PeerEd25519SingnatureVerificationFailed);
                                     }
                                 };
@@ -763,7 +763,7 @@ impl Handshake {
                             }
                             Err(_) => {
                                 // If the public key parsing fails, handle the error and propagate it
-                                tracing::error!("PeerEd25519PublicKeyParsingFailed");
+                                tracing::error!("Error: PeerEd25519PublicKeyParsingFailed");
                                 return Err(WireGuardError::PeerEd25519PublicKeyParsingFailed);
                             }
                         };

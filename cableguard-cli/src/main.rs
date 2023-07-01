@@ -236,7 +236,7 @@ fn main() {
     
         // Start the daemon process
         match daemonize.start() {
-            Ok(_) => tracing::info!("CableGuard started successfully"),
+            Ok(_) => tracing::info!("Info: CableGuard started successfully"),
             Err(e) => {
                 tracing::error!(error = ?e);
                 exit(1);
@@ -272,7 +272,7 @@ fn main() {
         Ok(d) => d,
         Err(e) => {
             // Notify parent that tunnel initialization failed
-            tracing::error!(message = "Failed to initialize tunnel", error=?e);
+            tracing::error!(message = "Error: Failed to initialize tunnel", error=?e);
             sock1.send(&[0]).unwrap();
             exit(1);
         }
@@ -281,7 +281,7 @@ fn main() {
     if !matches.is_present("disable-drop-privileges") {
         // Drop privileges if not disabled
         if let Err(e) = drop_privileges() {
-            tracing::error!(message = "Failed to drop privileges", error = ?e);
+            tracing::error!(message = "Error: Failed to drop privileges", error = ?e);
             sock1.send(&[0]).unwrap();
             exit(1);
         }
@@ -291,7 +291,7 @@ fn main() {
     sock1.send(&[1]).unwrap();
     drop(sock1);
     
-    tracing::info!("CableGuard will hand over to TUN handle");
+    tracing::info!("Info: CableGuard will hand over to TUN handle");
     
     // Wait for the device handle to finish processing
     device_handle.wait();    
