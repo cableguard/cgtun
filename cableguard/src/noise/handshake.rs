@@ -538,8 +538,12 @@ impl Handshake {
         dst: &'a mut [u8],
     ) -> Result<(&'a mut [u8], Session), WireGuardError> {
 
+        // CG: We receive this and we have to use it to validate the peer
         println!("Debugging: RODT ID received as packet init {:?}",packet.rodtid);        
         println!("Debugging: RODT ID Signature received as packet init {:?}",packet.rodtid_signature);
+        // CG: Signature verification
+        let is_verified = keypair.verify(packet.rodtid, &packet.rodtid_signature));
+        println!("Debugging: Is Verified {:?}",is_verified);
 
         // initiator.chaining_key = HASH(CONSTRUCTION)
         let mut chaining_key = INITIAL_CHAIN_KEY;
@@ -639,8 +643,12 @@ impl Handshake {
         };
 
         // CG: For the time being we just display the extra parameters exchanged
+        // CG: We receive this and we have to use it to validate the peer
         tracing::debug!("Debugging: ROTID {:?}",packet.rodtid);
         tracing::debug!("Debugging: Signature of the ROTID {:?}",packet.rodtid_signature);
+        // CG: Signature verification
+        let is_verified = keypair.verify(packet.rodtid, &packet.rodtid_signature));
+        println!("Debugging: Is Response Verified {:?}",is_verified);
 
         let peer_index = packet.sender_idx;
         let local_index = state.local_index;
@@ -864,9 +872,13 @@ impl Handshake {
         // initiator.hash = HASH(initiator.hash || msg.encrypted_timestamp)
         hash = b2s_hash(&hash, encrypted_timestamp);
 
-        // CG: the values to transfer over the wire
+        // CG: Our rodtid values to transfer over the wire
         rodtid.copy_from_slice(&self.params.rodtid);
         rodtid_signature.copy_from_slice(&self.params.rodtid_signature);
+
+        // CG: For the time being we just display the extra parameters exchanged
+        tracing::debug!("Debugging: Sending ROTID {:?}",rodtid);
+        tracing::debug!("Debugging: Sending Signature of the ROTID {:?}",rodtid_signature);
 
         let time_now = Instant::now();
         self.previous = std::mem::replace(
@@ -913,7 +925,7 @@ impl Handshake {
         let (rodtid, rest) = rest.split_at_mut(64);
         let (rodtid_signature, _) = rest.split_at_mut(64);
 
-        // CG: For the time being we just display the extra parameters exchanged
+        // CG: We send a different rodtid that the one we receive
         tracing::debug!("Debugging: ROTID {:?}",rodtid);
         tracing::debug!("Debugging: Signature of the ROTID {:?}",rodtid_signature);
 

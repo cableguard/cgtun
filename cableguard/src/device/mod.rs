@@ -369,8 +369,6 @@ impl Device {
         .expect("Invalid private key bytes");
 
         let rodtid_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
-        // CG: signature verification
-        // let is_verified = keypair.verify(rodtid, &rodtid_signature);
 
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Passing on only the X25519 private key
@@ -494,7 +492,7 @@ impl Device {
                     std::process::exit(1);        }
             }
         }
-        // CG: Prime the peers list with a fix vale to use it during handshaker
+        // CG: Prime the peers list with a fix value
         let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
         let randopublic_key: PublicKey = (&randoprivate_key).into();   
         let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
@@ -768,6 +766,7 @@ impl Device {
                         Err(_) => continue,
                     };
                     
+                    // CG: Would be good to understand this code
                     let peer = match &parsed_packet {
                         Packet::HandshakeInit(p) => {
                             parse_handshake_anon(own_bytes_private_key, own_bytes_public_key, p)

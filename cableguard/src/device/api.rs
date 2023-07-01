@@ -153,7 +153,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::debug!("description: {}", rodt.metadata.description);
             tracing::debug!("notafter: {}", rodt.metadata.notafter);
             tracing::debug!("notbefore: {}", rodt.metadata.notbefore);
-            // CG: Add listen port
+            tracing::debug!("notbefore: {}", rodt.metadata.listen_port);
             tracing::debug!("cidrblock: {}", rodt.metadata.cidrblock);
             tracing::debug!("dns: {}", rodt.metadata.dns);
             tracing::debug!("postup: {}", rodt.metadata.postup);
@@ -465,12 +465,13 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                     match option {
                         "private_key" => match value.parse::<KeyBytes>() {
                             Ok(own_static_bytes_key_pair) => {
-                                let own_static_hex_private_key = serialization::keybytes_to_hex_string(&own_static_bytes_key_pair);
-                                let own_static_string_private_key = format!("{:02X?}", own_static_hex_private_key);
                                 // Dumping the private key that is associated with the device in HEX format
                                 // let own_static_b64_private_key = hex_to_base64(&own_static_string_private_key);
-                                tracing::debug!(message = "Debugging:Private_key FN api_set: {}",own_static_string_private_key);
-                                // CG: Does this call need to read the key from the rodt?
+                                // let own_static_hex_private_key = serialization::keybytes_to_hex_string(&own_static_bytes_key_pair);
+                                // let own_static_string_private_key = format!("{:02X?}", own_static_hex_private_key);
+                                // tracing::debug!(message = "Debugging:Private_key FN api_set: {}",own_static_string_private_key);
+
+                                // CG: Setting a private key that is not predictable
                                 device.set_key_pair(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
                             }
                             Err(_) => return EINVAL,
