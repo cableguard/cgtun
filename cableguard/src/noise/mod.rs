@@ -4,16 +4,13 @@
 pub mod errors;
 pub mod handshake;
 pub mod rate_limiter;
-
 mod session;
 mod timers;
-
 use crate::noise::errors::WireGuardError;
 use crate::noise::handshake::Handshake;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::timers::{TimerName, Timers};
 use crate::x25519;
-
 use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};

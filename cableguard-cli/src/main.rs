@@ -20,14 +20,8 @@ use tracing::Level;
 use serde_json::Value;
 use hex::{FromHex};
 use base64::encode as base64encode;
-use crate::constants::SMART_CONTRACT;
-use crate::constants::BLOCKCHAIN_ENV;
-
-mod constants {
-    // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
-    pub static SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
-    pub static BLOCKCHAIN_ENV: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
-}
+use cableguard::device::api::constants::SMART_CONTRACT;
+use cableguard::device::api::constants::BLOCKCHAIN_NETWORK;
 
 fn main() {
     let matches = Command::new("cableguard")
@@ -131,23 +125,17 @@ fn main() {
     let own_static_base58_private_ed25519_key = json["private_key"].as_str().expect("Invalid private_key value");   
     let own_static_base58_private_ed25519_key = own_static_base58_private_ed25519_key.trim_start_matches("ed25519:");
 
-    // Set the account where is the rodt smart contract
-    let smart_contract = constants::SMART_CONTRACT;
-
-    // Set the environment to testnet or mainnet
-    let xnet = BLOCKCHAIN_ENV;
-
     // Initialize a RODT object
     let rodt: Rodt;
     
     println!("RODT Blockchain Directory: {}", "NEAR.ORG");
-    println!("Blockchain Directory Network: {}", xnet);
+    println!("Blockchain Directory Network: {}", BLOCKCHAIN_NETWORK);
     println!("Smart Contract Account in Base58: {}", SMART_CONTRACT);
     println!("RODT owner Account ID in Hex: {}", account_id);
 
     // Perform a RPC call with it and obtain the token_id
     // CG: Show a warning if the account is not primed or the account has not RODT
-    match nearorg_rpc_state(xnet, smart_contract, account_id) {
+    match nearorg_rpc_state(BLOCKCHAIN_NETWORK, SMART_CONTRACT, account_id) {
         Ok(result) => { result
         }
         Err(err) => {
@@ -159,7 +147,7 @@ fn main() {
 
     // Retrieve from the blockchain the RODT using the account_id
     let account_idargs = "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
-    match nearorg_rpc_tokens_for_owner(xnet, smart_contract, smart_contract, "nft_tokens_for_owner", &account_idargs) {
+    match nearorg_rpc_tokens_for_owner(BLOCKCHAIN_NETWORK, SMART_CONTRACT, SMART_CONTRACT, "nft_tokens_for_owner", &account_idargs) {
         Ok(result) => {
             rodt = result;
         }

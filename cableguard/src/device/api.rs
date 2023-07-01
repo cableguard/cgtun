@@ -5,7 +5,7 @@ use super::dev_lock::LockReadGuard;
 use super::drop_privileges::get_saved_ids;
 use super::{AllowedIP, Device, Error, SocketAddr};
 use crate::device::Action;
-use crate::serialization::{KeyBytes, self};
+use crate::serialization::{KeyBytes};
 use crate::x25519;
 use libc::*;
 use std::fs::{create_dir, remove_file};
@@ -19,6 +19,12 @@ use serde_json::{Value};
 use serde::{Deserialize, Serialize};
 use hex::encode as encode_hex;
 const SOCK_DIR: &str = "/var/run/wireguard/";
+
+pub mod constants {
+    // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
+    pub static SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
+    pub static BLOCKCHAIN_NETWORK: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Rodt {
@@ -153,7 +159,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::debug!("description: {}", rodt.metadata.description);
             tracing::debug!("notafter: {}", rodt.metadata.notafter);
             tracing::debug!("notbefore: {}", rodt.metadata.notbefore);
-            tracing::debug!("notbefore: {}", rodt.metadata.listen_port);
+            tracing::debug!("notbefore: {}", rodt.metadata.listenport);
             tracing::debug!("cidrblock: {}", rodt.metadata.cidrblock);
             tracing::debug!("dns: {}", rodt.metadata.dns);
             tracing::debug!("postup: {}", rodt.metadata.postup);

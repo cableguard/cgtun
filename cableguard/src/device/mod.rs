@@ -48,7 +48,7 @@ mod integration_tests;
 
 // CG: This is an embarrasing bit: I am reimplementing this because I don't know how to import it
 const SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
-const BLOCKCHAIN_ENV: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
+const BLOCKCHAIN_NETWORK: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
 // This already exist in main.rs
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -303,7 +303,7 @@ impl Drop for DeviceHandle {
 
 impl Device {
     
-    const XNET:&str= BLOCKCHAIN_ENV;
+    const XNET:&str= BLOCKCHAIN_NETWORK;
     const SMART_CONTRACT:&str = SMART_CONTRACT;
 
     fn next_index(&mut self) -> u32 {

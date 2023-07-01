@@ -1,9 +1,9 @@
 #!/bin/bash
 
-export BLOCKCHAIN_ENV="testnet"
+export BLOCKCHAIN_NETWORK="testnet"
 VERSION="1.3.5"
 export NFTCONTRACTID=$(cat ./walletsh/dev-account)
-echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
+echo "Version" $VERSION "running on " $BLOCKCHAIN_NETWORK "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 echo "It works properly only from the ~/cgtun directory at the moment; To be fixed"
 
 if [ "$1" == "help" ]; then
@@ -52,13 +52,13 @@ fi
 if [ -z $1  ]; then
     echo "There is a lag while collecting information from the blockchain"
     echo "The following is a list of accounts found in ~/.near-credentials :"
-    formatted_output=$(ls -tr "$HOME/.near-credentials/$BLOCKCHAIN_ENV/" | awk -F '.' '{ print $1 }')
+    formatted_output=$(ls -tr "$HOME/.near-credentials/$BLOCKCHAIN_NETWORK/" | awk -F '.' '{ print $1 }')
     echo "$formatted_output"
 fi
 
 if [ -n "$2" ]; then
     if [ "$2" == "keys" ]; then
-        key_file="$HOME/.near-credentials/$BLOCKCHAIN_ENV/$1.json"
+        key_file="$HOME/.near-credentials/$BLOCKCHAIN_NETWORK/$1.json"
         echo "The contents of the key file (PrivateKey in Base58 account ID in Hex) are:"
 	cat "$key_file" | jq -r '"\(.private_key | sub("ed25519:"; ""))\n\(.account_id)"'
         exit 0
