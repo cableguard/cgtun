@@ -448,26 +448,24 @@ impl Device {
             }
         }
 
-        // CG: From here maybe better placed in the DeviceHandle object instead
         // CG: We are adding here addtional device building:
         // add IPs, set private key, add initial peer
-        // We are only leaving out bringing the device UP
+        // should add bringing the device UP?
         let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ name;
         let output = Command::new("bash")
             .arg("-c")
             .arg(command)
             .output()
-            .expect("Failed to execute command");
+            .expect("Error: Failed to execute command");
         if output.status.success() {
             let _stdout = String::from_utf8_lossy(&output.stdout);
             tracing::debug!("Debugging: Ip addr add command executed successfully: {}",device.config.rodt.metadata.cidrblock);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            tracing::debug!("Debugging: Ip addr add command failed to execute. {}", stderr);
+            tracing::debug!("Error: Ip addr add command failed to execute {}", stderr);
         }
 
         // CG: Proactively setting the Static Private Key for the device
-        // CG: May be worth it move this to DeviceConfig impl new
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {
@@ -491,12 +489,13 @@ impl Device {
                     std::process::exit(1);        }
             }
         }
-        // CG: Don't Prime the peers list with a fix value
-        // let randoprivate_key = StaticSecret::random_from_rng(&mut OsRng);
-        // let randopublic_key: PublicKey = (&randoprivate_key).into();   
-        // let rando_public_key_u832: [u8; 32] = randopublic_key.as_bytes().clone(); 
-        // let rando_own_string_public_key: &str = &hex::encode(rando_public_key_u832);
-        // device.api_set_internal("set_peer_public_key", &rando_own_string_public_key);
+        // CG: THIS HERE NOW Prime the peers list with a constant value so they complete the handshake successfully
+
+        let constprivate_key = StaticSecret::("Find a const to put here");
+        let constpublic_key: PublicKey = (&constprivate_key).into();   
+        let const_public_key_u832: [u8; 32] = constpublic_key.as_bytes().clone(); 
+        let const_own_string_public_key: &str = &hex::encode(const_public_key_u832);
+        device.api_set_internal("set_peer_public_key", &const_own_string_public_key);
 
         // CG: Find the peer and check if
         // IsTrusted(rodt.metadata.authornftcontractid);
