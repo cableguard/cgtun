@@ -364,18 +364,18 @@ impl Device {
         //     own_string_public_key
         // );
 
-        // Creating the signature of the rodtid
+        // CG2: Creating the signature of the rodt_id
         let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Invalid private key bytes");
 
-        let rodtid_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
+        let rodt_id_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
 
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Passing on only the X25519 private key
             peer_publickey_public_key,
             preshared_key,
             hex_to_u864_array(self.config.rodt.owner_id.clone()),
-            rodtid_signature.to_bytes(),
+            rodt_id_signature.to_bytes(),
             keepalive,
             next_index,
             None,

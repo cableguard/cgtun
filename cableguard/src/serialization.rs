@@ -1,7 +1,7 @@
 #[derive(Debug)]
 pub(crate) struct KeyBytes(pub [u8; 32]);
 
-// CG: I can't see how this improves the handling for keys,
+// CG2: I can't see how this improves the handling for keys,
 // strong candidate for removal
 // Also I need to make sure that all conversions are reliable and consistent
 pub (crate) fn keybytes_to_hex_string(key_bytes: &KeyBytes) -> String {

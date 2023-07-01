@@ -80,7 +80,7 @@ const HANDSHAKE_RESP: MessageType = 2;
 const COOKIE_REPLY: MessageType = 3;
 const DATA: MessageType = 4;
 
-// CG: These sizes are increased by 128 bytes to accommodate for the rodtid and signature of the same
+// These sizes are increased by 128 bytes to accommodate for the rodt_id and signature of the same
 const HANDSHAKE_INIT_SZ: usize = 148+128;
 const HANDSHAKE_RESP_SZ: usize = 92+128;
 const COOKIE_REPLY_SZ: usize = 64;
@@ -92,8 +92,8 @@ pub struct HandshakeInit<'a> {
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_static: &'a [u8],
     encrypted_timestamp: &'a [u8],
-    rodtid: &'a [u8; KEY_LEN*2],
-    rodtid_signature: &'a [u8; KEY_LEN*2],
+    rodt_id: &'a [u8; KEY_LEN*2],
+    rodt_id_signature: &'a [u8; KEY_LEN*2],
 }
 
 #[derive(Debug)]
@@ -102,8 +102,8 @@ pub struct HandshakeResponse<'a> {
     pub receiver_idx: u32,
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_nothing: &'a [u8],
-    rodtid: &'a [u8; KEY_LEN*2],
-    rodtid_signature: &'a [u8; KEY_LEN*2],
+    rodt_id: &'a [u8; KEY_LEN*2],
+    rodt_id_signature: &'a [u8; KEY_LEN*2],
 }
 
 #[derive(Debug)]
@@ -151,9 +151,9 @@ impl Tunn {
                     .expect("length already checked above"),
                 encrypted_static: &src[40..88], // SIZE u8;32, 88-40 = 48 bytes, seems too big for the spec (32)
                 encrypted_timestamp: &src[88..116], // SIZE u8;12, 116-88 = 28 bytes, seems too big for the spec (12)
-                rodtid: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[116..180])
+                rodt_id: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[116..180])
                     .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
-                rodtid_signature: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[180..244])
+                rodt_id_signature: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[180..244])
                     .expect("length already checked above"), // SIZE u8;64, 244-180 = 64 bytes
                 }),
                 (HANDSHAKE_RESP, HANDSHAKE_RESP_SZ) => Packet::HandshakeResponse(HandshakeResponse {
@@ -167,9 +167,9 @@ impl Tunn {
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("length already checked above"),
                 encrypted_nothing: &src[44..60], // SIZE 60-44 = 16 bytes
-                rodtid: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[60..124])
+                rodt_id: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[60..124])
                     .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
-                rodtid_signature: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[124..188])
+                rodt_id_signature: <&[u8; KEY_LEN*2] as TryFrom<&[u8]>>::try_from(&src[124..188])
                     .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
             }),
             (COOKIE_REPLY, COOKIE_REPLY_SZ) => Packet::PacketCookieReply(PacketCookieReply {
@@ -219,8 +219,8 @@ impl Tunn {
         static_private: x25519::StaticSecret,
         peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
-        rodtid: [u8; KEY_LEN*2],
-        rodtid_signature: [u8; KEY_LEN*2],
+        rodt_id: [u8; KEY_LEN*2],
+        rodt_id_signature: [u8; KEY_LEN*2],
         persistent_keepalive: Option<u16>,
         index: u32,
         rate_limiter: Option<Arc<RateLimiter>>,
@@ -239,8 +239,8 @@ impl Tunn {
                 peer_static_public,
                 index << 8,
                 preshared_key,
-                rodtid,
-                rodtid_signature,
+                rodt_id,
+                rodt_id_signature,
             )
             .map_err(|_| "Invalid parameters")?,
             sessions: Default::default(),

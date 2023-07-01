@@ -246,9 +246,9 @@ struct NoiseParams {
     preshared_key: Option<[u8; KEY_LEN]>,
     // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
     // This needs a known length, 64 (KEY_LEN*2) as a limit to accomodate a full RODT ID
-    rodtid: [u8; KEY_LEN*2],
+    rodt_id: [u8; KEY_LEN*2],
     // CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
-    rodtid_signature: [u8; KEY_LEN*2],
+    rodt_id_signature: [u8; KEY_LEN*2],
 }
 
 impl std::fmt::Debug for NoiseParams {
@@ -394,8 +394,8 @@ impl NoiseParams {
         static_public: x25519::PublicKey,
         peer_static_public: x25519::PublicKey, 
         preshared_key: Option<[u8; 32]>,
-        rodtid: [u8; KEY_LEN*2],
-        rodtid_signature: [u8; KEY_LEN*2],
+        rodt_id: [u8; KEY_LEN*2],
+        rodt_id_signature: [u8; KEY_LEN*2],
     ) -> Result<NoiseParams, WireGuardError> {
 
         // CG: As peer_static_public is not known ahead of time 
@@ -411,8 +411,8 @@ impl NoiseParams {
             static_shared,
             sending_mac1_key: initial_sending_mac_key,
             preshared_key,
-            rodtid,
-            rodtid_signature,
+            rodt_id,
+            rodt_id_signature,
         })
     }
 
@@ -454,16 +454,16 @@ impl Handshake {
         peer_static_public: x25519::PublicKey,
         global_idx: u32,
         preshared_key: Option<[u8; 32]>,
-        rodtid: [u8; KEY_LEN*2],
-        rodtid_signature: [u8; KEY_LEN*2],
+        rodt_id: [u8; KEY_LEN*2],
+        rodt_id_signature: [u8; KEY_LEN*2],
     ) -> Result<Handshake, WireGuardError> {
         let params = NoiseParams::new(
             static_private,
             static_public,
             peer_static_public,
             preshared_key,
-            rodtid,
-            rodtid_signature,
+            rodt_id,
+            rodt_id_signature,
         )?;
 
         Ok(Handshake {
@@ -543,11 +543,11 @@ impl Handshake {
     ) -> Result<(&'a mut [u8], Session), WireGuardError> {
 
         // CG: We receive this and we have to use it to validate the peer
-        println!("Debugging: RODT ID received as packet init {:?}",packet.rodtid);        
-        println!("Debugging: RODT ID Signature received as packet init {:?}",packet.rodtid_signature);
+        println!("Debugging: RODT ID received as packet init {:?}",packet.rodt_id);        
+        println!("Debugging: RODT ID Signature received as packet init {:?}",packet.rodt_id_signature);
         // CG: Signature verification with public key of peer
         // Public key to be retrieved from the blockchain
-        let peer_slice_rodtid: &[u8] = &packet.rodtid[..];
+        let peer_slice_rodtid: &[u8] = &packet.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Failed to convert byte slice to string");
 
@@ -569,15 +569,15 @@ impl Handshake {
                     .try_into()
                     .expect("Invalid byte array length");
         
-                // Parse the signature bytes from packet.rodtid_signature
+                // Parse the signature bytes from packet.rodt_id_signature
                 // and assign it to the signature variable
-                match Signature::from_bytes(&*packet.rodtid_signature) {
+                match Signature::from_bytes(&*packet.rodt_id_signature) {
                     Ok(signature) => {
                         // If the signature parsing is successful, execute this block
                         match PublicKey::from_bytes(&peer_bytes_ed25519_public_key) {
                             Ok(peer_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
-                                match peer_publickey_ed25519_public_key.verify(packet.rodtid, &signature) {
+                                match peer_publickey_ed25519_public_key.verify(packet.rodt_id, &signature) {
                                     Ok(is_verified) => {
                                         // If the verification is successful, print the debugging message
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
@@ -663,8 +663,8 @@ impl Handshake {
         .map_err(|_| WireGuardError::WrongKey)?;
 
         // CG: For the time being we just display the extra parameters exchanged
-        tracing::debug!("Debugging: ROTID {:?}",self.params.rodtid);
-        tracing::debug!("Debugging: Signature of the ROTID {:?}",self.params.rodtid_signature);
+        tracing::debug!("Debugging: RODT_ID {:?}",self.params.rodt_id);
+        tracing::debug!("Debugging: Signature of the RODT_ID {:?}",self.params.rodt_id_signature);
 
         // initiator.hash = HASH(initiator.hash || msg.encrypted_static)
         hash = b2s_hash(&hash, packet.encrypted_static);
@@ -714,11 +714,11 @@ impl Handshake {
 
         // CG: For the time being we just display the extra parameters exchanged
         // CG: We receive this and we have to use it to validate the peer
-        tracing::debug!("Debugging: ROTID {:?}",packet.rodtid);
-        tracing::debug!("Debugging: Signature of the ROTID {:?}",packet.rodtid_signature);
+        tracing::debug!("Debugging: RODT_ID {:?}",packet.rodt_id);
+        tracing::debug!("Debugging: Signature of the RODT_ID {:?}",packet.rodt_id_signature);
 
         // CG: Signature verification
-        let peer_slice_rodtid: &[u8] = &packet.rodtid[..];
+        let peer_slice_rodtid: &[u8] = &packet.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Failed to convert byte slice to string");
 
@@ -740,15 +740,15 @@ impl Handshake {
                     .try_into()
                     .expect("Invalid byte array length");
         
-                // Parse the signature bytes from packet.rodtid_signature
+                // Parse the signature bytes from packet.rodt_id_signature
                 // and assign it to the signature variable
-                match Signature::from_bytes(&*packet.rodtid_signature) {
+                match Signature::from_bytes(&*packet.rodt_id_signature) {
                     Ok(signature) => {
                         // If the signature parsing is successful, execute this block
                         match PublicKey::from_bytes(&peer_bytes_ed25519_public_key) {
                             Ok(peer_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
-                                match peer_publickey_ed25519_public_key.verify(packet.rodtid, &signature) {
+                                match peer_publickey_ed25519_public_key.verify(packet.rodt_id, &signature) {
                                     Ok(is_verified) => {
                                         // If the verification is successful, print the debugging message
                                         println!("Error: Debugging: Is Response Verified {:?}", is_verified);
@@ -933,8 +933,8 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_static, rest) = rest.split_at_mut(32 + 16);
         let (encrypted_timestamp, rest) = rest.split_at_mut(12 + 16);
-        let (rodtid, rest) = rest.split_at_mut(64);
-        let (rodtid_signature, _) = rest.split_at_mut(64);
+        let (rodt_id, rest) = rest.split_at_mut(64);
+        let (rodt_id_signature, _) = rest.split_at_mut(64);
 
         let local_index = self.inc_index();
 
@@ -1006,13 +1006,13 @@ impl Handshake {
         // initiator.hash = HASH(initiator.hash || msg.encrypted_timestamp)
         hash = b2s_hash(&hash, encrypted_timestamp);
 
-        // CG: Our rodtid values to transfer over the wire
-        rodtid.copy_from_slice(&self.params.rodtid);
-        rodtid_signature.copy_from_slice(&self.params.rodtid_signature);
+        // CG: Our rodt_id values to transfer over the wire
+        rodt_id.copy_from_slice(&self.params.rodt_id);
+        rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
 
         // CG: For the time being we just display the extra parameters exchanged
-        tracing::debug!("Debugging: Sending ROTID {:?}",rodtid);
-        tracing::debug!("Debugging: Sending Signature of the ROTID {:?}",rodtid_signature);
+        tracing::debug!("Debugging: Sending RODT_ID {:?}",rodt_id);
+        tracing::debug!("Debugging: Sending Signature of the RODT_ID {:?}",rodt_id_signature);
 
         let time_now = Instant::now();
         self.previous = std::mem::replace(
@@ -1056,12 +1056,12 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_nothing, rest) = rest.split_at_mut(16);
         // CG: The response also has 2 additional fields so both sides can authenticate each other
-        let (rodtid, rest) = rest.split_at_mut(64);
-        let (rodtid_signature, _) = rest.split_at_mut(64);
+        let (rodt_id, rest) = rest.split_at_mut(64);
+        let (rodt_id_signature, _) = rest.split_at_mut(64);
 
-        // CG: We send a different rodtid that the one we receive
-        tracing::debug!("Debugging: ROTID {:?}",rodtid);
-        tracing::debug!("Debugging: Signature of the ROTID {:?}",rodtid_signature);
+        // CG: We send a different rodt_id that the one we receive
+        tracing::debug!("Debugging: RODT_ID {:?}",rodt_id);
+        tracing::debug!("Debugging: Signature of the RODT_ID {:?}",rodt_id_signature);
 
         // responder.ephemeral_private = DH_GENERATE()
         let ephemeral_private = x25519::ReusableSecret::random_from_rng(OsRng);

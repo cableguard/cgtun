@@ -476,8 +476,6 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 // let own_static_hex_private_key = serialization::keybytes_to_hex_string(&own_static_bytes_key_pair);
                                 // let own_static_string_private_key = format!("{:02X?}", own_static_hex_private_key);
                                 // tracing::debug!(message = "Debugging: Private_key FN api_set: {}",own_static_string_private_key);
-
-                                // CG: Setting a private key that is not predictable
                                 device.set_key_pair(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
                             }
                             Err(_) => return EINVAL,
