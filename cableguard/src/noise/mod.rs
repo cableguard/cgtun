@@ -472,15 +472,13 @@ impl Tunn {
         let session = self.handshake.receive_handshake_response(handshake_response)?;
 
         // CG: Beginning of RODT verification
-        let peer_slice_rodtid: &[u8] = &handshake_init.rodt_id[..];
+        let peer_slice_rodtid: &[u8] = &handshake_response.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Failed to convert byte slice to string");
 
         // CG: We receive this and we have to use it to validate the peer
         println!("Debugging: RODT ID received as packet init {}",peer_string_rodtid);        
-        println!("Debugging: RODT ID Signature received as packet init {:?}",handshake_init.rodt_id_signature);
-        let account_idargs = "{\"token_id\": \"".to_owned() 
-        + &peer_string_rodtid+ "\"}";
+        println!("Debugging: RODT ID Signature received as packet init {:?}",handshake_response.rodt_id_signature);
 
         let account_idargs = "{\"token_id\": \"".to_owned() 
         + &peer_string_rodtid+ "\"}";
