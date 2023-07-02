@@ -241,8 +241,8 @@ struct NoiseParams {
     sending_mac1_key: [u8; KEY_LEN],
     preshared_key: Option<[u8; KEY_LEN]>,
     // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
-    // This needs a known length, 64 (KEY_LEN*2) as a limit to accomodate a full RODT ID
-    rodt_id: [u8; KEY_LEN*2],
+    // This needs a known length, 128 (KEY_LEN*4) as a limit to accomodate a full RODT ID
+    rodt_id: [u8; KEY_LEN*4],
     // CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
     rodt_id_signature: [u8; KEY_LEN*2],
 }
@@ -390,7 +390,7 @@ impl NoiseParams {
         static_public: x25519::PublicKey,
         peer_static_public: x25519::PublicKey, 
         preshared_key: Option<[u8; 32]>,
-        rodt_id: [u8; KEY_LEN*2],
+        rodt_id: [u8; KEY_LEN*4],
         rodt_id_signature: [u8; KEY_LEN*2],
     ) -> Result<NoiseParams, WireGuardError> {
 
@@ -450,7 +450,7 @@ impl Handshake {
         peer_static_public: x25519::PublicKey,
         global_idx: u32,
         preshared_key: Option<[u8; 32]>,
-        rodt_id: [u8; KEY_LEN*2],
+        rodt_id: [u8; KEY_LEN*4],
         rodt_id_signature: [u8; KEY_LEN*2],
     ) -> Result<Handshake, WireGuardError> {
         let params = NoiseParams::new(
@@ -781,7 +781,7 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_static, rest) = rest.split_at_mut(32 + 16);
         let (encrypted_timestamp, rest) = rest.split_at_mut(12 + 16);
-        let (rodt_id, rest) = rest.split_at_mut(64);
+        let (rodt_id, rest) = rest.split_at_mut(128);
         let (rodt_id_signature, _) = rest.split_at_mut(64);
 
         let local_index = self.inc_index();
@@ -904,7 +904,7 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_nothing, rest) = rest.split_at_mut(16);
         // CG: The response also has 2 additional fields so both sides can authenticate each other
-        let (rodt_id, rest) = rest.split_at_mut(64);
+        let (rodt_id, rest) = rest.split_at_mut(128);
         let (rodt_id_signature, _) = rest.split_at_mut(64);
 
         // responder.ephemeral_private = DH_GENERATE()
