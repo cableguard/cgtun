@@ -365,7 +365,7 @@ impl Device {
 
         // CG: Copying the rodt_id to the Tunn
         let bytes_rodt_id = self.config.rodt.token_id.as_bytes();
-        let mut rodt_id: [u8;128] = [0;128];
+        let mut rodt_id: [u8;RODT_SZ] = [0;RODT_SZ];
         let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
         rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
         rodt_id[rodt_length] = 0;
