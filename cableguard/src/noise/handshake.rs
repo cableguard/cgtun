@@ -17,6 +17,7 @@ use std::convert::TryInto;
 use std::time::{Duration, SystemTime};
 use tracing::error;
 use hex::ToHex;
+use crate::noise::{RODT_SZ,RODT_SIGNATURE_SZ};
 
 #[cfg(feature = "mock-instant")]
 use mock_instant::Instant;

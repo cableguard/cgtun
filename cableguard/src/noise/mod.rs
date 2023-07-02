@@ -23,9 +23,6 @@ use crate::device::api::constants::BLOCKCHAIN_NETWORK;
 use ed25519_dalek::{PublicKey,Verifier,Signature};
 use hex::FromHex;
 
-// FROM HANDSHAKE.RS
-const KEY_LEN: usize = 32;
-
 /// The default value to use for rate limiting, when no other rate limiter is defined
 const PEER_HANDSHAKE_RATE_LIMIT: u64 = 10;
 
@@ -84,8 +81,8 @@ const HANDSHAKE_INIT_CONSTANT: MessageType = 1;
 const HANDSHAKE_RESP: MessageType = 2;
 const COOKIE_REPLY: MessageType = 3;
 const DATA: MessageType = 4;
-const RODT_SZ = 128;
-const RODT_SIGNATURE_SZ = 64;
+pub const RODT_SZ:usize = 128;
+pub const RODT_SIGNATURE_SZ:usize = 64;
 
 // These sizes are increased by RODT_SZ + 64 bytes to accommodate for the rodt_id and signature of the same
 const HANDSHAKE_INIT_SZ: usize = 148+RODT_SZ+RODT_SIGNATURE_SZ;
@@ -227,7 +224,7 @@ impl Tunn {
         peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
         rodt_id: [u8; RODT_SZ],
-        rodt_id_signature: [u8; RODT_SZ],
+        rodt_id_signature: [u8; RODT_SIGNATURE_SZ],
         persistent_keepalive: Option<u16>,
         index: u32,
         rate_limiter: Option<Arc<RateLimiter>>,
