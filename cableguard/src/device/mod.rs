@@ -489,18 +489,14 @@ impl Device {
                     std::process::exit(1);        }
             }
         }
-        // CG: THIS HERE NOW Prime the peers list with a constant value so they complete the handshake successfully
 
-        let constprivate_key = StaticSecret::("Find a const to put here");
+        // CG: THIS HERE NOW Prime the peers public key list with a constant value so they complete the handshake successfully
+        let constprivate_key = StaticSecret::random_from_rng(&mut OsRng);
         let constpublic_key: PublicKey = (&constprivate_key).into();   
-        let const_public_key_u832: [u8; 32] = constpublic_key.as_bytes().clone(); 
-        let const_own_string_public_key: &str = &hex::encode(const_public_key_u832);
-        device.api_set_internal("set_peer_public_key", &const_own_string_public_key);
-
-        // CG: Find the peer and check if
-        // IsTrusted(rodt.metadata.authornftcontractid);
-        // ,checking if the Issuer smart contract has published a TXT 
-        // entry with the token_id of the server
+        // let const_public_key_u832: [u8; 32] = constpublic_key.as_bytes().clone(); 
+        // let const_own_string_public_key: &str = &hex::encode(const_public_key_u832);
+        // device.api_set_internal("set_peer_public_key", &const_own_string_public_key);
+        device.api_set_peer_internal(constpublic_key);
 
         Ok(device)
     }
@@ -989,7 +985,6 @@ impl Device {
 
     // CG: This instance of api_set operates internally, not talking to wg
     pub fn api_set_internal(&mut self, option: &str, value: &str) {
-
         match option {
             // CG: We can self-serve the private key from the input json wallet file
             // I think I can call set_key_pair with device.config.x25519_private_key

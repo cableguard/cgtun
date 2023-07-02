@@ -542,78 +542,6 @@ impl Handshake {
         dst: &'a mut [u8],
     ) -> Result<(&'a mut [u8], Session), WireGuardError> {
 
-        // CG: We receive this and we have to use it to validate the peer
-        println!("Debugging: RODT ID received as packet init {:?}",packet.rodt_id);        
-        println!("Debugging: RODT ID Signature received as packet init {:?}",packet.rodt_id_signature);
-        // CG: Signature verification with public key of peer
-        // Public key to be retrieved from the blockchain
-        let peer_slice_rodtid: &[u8] = &packet.rodt_id[..];
-        let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
-        .expect("Failed to convert byte slice to string");
-
-        let account_idargs = "{\"token_id\": \"".to_owned() 
-        + &peer_string_rodtid+ "\"}";
-        tracing::debug!("Info: account idargs: {:?}", account_idargs);
-        match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
-            Ok(result) => {
-                // If the function call is successful, execute this block
-                let peer_rodt = result;
-                tracing::debug!("RODT Owner Init Received: {:?}", peer_rodt.owner_id);
-                
-                // Convert the owner_id string to a Vec<u8> by decoding it from hex
-                let peer_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(peer_rodt.owner_id)
-                    .expect("Failed to decode hex string");
-                
-                // Convert the bytes to a [u8; 32] array
-                let peer_bytes_ed25519_public_key: [u8; 32] = peer_vec_ed25519_public_key
-                    .try_into()
-                    .expect("Invalid byte array length");
-        
-                // Parse the signature bytes from packet.rodt_id_signature
-                // and assign it to the signature variable
-                match Signature::from_bytes(&*packet.rodt_id_signature) {
-                    Ok(signature) => {
-                        // If the signature parsing is successful, execute this block
-                        match PublicKey::from_bytes(&peer_bytes_ed25519_public_key) {
-                            Ok(peer_publickey_ed25519_public_key) => {
-                                // If the public key parsing is successful, execute this block
-                                match peer_publickey_ed25519_public_key.verify(packet.rodt_id, &signature) {
-                                    Ok(is_verified) => {
-                                        // If the verification is successful, print the debugging message
-                                        println!("Debugging: Is Response Verified {:?}", is_verified);
-                                    }
-                                    Err(_) => {
-                                    // Err(PeerEd25519SingnatureVerificationFailed) => {
-                                        // If the verification fails, handle the error and propagate it
-                                        tracing::error!("Error: PeerEd25519SingnatureVerificationFailed");
-                                        return Err(WireGuardError::PeerEd25519SingnatureVerificationFailed);
-                                    }
-                                };
-                                // Rest of the code if verification is successful
-                            }
-                            Err(_) => {
-                                // If the public key parsing fails, handle the error and propagate it
-                                tracing::error!("Error: PeerEd25519PublicKeyParsingFailed");
-                                return Err(WireGuardError::PeerEd25519PublicKeyParsingFailed);
-                            }
-                        };
-                        // Rest of the code if public key parsing is successful
-                    }
-                    Err(_) => {
-                        // If the signature parsing fails, handle the error and propagate it
-                        tracing::error!("Error: PeerEd25519SingnatureParsingFailed");
-                        return Err(WireGuardError::PeerEd25519SingnatureParsingFailed);
-                    }
-                };
-                // Rest of the code if signature parsing is successful
-            }
-            Err(err) => {
-                // If the nearorg_rpc_token function call returns an error, execute this block
-                tracing::error!("Error: There is no server RODT associated with the account: {}", err);
-                std::process::exit(1);
-            }
-        }
-        
         // initiator.chaining_key = HASH(CONSTRUCTION)
         let mut chaining_key = INITIAL_CHAIN_KEY;
         let mut hash = INITIAL_CHAIN_HASH;
@@ -661,10 +589,6 @@ impl Handshake {
         )
         .map_err(|_| WireGuardError::WrongKey)?;
 
-        // CG: For the time being we just display the extra parameters exchanged
-        tracing::debug!("Debugging: RODT_ID {:?}",self.params.rodt_id);
-        tracing::debug!("Debugging: Signature of the RODT_ID {:?}",self.params.rodt_id_signature);
-
         // initiator.hash = HASH(initiator.hash || msg.encrypted_static)
         hash = b2s_hash(&hash, packet.encrypted_static);
         // temp = HMAC(initiator.chaining_key, DH(initiator.static_private, responder.static_public))
@@ -710,78 +634,6 @@ impl Handshake {
             (_, HandshakeState::InitSent(s)) if s.local_index == packet.receiver_idx => (s, true),
             _ => return Err(WireGuardError::UnexpectedPacket),
         };
-
-        // CG: For the time being we just display the extra parameters exchanged
-        // CG: We receive this and we have to use it to validate the peer
-        tracing::debug!("Debugging: RODT_ID {:?}",packet.rodt_id);
-        tracing::debug!("Debugging: Signature of the RODT_ID {:?}",packet.rodt_id_signature);
-
-        // CG: Signature verification
-        let peer_slice_rodtid: &[u8] = &packet.rodt_id[..];
-        let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
-        .expect("Failed to convert byte slice to string");
-
-        let account_idargs = "{\"token_id\": \"".to_owned() 
-        + &peer_string_rodtid+ "\"}";
-        tracing::debug!("Info: account idargs: {:?}", account_idargs);
-        match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
-            Ok(result) => {
-                // If the function call is successful, execute this block
-                let peer_rodt = result;
-                tracing::debug!("RODT Owner Init Received: {:?}", peer_rodt.owner_id);
-                
-                // Convert the owner_id string to a Vec<u8> by decoding it from hex
-                let peer_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(peer_rodt.owner_id)
-                    .expect("Failed to decode hex string");
-                
-                // Convert the bytes to a [u8; 32] array
-                let peer_bytes_ed25519_public_key: [u8; 32] = peer_vec_ed25519_public_key
-                    .try_into()
-                    .expect("Invalid byte array length");
-        
-                // Parse the signature bytes from packet.rodt_id_signature
-                // and assign it to the signature variable
-                match Signature::from_bytes(&*packet.rodt_id_signature) {
-                    Ok(signature) => {
-                        // If the signature parsing is successful, execute this block
-                        match PublicKey::from_bytes(&peer_bytes_ed25519_public_key) {
-                            Ok(peer_publickey_ed25519_public_key) => {
-                                // If the public key parsing is successful, execute this block
-                                match peer_publickey_ed25519_public_key.verify(packet.rodt_id, &signature) {
-                                    Ok(is_verified) => {
-                                        // If the verification is successful, print the debugging message
-                                        println!("Error: Debugging: Is Response Verified {:?}", is_verified);
-                                    }
-                                    Err(_) => {
-                                        // If the verification fails, handle the error and propagate it
-                                        tracing::error!("Error: PeerEd25519SingnatureVerificationFailed");
-                                        return Err(WireGuardError::PeerEd25519SingnatureVerificationFailed);
-                                    }
-                                };
-                                // Rest of the code if verification is successful
-                            }
-                            Err(_) => {
-                                // If the public key parsing fails, handle the error and propagate it
-                                tracing::error!("Error: PeerEd25519PublicKeyParsingFailed");
-                                return Err(WireGuardError::PeerEd25519PublicKeyParsingFailed);
-                            }
-                        };
-                        // Rest of the code if public key parsing is successful
-                    }
-                    Err(_) => {
-                        // If the signature parsing fails, handle the error and propagate it
-                        tracing::error!("PeerEd25519SingnatureParsingFailed");
-                        return Err(WireGuardError::PeerEd25519SingnatureParsingFailed);
-                    }
-                };
-                // Rest of the code if signature parsing is successful
-            }
-            Err(err) => {
-                // If the nearorg_rpc_token function call returns an error, execute this block
-                tracing::error!("Error: There is no server RODT associated with the account: {}", err);
-                std::process::exit(1);
-            }
-        }
 
         let peer_index = packet.sender_idx;
         let local_index = state.local_index;
@@ -831,6 +683,11 @@ impl Handshake {
         // responder.hash = HASH(responder.hash || msg.encrypted_nothing)
         // hash = b2s_hash(hash, buf[ENC_NOTHING_OFF..ENC_NOTHING_OFF + ENC_NOTHING_SZ]);
 
+        // initiator.sending_key = temp2
+        // initiator.receiving_key = temp3
+        // initiator.sending_key_counter = 0
+        // initiator.receiving_key_counter = 0
+
         // Derive keys
         // temp1 = HMAC(initiator.chaining_key, [empty])
         let temp1 = b2s_hmac(&chaining_key, &[]);
@@ -850,10 +707,6 @@ impl Handshake {
             self.state = HandshakeState::None;
         }
 
-        // initiator.sending_key = temp2
-        // initiator.receiving_key = temp3
-        // initiator.sending_key_counter = 0
-        // initiator.receiving_key_counter = 0
         Ok(Session::new(local_index, peer_index, temp3, temp2))
     }
 
