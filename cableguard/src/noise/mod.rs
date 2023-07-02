@@ -17,6 +17,11 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::Arc;
 use std::time::Duration;
 use hex::encode;
+use crate::device::api::nearorg_rpc_token;
+use crate::device::api::constants::SMART_CONTRACT;
+use crate::device::api::constants::BLOCKCHAIN_NETWORK;
+use ed25519_dalek::{PublicKey,Verifier,Signature};
+use hex::FromHex;
 
 // FROM HANDSHAKE.RS
 const KEY_LEN: usize = 32;
@@ -75,7 +80,7 @@ pub struct Tunn {
 }
 
 type MessageType = u32;
-const HANDSHAKE_INIT: MessageType = 1;
+const HANDSHAKE_INIT_CONSTANT: MessageType = 1;
 const HANDSHAKE_RESP: MessageType = 2;
 const COOKIE_REPLY: MessageType = 3;
 const DATA: MessageType = 4;
@@ -86,7 +91,7 @@ const HANDSHAKE_RESP_SZ: usize = 92+128;
 const COOKIE_REPLY_SZ: usize = 64;
 const DATA_OVERHEAD_SZ: usize = 32;
 
-#[derive(Debug)]
+#[derive(Debug,Copy, Clone)]
 pub struct HandshakeInit<'a> {
     sender_idx: u32,
     unencrypted_ephemeral: &'a [u8; 32],
@@ -96,7 +101,7 @@ pub struct HandshakeInit<'a> {
     rodt_id_signature: &'a [u8; KEY_LEN*2],
 }
 
-#[derive(Debug)]
+#[derive(Debug,Copy, Clone)]
 pub struct HandshakeResponse<'a> {
     sender_idx: u32,
     pub receiver_idx: u32,
@@ -140,7 +145,7 @@ impl Tunn {
         let packet_type = u32::from_le_bytes(src[0..4].try_into().unwrap());
 
         Ok(match (packet_type, src.len()) {
-                (HANDSHAKE_INIT, HANDSHAKE_INIT_SZ) => Packet::HandshakeInit(HandshakeInit {
+                (HANDSHAKE_INIT_CONSTANT, HANDSHAKE_INIT_SZ) => Packet::HandshakeInit(HandshakeInit {
                 //    u32 sender_index
                 //    u8 unencrypted_ephemeral[32]
                 //    u8 encrypted_static[AEAD_LEN(32)]
@@ -354,23 +359,23 @@ impl Tunn {
 
     fn handle_received_handshake_init<'a>(
         &mut self,
-        p: HandshakeInit,
+        handshake_init: HandshakeInit,
         dst: &'a mut [u8],
     ) -> Result<TunnResult<'a>, WireGuardError> {
         tracing::debug!(
             message = "Info: Received handshake_initiation",
-            remote_idx = p.sender_idx
+            remote_idx = handshake_init.sender_idx
         );
 
-        let (packet, session) = self.handshake.receive_handshake_initialization(p, dst)?;
+        let (packet, session) = self.handshake.receive_handshake_initialization(handshake_init, dst)?;
 
         // CG: Beginning of RODT verification
         // CG: We receive this and we have to use it to validate the peer
-        println!("Debugging: RODT ID received as packet init {:?}",packet.rodt_id);        
-        println!("Debugging: RODT ID Signature received as packet init {:?}",packet.rodt_id_signature);
+        println!("Debugging: RODT ID received as packet init {:?}",handshake_init.rodt_id);        
+        println!("Debugging: RODT ID Signature received as packet init {:?}",handshake_init.rodt_id_signature);
         // CG: Signature verification with public key of peer
         // Public key to be retrieved from the blockchain
-        let peer_slice_rodtid: &[u8] = &packet.rodt_id[..];
+        let peer_slice_rodtid: &[u8] = &handshake_init.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Failed to convert byte slice to string");
 
@@ -394,13 +399,14 @@ impl Tunn {
         
                 // Parse the signature bytes from packet.rodt_id_signature
                 // and assign it to the signature variable
-                match Signature::from_bytes(&*packet.rodt_id_signature) {
+                match Signature::from_bytes(&*handshake_init.rodt_id_signature) {
                     Ok(signature) => {
                         // If the signature parsing is successful, execute this block
                         match PublicKey::from_bytes(&peer_bytes_ed25519_public_key) {
                             Ok(peer_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
-                                match peer_publickey_ed25519_public_key.verify(packet.rodt_id, &signature) {
+                                let clone_p_rodt_id = handshake_init.rodt_id;
+                                match peer_publickey_ed25519_public_key.verify(clone_p_rodt_id, &signature) {
                                     Ok(is_verified) => {
                                         // If the verification is successful, print the debugging message
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
@@ -456,24 +462,24 @@ impl Tunn {
 
     fn handle_received_handshake_response<'a>(
         &mut self,
-        p: HandshakeResponse,
+        handshake_response: HandshakeResponse,
         dst: &'a mut [u8],
     ) -> Result<TunnResult<'a>, WireGuardError> {
         tracing::debug!(
             message = "Info: Received handshake_response",
-            local_idx = p.receiver_idx,
-            remote_idx = p.sender_idx
+            local_idx = handshake_response.receiver_idx,
+            remote_idx = handshake_response.sender_idx
         );
 
-        let session = self.handshake.receive_handshake_response(p)?;
+        let session = self.handshake.receive_handshake_response(handshake_response)?;
 
         // CG: Beginning of RODT verification
         // CG: We receive this and we have to use it to validate the peer
-        println!("Debugging: RODT ID received as packet init {:?}",packet.rodt_id);        
-        println!("Debugging: RODT ID Signature received as packet init {:?}",packet.rodt_id_signature);
+        println!("Debugging: RODT ID received as packet init {:?}",handshake_response.rodt_id);        
+        println!("Debugging: RODT ID Signature received as packet init {:?}",handshake_response.rodt_id_signature);
         // CG: Signature verification with public key of peer
         // Public key to be retrieved from the blockchain
-        let peer_slice_rodtid: &[u8] = &packet.rodt_id[..];
+        let peer_slice_rodtid: &[u8] = &handshake_response.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Failed to convert byte slice to string");
 
@@ -497,13 +503,14 @@ impl Tunn {
         
                 // Parse the signature bytes from packet.rodt_id_signature
                 // and assign it to the signature variable
-                match Signature::from_bytes(&*packet.rodt_id_signature) {
+                match Signature::from_bytes(&*handshake_response.rodt_id_signature) {
                     Ok(signature) => {
                         // If the signature parsing is successful, execute this block
                         match PublicKey::from_bytes(&peer_bytes_ed25519_public_key) {
                             Ok(peer_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
-                                match peer_publickey_ed25519_public_key.verify(packet.rodt_id, &signature) {
+                                let clone_p_rodt_id = handshake_response.rodt_id;
+                                match peer_publickey_ed25519_public_key.verify(clone_p_rodt_id, &signature) {
                                     Ok(is_verified) => {
                                         // If the verification is successful, print the debugging message
                                         println!("Debugging: Is Response Verified {:?}", is_verified);

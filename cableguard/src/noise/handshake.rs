@@ -16,11 +16,7 @@ use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, CHACHA20_POLY1305};
 use std::convert::TryInto;
 use std::time::{Duration, SystemTime};
 use tracing::error;
-use hex::{ToHex,FromHex};
-use crate::device::api::nearorg_rpc_token;
-use crate::device::api::constants::SMART_CONTRACT;
-use crate::device::api::constants::BLOCKCHAIN_NETWORK;
-use ed25519_dalek::{PublicKey,Verifier,Signature};
+use hex::ToHex;
 
 #[cfg(feature = "mock-instant")]
 use mock_instant::Instant;
@@ -804,7 +800,7 @@ impl Handshake {
         
         // msg.message_type = 1
         // msg.reserved_zero = { 0, 0, 0 }
-        message_type.copy_from_slice(&super::HANDSHAKE_INIT.to_le_bytes());
+        message_type.copy_from_slice(&super::HANDSHAKE_INIT_CONSTANT.to_le_bytes());
         
         // msg.sender_index = little_endian(initiator.sender_index)
         sender_index.copy_from_slice(&local_index.to_le_bytes());
