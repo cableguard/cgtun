@@ -370,15 +370,13 @@ impl Tunn {
         let (packet, session) = self.handshake.receive_handshake_initialization(handshake_init, dst)?;
 
         // CG: Beginning of RODT verification
-        // CG: We receive this and we have to use it to validate the peer
-        println!("Debugging: RODT ID received as packet init {:?}",handshake_init.rodt_id);        
-        println!("Debugging: RODT ID Signature received as packet init {:?}",handshake_init.rodt_id_signature);
-        // CG: Signature verification with public key of peer
-        // Public key to be retrieved from the blockchain
         let peer_slice_rodtid: &[u8] = &handshake_init.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Failed to convert byte slice to string");
 
+        // CG: We receive this and we have to use it to validate the peer
+        println!("Debugging: RODT ID received as packet init {}",peer_string_rodtid);        
+        println!("Debugging: RODT ID Signature received as packet init {:?}",handshake_init.rodt_id_signature);
         let account_idargs = "{\"token_id\": \"".to_owned() 
         + &peer_string_rodtid+ "\"}";
         tracing::debug!("Info: account idargs: {:?}", account_idargs);
@@ -405,8 +403,8 @@ impl Tunn {
                         match PublicKey::from_bytes(&peer_bytes_ed25519_public_key) {
                             Ok(peer_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
-                                let clone_p_rodt_id = handshake_init.rodt_id;
-                                match peer_publickey_ed25519_public_key.verify(clone_p_rodt_id, &signature) {
+                                let clone_handshake_init_rodt_id = handshake_init.rodt_id;
+                                match peer_publickey_ed25519_public_key.verify(clone_handshake_init_rodt_id, &signature) {
                                     Ok(is_verified) => {
                                         // If the verification is successful, print the debugging message
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
@@ -474,14 +472,15 @@ impl Tunn {
         let session = self.handshake.receive_handshake_response(handshake_response)?;
 
         // CG: Beginning of RODT verification
-        // CG: We receive this and we have to use it to validate the peer
-        println!("Debugging: RODT ID received as packet init {:?}",handshake_response.rodt_id);        
-        println!("Debugging: RODT ID Signature received as packet init {:?}",handshake_response.rodt_id_signature);
-        // CG: Signature verification with public key of peer
-        // Public key to be retrieved from the blockchain
-        let peer_slice_rodtid: &[u8] = &handshake_response.rodt_id[..];
+        let peer_slice_rodtid: &[u8] = &handshake_init.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Failed to convert byte slice to string");
+
+        // CG: We receive this and we have to use it to validate the peer
+        println!("Debugging: RODT ID received as packet init {}",peer_string_rodtid);        
+        println!("Debugging: RODT ID Signature received as packet init {:?}",handshake_init.rodt_id_signature);
+        let account_idargs = "{\"token_id\": \"".to_owned() 
+        + &peer_string_rodtid+ "\"}";
 
         let account_idargs = "{\"token_id\": \"".to_owned() 
         + &peer_string_rodtid+ "\"}";
@@ -509,8 +508,8 @@ impl Tunn {
                         match PublicKey::from_bytes(&peer_bytes_ed25519_public_key) {
                             Ok(peer_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
-                                let clone_p_rodt_id = handshake_response.rodt_id;
-                                match peer_publickey_ed25519_public_key.verify(clone_p_rodt_id, &signature) {
+                                let clone_handshake_response_rodt_id = handshake_response.rodt_id;
+                                match peer_publickey_ed25519_public_key.verify(clone_handshake_response_rodt_id, &signature) {
                                     Ok(is_verified) => {
                                         // If the verification is successful, print the debugging message
                                         println!("Debugging: Is Response Verified {:?}", is_verified);

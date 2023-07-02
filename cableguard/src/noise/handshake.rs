@@ -907,10 +907,6 @@ impl Handshake {
         let (rodt_id, rest) = rest.split_at_mut(64);
         let (rodt_id_signature, _) = rest.split_at_mut(64);
 
-        // CG: We send a different rodt_id that the one we receive
-        tracing::debug!("Debugging: RODT_ID {:?}",rodt_id);
-        tracing::debug!("Debugging: Signature of the RODT_ID {:?}",rodt_id_signature);
-
         // responder.ephemeral_private = DH_GENERATE()
         let ephemeral_private = x25519::ReusableSecret::random_from_rng(OsRng);
         let local_index = self.inc_index();
@@ -971,6 +967,14 @@ impl Handshake {
         // initiator.receiving_key = temp3
         // initiator.sending_key_counter = 0
         // initiator.receiving_key_counter = 0
+
+        // CG: We send a different rodt_id that the one we receive
+        // CG: Our rodt_id values to transfer over the wire
+        rodt_id.copy_from_slice(&self.params.rodt_id);
+        rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
+        tracing::debug!("Debugging: RODT_ID Response {:?}",rodt_id);
+        tracing::debug!("Debugging: Signature of the RODT_ID Response {:?}",rodt_id_signature);
+
         let dst = self.append_mac1_and_mac2(local_index, &mut dst[..super::HANDSHAKE_RESP_SZ])?;
 
         Ok((dst, Session::new(local_index, peer_index, temp2, temp3)))
