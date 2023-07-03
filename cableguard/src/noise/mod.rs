@@ -493,8 +493,8 @@ impl Tunn {
         .expect("Failed to convert byte slice to string");
 
         // CG: We receive this and we have to use it to validate the peer
-        println!("Debugging: RODT ID received as packet init {}",peer_string_rodtid);        
-        println!("Debugging: RODT ID Signature received as packet init {:?}",peer_handshake_response.rodt_id_signature);
+        println!("Debugging: RODT ID received as response {}",peer_string_rodtid);        
+        println!("Debugging: RODT ID Signature received as response {:?}",peer_handshake_response.rodt_id_signature);
 
         let account_idargs = "{\"token_id\": \"".to_owned() 
         + &peer_string_rodtid+ "\"}";

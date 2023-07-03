@@ -370,8 +370,7 @@ impl Device {
 
         let rodt_id_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
 
-        tracing::debug!("Debugging: Is RODT ID and +TO BYTES the same? {} {:?}",self.config.rodt.token_id,self.config.rodt.token_id.as_bytes());
-        tracing::debug!("Debugging: Is RODT ID SIGNATURE {}",rodt_id_signature);
+        tracing::debug!("Debugging: Own RODT ID signature {}",rodt_id_signature);
 
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Own X25519 private key
@@ -495,12 +494,12 @@ impl Device {
         }
 
         // CG: THIS HERE NOW Prime the peers public key list with a constant value so they complete the handshake successfully
-        let constprivate_key = StaticSecret::random_from_rng(&mut OsRng);
-        let constpublic_key: PublicKey = (&constprivate_key).into();   
+        //let constprivate_key = StaticSecret::random_from_rng(&mut OsRng);
+        //let constpublic_key: PublicKey = (&constprivate_key).into();   
         // let const_public_key_u832: [u8; 32] = constpublic_key.as_bytes().clone(); 
         // let const_own_string_public_key: &str = &hex::encode_hex(const_public_key_u832);
         // device.api_set_internal("set_peer_public_key", &const_own_string_public_key);
-        device.api_set_peer_internal(constpublic_key);
+        //device.api_set_peer_internal(constpublic_key);
 
         Ok(device)
     }

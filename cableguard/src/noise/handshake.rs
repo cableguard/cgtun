@@ -857,9 +857,9 @@ impl Handshake {
 
         // CG: Our rodt_id values to transfer over the wire
         rodt_id.copy_from_slice(&self.params.rodt_id);
-        tracing::debug!("Debugging: Are RODT SIGNATURE (this) and COPY FROM SLICE the same? {:?}",rodt_id_signature);
+        tracing::debug!("Debugging: HSI RODT ID {:?}",rodt_id);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
-        tracing::debug!("Debugging: Are RODT SIGNATURE and COPY FROM SLICE (this) the same? {:?}",rodt_id_signature);
+        tracing::debug!("Debugging: HSI RODT SIGNATURE {:?}",rodt_id_signature);
 
         // CG:: Check if the conversion was successful
         let string_rodt_id = String::from_utf8(self.params.rodt_id.to_vec());
