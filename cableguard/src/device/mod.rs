@@ -370,7 +370,8 @@ impl Device {
 
         let rodt_id_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
 
-        tracing::debug!("Debugging: Is RODT ID SIGNATURE and +TO BYTES the same? {?} {?}"rodt_id_signature ,rodt_id_signature .to_bytes);
+        tracing::debug!("Debugging: Is RODT ID and +TO BYTES the same? {} {:?}",self.config.rodt.token_id,self.config.rodt.token_id.as_bytes());
+        tracing::debug!("Debugging: Is RODT ID SIGNATURE {}",rodt_id_signature);
 
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Own X25519 private key
