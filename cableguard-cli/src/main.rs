@@ -15,6 +15,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, ErrorKind,Read};
 use hex::{FromHex};
 use base64::encode as base64encode;
+use std::env;
 
 fn main() {
     let matches = Command::new("cableguard")
@@ -120,7 +121,9 @@ fn main() {
 
     // Initialize a RODT object
     let rodt: Rodt;
-    
+
+    let version = env!("CARGO_PKG_VERSION");
+    println!("Cableguard version: {}", version);
     println!("RODT Blockchain Directory: {}", "NEAR.ORG");
     println!("Blockchain Directory Network: {}", BLOCKCHAIN_NETWORK);
     println!("Smart Contract Account in Base58: {}", SMART_CONTRACT);
