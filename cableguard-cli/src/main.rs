@@ -14,7 +14,7 @@ use std::process::exit;
 use std::fs::{File, OpenOptions};
 use std::io::{self, ErrorKind,Read};
 use hex::{FromHex};
-use base64::encode as base64encode;
+use base64::encode as encode_base64;
 use std::env;
 
 fn main() {
@@ -300,5 +300,5 @@ fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
         .join("");
     
     let bytes = Vec::from_hex(&hex_string).expect("Invalid Hex string");
-    base64encode(&bytes)
+    encode_base64(&bytes)
 }

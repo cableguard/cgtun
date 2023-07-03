@@ -15,7 +15,6 @@ use parking_lot::Mutex;
 use rand_core::OsRng;
 use tracing;
 use tracing_subscriber::fmt;
-
 use crate::serialization::KeyBytes;
 use std::ffi::{CStr, CString};
 use std::io::{Error, ErrorKind, Write};

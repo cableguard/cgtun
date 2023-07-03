@@ -19,7 +19,8 @@ use std::thread;
 use std::thread::JoinHandle;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
-use hex::{encode,ToHex};
+use hex::ToHex;
+use hex::encode as encode_hex;
 use allowed_ips::AllowedIps;
 use api::nearorg_rpc_token;
 use parking_lot::Mutex;
@@ -494,7 +495,7 @@ impl Device {
         let constprivate_key = StaticSecret::random_from_rng(&mut OsRng);
         let constpublic_key: PublicKey = (&constprivate_key).into();   
         // let const_public_key_u832: [u8; 32] = constpublic_key.as_bytes().clone(); 
-        // let const_own_string_public_key: &str = &hex::encode(const_public_key_u832);
+        // let const_own_string_public_key: &str = &hex::encode_hex(const_public_key_u832);
         // device.api_set_internal("set_peer_public_key", &const_own_string_public_key);
         device.api_set_peer_internal(constpublic_key);
 
@@ -550,19 +551,19 @@ impl Device {
 
         // CG: Don't show the private key
         // CG: Set private_key from the RODT private key
-        // let rodt_string_private_key: &str = &hex::encode(self.config.x25519_private_key);
+        // let rodt_string_private_key: &str = &hex::encode_hex(self.config.x25519_private_key);
         // println!("Debugging: RODT Private Key, fn set_key_pair: {}", rodt_string_private_key);
 
         let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
 
         // CG: I don't think we need this anymore
         // let own_bytes_public_key = own_publickey_public_key.to_bytes();
-        // let own_string_public_key = encode(&own_bytes_public_key);
+        // let own_string_public_key = encode_hex(&own_bytes_public_key);
         // println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key_pair: {}", own_string_public_key);
 
         // CG: Don't show the private key
         // let own_bytes_private_key = own_staticsecret_private_key.to_bytes();
-        // let own_string_private_key = encode(&own_bytes_private_key);
+        // let own_string_private_key = encode_hex(&own_bytes_private_key);
         // println!("{} {}","Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key_pair: {}", own_string_private_key);
 
         // CG: We are using the input value of the function instead of value from the RODT
@@ -1026,8 +1027,8 @@ impl Device {
                     },
             "set_peer_public_key" => match value.parse::<KeyBytes>() {
                 Ok(peer_keybytes_key) => {
-                    let peer_b58_public_key = encode(peer_keybytes_key.0);
-                    tracing::debug!("Debugging: Peer Public Key FN api_set_internal {:?}", peer_b58_public_key);
+                    let peer_hex_public_key = encode_hex(peer_keybytes_key.0);
+                    tracing::debug!("Debugging: Peer Public Key FN api_set_internal {:?}", peer_hex_public_key);
                         return self.api_set_peer_internal(
                             x25519::PublicKey::from(peer_keybytes_key.0),
                         )

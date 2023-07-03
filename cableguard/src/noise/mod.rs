@@ -231,8 +231,8 @@ impl Tunn {
         let static_public = x25519::PublicKey::from(&static_private);
 
         // CG: Muting snooping into public keys
-        // let static_public_string = encode(static_public);
-        // let peer_static_public_string =  encode(peer_static_public);
+        // let static_public_string = encode_hex(static_public);
+        // let peer_static_public_string =  encode_hex(peer_static_public);
         // tracing::debug!("Debugging: static_public = {} in fn new/Tunn", static_public_string);
         // tracing::debug!("Debugging: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
 
@@ -807,10 +807,10 @@ mod tests {
         let their_idx = OsRng.next_u32();
 
         // Convert the keys to strings
-        let own_string_private_key = encode(own_staticsecret_private_key.to_bytes());
-        let own_string_public_key = encode(own_publickey_public_key.as_bytes());
-        let their_string_private_key = encode(their_staticsecret_private_key.to_bytes());
-        let their_string_public_key = encode(their_publickey_public_key.as_bytes());
+        let own_string_private_key = encode_hex(own_staticsecret_private_key.to_bytes());
+        let own_string_public_key = encode_hex(own_publickey_public_key.as_bytes());
+        let their_string_private_key = encode_hex(their_staticsecret_private_key.to_bytes());
+        let their_string_public_key = encode_hex(their_publickey_public_key.as_bytes());
 
         // Display the converted values in the trace
         tracing::debug!("Debugging: own_staticsecret_private_key: {}, own_publickey_public_key: {}, their_secret_key: {}, their_public_key: {} in fn produce_two_tuns",

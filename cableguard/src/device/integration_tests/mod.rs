@@ -19,7 +19,7 @@ mod tests {
     use std::sync::Arc;
     use std::thread;
     use base64::encode as base64encode;
-    use hex::encode;
+    use hex::encode as encode_hex;
 
     static NEXT_IFACE_IDX: AtomicUsize = AtomicUsize::new(100); // utun 100+ should be vacant during testing on CI
     static NEXT_PORT: AtomicUsize = AtomicUsize::new(61111); // Use ports starting with 61111, hoping we don't run into a taken port 🤷
@@ -132,7 +132,7 @@ mod tests {
                  return 200 '{}';\n\
                  }}\n\
                  }}",
-                encode(PublicKey::from(&self.key).as_bytes())
+                encode_hex(PublicKey::from(&self.key).as_bytes())
             )
         }
 
@@ -425,9 +425,9 @@ mod tests {
         /// Assign a private_key to the interface
         fn wg_set_key(&self, key: StaticSecret) -> String {
             let bytesk = key.to_bytes();
-            let encoded_key = encode(&bytesk);
+            let encoded_key = encode_hex(&bytesk);
             tracing::debug!(message = "Debugging: Private_key FN wg_set_key: {}", encoded_key);
-            self.wg_set(&format!("private_key={}", encode(key.to_bytes()));
+            self.wg_set(&format!("private_key={}", encode_hex(key.to_bytes()));
         }
 
         /// Assign a peer to the interface (with public_key, endpoint and a series of nallowed_ip)
@@ -437,7 +437,7 @@ mod tests {
             ep: &SocketAddr,
             allowed_ips: &[AllowedIp],
         ) -> String {
-            let mut req = format!("public_key={}\nendpoint={}", encode(key.as_bytes()), ep);
+            let mut req = format!("public_key={}\nendpoint={}", encode_hex(key.as_bytes()), ep);
             for AllowedIp { ip, cidr } in allowed_ips {
                 let _ = write!(req, "\nallowed_ip={}/{}", ip, cidr);
             }
@@ -461,7 +461,7 @@ mod tests {
         let mut path = String::from("/tmp/");
         let mut buf = [0u8; 32];
         SystemRandom::new().fill(&mut buf[..]).unwrap();
-        path.push_str(&encode(buf));
+        path.push_str(&encode_hex(buf));
         path
     }
 
@@ -492,7 +492,7 @@ mod tests {
             wg.wg_get(),
             format!(
                 "own_public_key={}\nlisten_port={}\nerrno=0\n\n",
-                encode(own_public_key.as_bytes()),
+                encode_hex(own_public_key.as_bytes()),
                 port
             )
         );
@@ -529,9 +529,9 @@ mod tests {
                  rx_bytes=0\n\
                  tx_bytes=0\n\
                  errno=0\n\n",
-                encode(own_public_key.as_bytes()),
+                encode_hex(own_public_key.as_bytes()),
                 port,
-                encode(peer_pub_key.as_bytes()),
+                encode_hex(peer_pub_key.as_bytes()),
                 endpoint,
                 allowed_ips[0].ip,
                 allowed_ips[0].cidr,
@@ -585,7 +585,7 @@ mod tests {
 
         let response = peer.get_request();
 
-        assert_eq!(response, encode(PublicKey::from(&peer.key).as_bytes()));
+        assert_eq!(response, encode_hex(PublicKey::from(&peer.key).as_bytes()));
     }
 
     /// Test if wireguard can handle simple ipv4 connections
@@ -621,7 +621,7 @@ mod tests {
 
         let response = peer.get_request();
 
-        assert_eq!(response, encode(PublicKey::from(&peer.key).as_bytes()));
+        assert_eq!(response, encode_hex(PublicKey::from(&peer.key).as_bytes()));
     }
 
     #[test]
@@ -656,7 +656,7 @@ mod tests {
 
         let response = peer.get_request();
 
-        assert_eq!(response, encode(PublicKey::from(&peer.key).as_bytes()));
+        assert_eq!(response, encode_hex(PublicKey::from(&peer.key).as_bytes()));
     }
 
     /// Test if wireguard can handle connection with an ipv6 endpoint
@@ -695,7 +695,7 @@ mod tests {
 
         let response = peer.get_request();
 
-        assert_eq!(response, encode(PublicKey::from(&peer.key).as_bytes()));
+        assert_eq!(response, encode_hex(PublicKey::from(&peer.key).as_bytes()));
     }
 
     /// Test if wireguard can handle connection with an ipv6 endpoint
@@ -745,7 +745,7 @@ mod tests {
 
         let response = peer.get_request();
 
-        assert_eq!(response, encode(PublicKey::from(&peer.key).as_bytes()));
+        assert_eq!(response, encode_hex(PublicKey::from(&peer.key).as_bytes()));
     }
 
     /// Test many concurrent connections
@@ -789,7 +789,7 @@ mod tests {
             threads.push(thread::spawn(move || {
                 for _ in 0..100 {
                     let response = p.get_request();
-                    assert_eq!(response, encode(pub_key.as_bytes()));
+                    assert_eq!(response, encode_hex(pub_key.as_bytes()));
                 }
             }));
         }
@@ -840,7 +840,7 @@ mod tests {
             threads.push(thread::spawn(move || {
                 for _ in 0..100 {
                     let response = p.get_request();
-                    assert_eq!(response, encode(pub_key.as_bytes()));
+                    assert_eq!(response, encode_hex(pub_key.as_bytes()));
                 }
             }));
         }
