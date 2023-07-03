@@ -127,7 +127,7 @@ pub unsafe extern "C" fn convert_x25519_key_to_base64(
 /// Creates new tunnel
 #[no_mangle]
 #[export_name = "Java_com_cloudflare_app_boringtun_BoringTunJNI_new_1tunnel"]
-pub unsafe extern "C" fn create_new_tunnel(
+pub unsafe extern "C" fn produce_new_tunnel(
     env: JNIEnv,
     _class: JClass,
     arg_secret_key: JString,

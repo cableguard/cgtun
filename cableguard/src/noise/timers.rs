@@ -300,7 +300,7 @@ impl Tunn {
         }
 
         if handshake_initiation_required {
-            return self.format_handshake_initiation(dst, true);
+            return self.produce_handshake_initiation(dst, true);
         }
 
         if keepalive_required {

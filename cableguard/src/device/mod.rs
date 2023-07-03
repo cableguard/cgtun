@@ -34,7 +34,7 @@ use crate::x25519::{PublicKey,StaticSecret};
 use crate::serialization::{KeyBytes, self};
 use crate::device::api::Rodt;
 use crate::noise::errors::WireGuardError;
-use crate::noise::handshake::parse_handshake_anon;
+use crate::noise::handshake::consume_handshake_anon;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use ed25519_dalek::{Keypair,Signer};
@@ -771,7 +771,7 @@ impl Device {
                     // CG: Would be good to understand this code
                     let peer = match &parsed_packet {
                         Packet::HandshakeInit(p) => {
-                            parse_handshake_anon(own_bytes_private_key, own_bytes_public_key, p)
+                            consume_handshake_anon(own_bytes_private_key, own_bytes_public_key, p)
                                 .ok()
                                 .and_then(|hh| {
                                     let own_string_private_key = own_bytes_private_key.encode_hex::<String>();
@@ -804,7 +804,7 @@ impl Device {
                     let mut flush = false; // Are there packets to send from the queue?
                     match p
                         .tunnel
-                        .handle_verified_packet(parsed_packet, &mut t.dst_buf[..])
+                        .consume_verified_packet(parsed_packet, &mut t.dst_buf[..])
                     {
                         TunnResult::Done => {}
                         TunnResult::Err(_) => continue,

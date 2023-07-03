@@ -265,7 +265,7 @@ pub fn nearorg_rpc_state(
     Ok(())
 }
 
-fn create_sock_dir() {
+fn produce_sock_dir() {
     let _ = create_dir(SOCK_DIR); // Create the directory if it does not exist
 
     if let Ok((saved_uid, saved_gid)) = get_saved_ids() {
@@ -288,7 +288,7 @@ impl Device {
     pub fn register_api_handler(&mut self) -> Result<(), Error> {
         let path = format!("{}/{}.sock", SOCK_DIR, self.iface.name()?);
 
-        create_sock_dir();
+        produce_sock_dir();
 
         let _ = remove_file(&path); // Attempt to remove the socket if already exists
 

@@ -267,7 +267,7 @@ fn main() {
     let mut device_handle: DeviceHandle = match DeviceHandle::new(&tun_name, &config) {
         Ok(d) => d,
         Err(e) => {
-            // Notify parent that tunnel initialization failed
+            // Notify parent that tunnel initiation failed
             tracing::error!(message = "Error: Failed to initialize tunnel", error=?e);
             sock1.send(&[0]).unwrap();
             exit(1);
@@ -283,7 +283,7 @@ fn main() {
         }
     }
     
-    // Notify parent that tunnel initialization succeeded
+    // Notify parent that tunnel initiation succeeded
     sock1.send(&[1]).unwrap();
     drop(sock1);
     

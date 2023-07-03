@@ -66,7 +66,7 @@ impl AsRawFd for TunSocket {
 }
 
 // On Darwin tunnel can only be named utunXXX
-pub fn parse_utun_name(name: &str) -> Result<u32, Error> {
+pub fn consume_utun_name(name: &str) -> Result<u32, Error> {
     if !name.starts_with("utun") {
         return Err(Error::InvalidTunnelName);
     }
@@ -116,7 +116,7 @@ impl TunSocket {
     }
 
     pub fn new(name: &str) -> Result<TunSocket, Error> {
-        let idx = parse_utun_name(name)?;
+        let idx = consume_utun_name(name)?;
 
         let fd = match unsafe { socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL) } {
             -1 => return Err(Error::Socket(io::Error::last_os_error())),

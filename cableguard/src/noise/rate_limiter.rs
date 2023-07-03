@@ -116,7 +116,7 @@ impl RateLimiter {
         self.count.fetch_add(1, Ordering::SeqCst) >= self.limit
     }
 
-    pub(crate) fn format_cookie_reply<'a>(
+    pub(crate) fn produce_cookie_reply<'a>(
         &self,
         idx: u32,
         cookie: Cookie,
@@ -160,7 +160,7 @@ impl RateLimiter {
         src: &'a [u8],
         dst: &'b mut [u8],
     ) -> Result<Packet<'a>, TunnResult<'b>> {
-        let packet = Tunn::parse_incoming_packet(src)?;
+        let packet = Tunn::consume_incoming_packet(src)?;
 
         // Verify and rate limit handshake messages only
         if let Packet::HandshakeInit(HandshakeInit { sender_idx, .. })
@@ -185,7 +185,7 @@ impl RateLimiter {
 
                 if verify_slices_are_equal(&computed_mac2[..16], mac2).is_err() {
                     let cookie_packet = self
-                        .format_cookie_reply(sender_idx, cookie, mac1, dst)
+                        .produce_cookie_reply(sender_idx, cookie, mac1, dst)
                         .map_err(TunnResult::Err)?;
                     return Err(TunnResult::WriteToNetwork(cookie_packet));
                 }

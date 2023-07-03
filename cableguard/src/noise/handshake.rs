@@ -327,7 +327,7 @@ pub struct HalfHandshake {
     pub peer_static_public: [u8; 32],
 }
 
-pub fn parse_handshake_anon(
+pub fn consume_handshake_anon(
     static_private: &x25519::StaticSecret,
     static_public: &x25519::PublicKey,
     packet: &HandshakeInit,
@@ -371,7 +371,7 @@ pub fn parse_handshake_anon(
     // let own_static_string_public_key = static_public.as_bytes().encode_hex::<String>();
     // let peer_ephemeral_string_public_key = peer_ephemeral_public.as_bytes().encode_hex::<String>();
     // let peer_static_string_public_key = peer_static_public.encode_hex::<String>();
-    // tracing::debug!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn parse_handshake_anon",
+    // tracing::debug!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn consume_handshake_anon",
     //    own_static_string_private_key,
     //    own_static_string_public_key,
     //    peer_ephemeral_string_public_key,
@@ -533,7 +533,7 @@ impl Handshake {
     // Usin   allowedips: 0.0.0.0/0 and endpoint: 127.0.0.1
     // Not taking connections out of the bandwith, network or location limits
 
-    pub(super) fn receive_handshake_initialization<'a>(
+    pub(super) fn consume_received_handshake_initiation<'a>(
         &mut self,
         packet: HandshakeInit,
         dst: &'a mut [u8],
@@ -618,7 +618,7 @@ impl Handshake {
             },
         );
 
-        self.format_handshake_response(dst)
+        self.produce_handshake_response(dst)
     }
 
     pub(super) fn receive_handshake_response(
@@ -769,7 +769,7 @@ impl Handshake {
         Ok(dst)
     }
 
-    pub(super) fn format_handshake_initiation<'a>(
+    pub(super) fn produce_handshake_initiation<'a>(
         &mut self,
         dst: &'a mut [u8],
     ) -> Result<&'a mut [u8], WireGuardError> {
@@ -865,8 +865,8 @@ impl Handshake {
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
 
         // CG: For the time being we just display the extra parameters exchanged
-        tracing::debug!("Debugging: Sending RODT_ID {:?}",self.params.rodt_id);
-        tracing::debug!("Debugging: Sending Signature of the RODT_ID {:?}",rodt_id_signature);
+        tracing::debug!("Debugging: Initiation RODT_ID {:?}",self.params.rodt_id);
+        tracing::debug!("Debugging: Inititation Signature of the RODT_ID {:?}",rodt_id_signature);
 
         let time_now = Instant::now();
         self.previous = std::mem::replace(
@@ -883,7 +883,7 @@ impl Handshake {
         self.append_mac1_and_mac2(local_index, &mut dst[..super::HANDSHAKE_INIT_SZ])
     }
 
-    fn format_handshake_response<'a>(
+    fn produce_handshake_response<'a>(
         &mut self,
         dst: &'a mut [u8],
     ) -> Result<(&'a mut [u8], Session), WireGuardError> {
@@ -983,8 +983,8 @@ impl Handshake {
 
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
 
-        tracing::debug!("Debugging: RODT_ID Response {:?}", self.params.rodt_id);
-        tracing::debug!("Debugging: Signature of the RODT_ID Response {:?}",rodt_id_signature);
+        tracing::debug!("Debugging: Response RODT_ID {:?}", self.params.rodt_id);
+        tracing::debug!("Debugging: Response Signature of the RODT_ID {:?}",rodt_id_signature);
 
         let dst = self.append_mac1_and_mac2(local_index, &mut dst[..super::HANDSHAKE_RESP_SZ])?;
 
