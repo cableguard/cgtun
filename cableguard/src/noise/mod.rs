@@ -16,7 +16,6 @@ use std::convert::{TryFrom, TryInto};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::Arc;
 use std::time::Duration;
-use hex::encode;
 use crate::device::api::nearorg_rpc_token;
 use crate::device::api::constants::SMART_CONTRACT;
 use crate::device::api::constants::BLOCKCHAIN_NETWORK;
@@ -231,17 +230,20 @@ impl Tunn {
     ) -> Result<Self, &'static str> {
         let static_public = x25519::PublicKey::from(&static_private);
 
-        let static_public_string = encode(static_public);
-        let peer_static_public_string =  encode(peer_static_public);
-        tracing::debug!("Debugging: static_public = {} in fn new/Tunn", static_public_string);
-        tracing::debug!("Debugging: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
+        // CG: Muting snooping into public keys
+        // let static_public_string = encode(static_public);
+        // let peer_static_public_string =  encode(peer_static_public);
+        // tracing::debug!("Debugging: static_public = {} in fn new/Tunn", static_public_string);
+        // tracing::debug!("Debugging: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
 
-        // CG: Copying the rodt_id to the Tunn
+        // CG: Copying the rodt_id to the Tunn safely
         let bytes_rodt_id = string_rodt_id.as_bytes();
         let mut rodt_id: [u8;RODT_ID_SZ] = [0;RODT_ID_SZ];
         let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
         rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
         rodt_id[rodt_length] = 0;
+
+        tracing::debug!("Debugging: RODT ID {} as passed {:?}", string_rodt_id, rodt_id);
 
         let tunn = Tunn {
             handshake: Handshake::new(
@@ -475,7 +477,7 @@ impl Tunn {
             remote_idx = handshake_response.sender_idx
         );
 
-        let session = self.handshake.receive_handshake_response(handshake_response)?;
+        let session = self.handshake.consume_received_handshake_response(handshake_response)?;
 
         // CG: Beginning of RODT verification
         let peer_slice_rodtid: &[u8] = &handshake_response.rodt_id[..];

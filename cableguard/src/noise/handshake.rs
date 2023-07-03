@@ -621,7 +621,7 @@ impl Handshake {
         self.produce_handshake_response(dst)
     }
 
-    pub(super) fn receive_handshake_response(
+    pub(super) fn consume_received_handshake_response(
         &mut self,
         packet: HandshakeResponse,
     ) -> Result<Session, WireGuardError> {
@@ -856,14 +856,9 @@ impl Handshake {
         hash = b2s_hash(&hash, encrypted_timestamp);
 
         // CG: Our rodt_id values to transfer over the wire
-        let bytes_rodt_id = self.params.rodt_id;
-        let mut rodt_id: [u8;RODT_ID_SZ] = [0;RODT_ID_SZ];
-        let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
-        rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
-        rodt_id[rodt_length] = 0;
-
+        rodt_id.copy_from_slice(&self.params.rodt_id);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
-
+        
         // CG: For the time being we just display the extra parameters exchanged
         tracing::debug!("Debugging: Initiation RODT_ID {:?}",self.params.rodt_id);
         tracing::debug!("Debugging: Inititation Signature of the RODT_ID {:?}",rodt_id_signature);
@@ -974,13 +969,7 @@ impl Handshake {
         // initiator.sending_key_counter = 0
         // initiator.receiving_key_counter = 0
 
-        // CG: Our rodt_id values to transfer over the wire
-        let bytes_rodt_id = self.params.rodt_id;
-        let mut rodt_id: [u8;RODT_ID_SZ] = [0;RODT_ID_SZ];
-        let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
-        rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
-        rodt_id[rodt_length] = 0;
-
+        rodt_id.copy_from_slice(&self.params.rodt_id);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
 
         tracing::debug!("Debugging: Response RODT_ID {:?}", self.params.rodt_id);
