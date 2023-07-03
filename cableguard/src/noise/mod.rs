@@ -404,7 +404,7 @@ impl Tunn {
                     .try_into()
                     .expect("Invalid byte array length");
         
-                // Parse the signature bytes from packet.rodt_id_signature
+                // Parse the signature bytes from handshake_init.rodt_id_signature
                 // and assign it to the signature variable
                 match Signature::from_bytes(&*handshake_init.rodt_id_signature) {
                     Ok(signature) => {
