@@ -38,7 +38,6 @@ use crate::noise::handshake::consume_handshake_anon;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use ed25519_dalek::{Keypair,Signer};
-use crate::noise::RODT_SZ;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
@@ -364,13 +363,6 @@ impl Device {
         //     own_string_public_key
         // );
 
-        // CG: Copying the rodt_id to the Tunn
-        let bytes_rodt_id = self.config.rodt.token_id.as_bytes();
-        let mut rodt_id: [u8;RODT_SZ] = [0;RODT_SZ];
-        let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
-        rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
-        rodt_id[rodt_length] = 0;
-
         // CG2: Creating the signature of the rodt_id
         let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Invalid private key bytes");
@@ -381,7 +373,7 @@ impl Device {
             device_key_pair.0.clone(), // Passing on only the X25519 private key
             peer_publickey_public_key,
             preshared_key,
-            rodt_id,
+            self.config.rodt.token_id,
             rodt_id_signature.to_bytes(),
             keepalive,
             next_index,

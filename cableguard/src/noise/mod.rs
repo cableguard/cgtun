@@ -81,12 +81,12 @@ const HANDSHAKE_INIT_CONSTANT: MessageType = 1;
 const HANDSHAKE_RESP: MessageType = 2;
 const COOKIE_REPLY: MessageType = 3;
 const DATA: MessageType = 4;
-pub const RODT_SZ:usize = 128;
-pub const RODT_SIGNATURE_SZ:usize = 64;
+pub const RODT_ID_SZ:usize = 128;
+pub const RODT_ID_SIGNATURE_SZ:usize = 64;
 
-// These sizes are increased by RODT_SZ + 64 bytes to accommodate for the rodt_id and signature of the same
-const HANDSHAKE_INIT_SZ: usize = 148+RODT_SZ+RODT_SIGNATURE_SZ;
-const HANDSHAKE_RESP_SZ: usize = 92+RODT_SZ+RODT_SIGNATURE_SZ;
+// These sizes are increased by RODT_ID_SZ + 64 bytes to accommodate for the rodt_id and signature of the same
+const HANDSHAKE_INIT_SZ: usize = 148+RODT_ID_SZ+RODT_ID_SIGNATURE_SZ;
+const HANDSHAKE_RESP_SZ: usize = 92+RODT_ID_SZ+RODT_ID_SIGNATURE_SZ;
 const COOKIE_REPLY_SZ: usize = 64;
 const DATA_OVERHEAD_SZ: usize = 32;
 
@@ -96,8 +96,8 @@ pub struct HandshakeInit<'a> {
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_static: &'a [u8],
     encrypted_timestamp: &'a [u8],
-    rodt_id: &'a [u8; RODT_SZ],
-    rodt_id_signature: &'a [u8; RODT_SIGNATURE_SZ],
+    rodt_id: &'a [u8; RODT_ID_SZ],
+    rodt_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
 }
 
 #[derive(Debug,Copy, Clone)]
@@ -106,8 +106,8 @@ pub struct HandshakeResponse<'a> {
     pub receiver_idx: u32,
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_nothing: &'a [u8],
-    rodt_id: &'a [u8; RODT_SZ],
-    rodt_id_signature: &'a [u8; RODT_SIGNATURE_SZ],
+    rodt_id: &'a [u8; RODT_ID_SZ],
+    rodt_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
 }
 
 #[derive(Debug)]
@@ -155,9 +155,9 @@ impl Tunn {
                     .expect("length already checked above"),
                 encrypted_static: &src[40..88], // SIZE u8;32, 88-40 = 48 bytes, seems too big for the spec (32)
                 encrypted_timestamp: &src[88..116], // SIZE u8;12, 116-88 = 28 bytes, seems too big for the spec (12)
-                rodt_id: <&[u8; RODT_SZ] as TryFrom<&[u8]>>::try_from(&src[116..244])
+                rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[116..244])
                     .expect("length already checked above"), // SIZE u8;128, 244-116 = 18 bytes
-                rodt_id_signature: <&[u8; RODT_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[244..308])
+                rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[244..308])
                     .expect("length already checked above"), // SIZE u8;64, 308-244 = 64 bytes
                 }),
                 (HANDSHAKE_RESP, HANDSHAKE_RESP_SZ) => Packet::HandshakeResponse(HandshakeResponse {
@@ -171,9 +171,9 @@ impl Tunn {
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("length already checked above"),
                 encrypted_nothing: &src[44..60], // SIZE 60-44 = 16 bytes
-                rodt_id: <&[u8; RODT_SZ] as TryFrom<&[u8]>>::try_from(&src[60..124])
+                rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[60..124])
                     .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
-                rodt_id_signature: <&[u8; RODT_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[124..188])
+                rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[124..188])
                     .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
             }),
             (COOKIE_REPLY, COOKIE_REPLY_SZ) => Packet::PacketCookieReply(PacketCookieReply {
@@ -223,8 +223,8 @@ impl Tunn {
         static_private: x25519::StaticSecret,
         peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
-        rodt_id: [u8; RODT_SZ],
-        rodt_id_signature: [u8; RODT_SIGNATURE_SZ],
+        string_rodt_id: String,
+        rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
         persistent_keepalive: Option<u16>,
         index: u32,
         rate_limiter: Option<Arc<RateLimiter>>,
@@ -235,6 +235,13 @@ impl Tunn {
         let peer_static_public_string =  encode(peer_static_public);
         tracing::debug!("Debugging: static_public = {} in fn new/Tunn", static_public_string);
         tracing::debug!("Debugging: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
+
+        // CG: Copying the rodt_id to the Tunn
+        let bytes_rodt_id = string_rodt_id.as_bytes();
+        let mut rodt_id: [u8;RODT_ID_SZ] = [0;RODT_ID_SZ];
+        let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
+        rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
+        rodt_id[rodt_length] = 0;
 
         let tunn = Tunn {
             handshake: Handshake::new(

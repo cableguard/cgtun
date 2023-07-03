@@ -17,7 +17,7 @@ use std::convert::TryInto;
 use std::time::{Duration, SystemTime};
 use tracing::error;
 use hex::ToHex;
-use crate::noise::{RODT_SZ,RODT_SIGNATURE_SZ};
+use crate::noise::{RODT_ID_SZ,RODT_ID_SIGNATURE_SZ};
 
 #[cfg(feature = "mock-instant")]
 use mock_instant::Instant;
@@ -242,10 +242,10 @@ struct NoiseParams {
     sending_mac1_key: [u8; KEY_LEN],
     preshared_key: Option<[u8; KEY_LEN]>,
     // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
-    // This needs a known length, RODT_SZ (RODT_SZ) as a limit to accomodate a full RODT ID
-    rodt_id: [u8; RODT_SZ],
+    // This needs a known length, RODT_ID_SZ (RODT_ID_SZ) as a limit to accomodate a full RODT ID
+    rodt_id: [u8; RODT_ID_SZ],
     // CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
-    rodt_id_signature: [u8; RODT_SIGNATURE_SZ],
+    rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
 }
 
 impl std::fmt::Debug for NoiseParams {
@@ -391,8 +391,8 @@ impl NoiseParams {
         static_public: x25519::PublicKey,
         peer_static_public: x25519::PublicKey, 
         preshared_key: Option<[u8; 32]>,
-        rodt_id: [u8; RODT_SZ],
-        rodt_id_signature: [u8; RODT_SIGNATURE_SZ],
+        rodt_id: [u8; RODT_ID_SZ],
+        rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
     ) -> Result<NoiseParams, WireGuardError> {
 
         // CG: As peer_static_public is not known ahead of time 
@@ -451,8 +451,8 @@ impl Handshake {
         peer_static_public: x25519::PublicKey,
         global_idx: u32,
         preshared_key: Option<[u8; 32]>,
-        rodt_id: [u8; RODT_SZ],
-        rodt_id_signature: [u8; RODT_SIGNATURE_SZ],
+        rodt_id: [u8; RODT_ID_SZ],
+        rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
     ) -> Result<Handshake, WireGuardError> {
         let params = NoiseParams::new(
             static_private,
@@ -782,7 +782,7 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_static, rest) = rest.split_at_mut(32 + 16);
         let (encrypted_timestamp, rest) = rest.split_at_mut(12 + 16);
-        let (rodt_id, rest) = rest.split_at_mut(RODT_SZ);
+        let (rodt_id, rest) = rest.split_at_mut(RODT_ID_SZ);
         let (rodt_id_signature, _) = rest.split_at_mut(64);
 
         let local_index = self.inc_index();
@@ -856,8 +856,8 @@ impl Handshake {
         hash = b2s_hash(&hash, encrypted_timestamp);
 
         // CG: Our rodt_id values to transfer over the wire
-        let bytes_rodt_id = self.params.rodt_id.as_bytes();
-        let mut rodt_id: [u8;RODT_SZ] = [0;RODT_SZ];
+        let bytes_rodt_id = self.params.rodt_id;
+        let mut rodt_id: [u8;RODT_ID_SZ] = [0;RODT_ID_SZ];
         let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
         rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
         rodt_id[rodt_length] = 0;
@@ -910,7 +910,7 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_nothing, rest) = rest.split_at_mut(16);
         // CG: The response also has 2 additional fields so both sides can authenticate each other
-        let (rodt_id, rest) = rest.split_at_mut(RODT_SZ);
+        let (rodt_id, rest) = rest.split_at_mut(RODT_ID_SZ);
         let (rodt_id_signature, _) = rest.split_at_mut(64);
 
         // responder.ephemeral_private = DH_GENERATE()
@@ -975,8 +975,8 @@ impl Handshake {
         // initiator.receiving_key_counter = 0
 
         // CG: Our rodt_id values to transfer over the wire
-        let bytes_rodt_id = self.params.rodt_id.as_bytes();
-        let mut rodt_id: [u8;RODT_SZ] = [0;RODT_SZ];
+        let bytes_rodt_id = self.params.rodt_id;
+        let mut rodt_id: [u8;RODT_ID_SZ] = [0;RODT_ID_SZ];
         let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
         rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
         rodt_id[rodt_length] = 0;
