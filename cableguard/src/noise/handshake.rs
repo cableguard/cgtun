@@ -864,7 +864,7 @@ impl Handshake {
         match string_rodt_id {
             Ok(string) => {
                 // Conversion succeeded, use the resulting string
-                tracing::debug!("Debugging: Initiation RODT_ID {}",string);
+                tracing::debug!("Debugging: Initiation RODT_ID sent {}",string);
             }
             Err(error) => {
                 // Conversion failed, handle the error
@@ -872,7 +872,7 @@ impl Handshake {
             }
         }
         
-        tracing::debug!("Debugging: Initiation Signature of the RODT_ID {:?}",rodt_id_signature);
+        tracing::debug!("Debugging: Initiation Signature of the RODT_ID sent {:?}",rodt_id_signature);
 
         let time_now = Instant::now();
         self.previous = std::mem::replace(
