@@ -381,7 +381,8 @@ impl Tunn {
         let peer_slice_rodtid: &[u8] = &handshake_init.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Failed to convert byte slice to string");
-
+        .trim_end_matches('\0');
+        
         // CG: We receive this and we have to use it to validate the peer
         println!("Debugging: Processing RODT ID received {}",peer_string_rodtid);        
         println!("Debugging: Processing RODT ID Signature received {:?}",handshake_init.rodt_id_signature);

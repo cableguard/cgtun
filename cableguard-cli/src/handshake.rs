@@ -858,20 +858,9 @@ impl Handshake {
         // CG: Our rodt_id values to transfer over the wire
         rodt_id.copy_from_slice(&self.params.rodt_id);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
-
-        // CG:: Check if the conversion was successful
-        let string_rodt_id = String::from_utf8(self.params.rodt_id.to_vec());
-        match string_rodt_id {
-            Ok(string) => {
-                // Conversion succeeded, use the resulting string
-                tracing::debug!("Debugging: Initiation RODT_ID {}",string);
-            }
-            Err(error) => {
-                // Conversion failed, handle the error
-                println!("[u8:128 to String conversion error: {:?}", error);
-            }
-        }
         
+        // CG: For the time being we just display the extra parameters exchanged
+        tracing::debug!("Initiation{}",self.params.rodt_id);
         tracing::debug!("Debugging: Initiation Signature of the RODT_ID {:?}",rodt_id_signature);
 
         let time_now = Instant::now();
