@@ -856,11 +856,16 @@ impl Handshake {
         hash = b2s_hash(&hash, encrypted_timestamp);
 
         // CG: Our rodt_id values to transfer over the wire
-        rodt_id.copy_from_slice(&self.params.rodt_id);
+        let bytes_rodt_id = self.params.rodt_id.as_bytes();
+        let mut rodt_id: [u8;RODT_SZ] = [0;RODT_SZ];
+        let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
+        rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
+        rodt_id[rodt_length] = 0;
+
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
 
         // CG: For the time being we just display the extra parameters exchanged
-        tracing::debug!("Debugging: Sending RODT_ID {:?}",rodt_id);
+        tracing::debug!("Debugging: Sending RODT_ID {:?}",self.params.rodt_id);
         tracing::debug!("Debugging: Sending Signature of the RODT_ID {:?}",rodt_id_signature);
 
         let time_now = Instant::now();
@@ -969,11 +974,16 @@ impl Handshake {
         // initiator.sending_key_counter = 0
         // initiator.receiving_key_counter = 0
 
-        // CG: We send a different rodt_id that the one we receive
         // CG: Our rodt_id values to transfer over the wire
-        rodt_id.copy_from_slice(&self.params.rodt_id);
+        let bytes_rodt_id = self.params.rodt_id.as_bytes();
+        let mut rodt_id: [u8;RODT_SZ] = [0;RODT_SZ];
+        let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
+        rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
+        rodt_id[rodt_length] = 0;
+
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
-        tracing::debug!("Debugging: RODT_ID Response {:?}",rodt_id);
+
+        tracing::debug!("Debugging: RODT_ID Response {:?}", self.params.rodt_id);
         tracing::debug!("Debugging: Signature of the RODT_ID Response {:?}",rodt_id_signature);
 
         let dst = self.append_mac1_and_mac2(local_index, &mut dst[..super::HANDSHAKE_RESP_SZ])?;
