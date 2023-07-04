@@ -486,7 +486,7 @@ impl Tunn {
         // CG: Beginning of RODT verification
         let peer_slice_rodtid: &[u8] = &peer_handshake_response.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
-        .expect("Failed to convert byte slice to string");
+        .expect("Failed to convert byte slice to string")
         .trim_end_matches('\0');
         
         // CG: We receive this and we have to use it to validate the peer
