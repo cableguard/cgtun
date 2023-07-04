@@ -155,7 +155,7 @@ impl Tunn {
                 encrypted_static: &src[40..88], // SIZE u8;32, 88-40 = 48 bytes, seems too big for the spec (32)
                 encrypted_timestamp: &src[88..116], // SIZE u8;12, 116-88 = 28 bytes, seems too big for the spec (12)
                 rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[116..244])
-                    .expect("length already checked above"), // SIZE u8;128, 244-116 = 18 bytes
+                    .expect("length already checked above"), // SIZE u8;128, 244-116 = 128 bytes
                 rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[244..308])
                     .expect("length already checked above"), // SIZE u8;64, 308-244 = 64 bytes
                 }),
@@ -170,10 +170,10 @@ impl Tunn {
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("length already checked above"),
                 encrypted_nothing: &src[44..60], // SIZE 60-44 = 16 bytes
-                rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[60..124])
-                    .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
-                rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[124..188])
-                    .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
+                rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[60..188])
+                    .expect("length already checked above"), // SIZE u8;64, 188-60 = 128 bytes
+                rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[188..252])
+                    .expect("length already checked above"), // SIZE u8;64, 252-188 = 64 bytes
             }),
             (COOKIE_REPLY, COOKIE_REPLY_SZ) => Packet::PacketCookieReply(PacketCookieReply {
                 receiver_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()),
@@ -417,14 +417,15 @@ impl Tunn {
                             Ok(fetched_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
                                 let clone_peer_rodt_id = peer_handshake_init.rodt_id;
+                                        // If the verification is successful, print the debugging message
+                                        println!("Debugging: Compare Verifications string, bytes signature bytes, signature string {:?} {:?} {:?} {:?}"
+                                        clone_peer_rodt_id,fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature)
+                                        peer_string_rodtid.as_bytes(),fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature));
+
                                 match fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature) {
                                     Ok(is_verified) => {
-                                        // If the verification is successful, print the debugging message
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
-                                        println!("Debugging: Compare Verifications bytes or string {:?} {:?}"
-                                        ,fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature)
-                                        ,fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature));
-                                    }
+                                        }
                                     Err(_) => {
                                     // Err(PeerEd25519SingnatureVerificationFailed) => {
                                         // If the verification fails, handle the error and propagate it
@@ -522,12 +523,16 @@ impl Tunn {
                         match PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
                             Ok(fetched_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
-                                let clone_handshake_response_rodt_id = peer_handshake_response.rodt_id;
-                                match fetched_publickey_ed25519_public_key.verify(clone_handshake_response_rodt_id, &signature) {
-                                    Ok(is_verified) => {
+                                let clone_peer_rodt_id = peer_handshake_init.rodt_id;
                                         // If the verification is successful, print the debugging message
+                                        println!("Debugging: Compare Verifications string, bytes, signature bytes, signature string {:?} {:?} {:?} {:?}"
+                                        clone_peer_rodt_id,fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature)
+                                        peer_string_rodtid.as_bytes(),fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature));
+
+                                match fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature) {
+                                    Ok(is_verified) => {
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
-                                    }
+                                        }
                                     Err(_) => {
                                     // Err(PeerEd25519SingnatureVerificationFailed) => {
                                         // If the verification fails, handle the error and propagate it
