@@ -417,12 +417,7 @@ impl Tunn {
                             Ok(fetched_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
                                 let clone_peer_rodt_id = peer_handshake_init.rodt_id;
-                                        // If the verification is successful, print the debugging message
-                                        println!("Debugging: Compare Verifications string, bytes signature bytes, signature string {:?} {:?} {:?} {:?}"
-                                        ,clone_peer_rodt_id,fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature)
-                                        ,peer_string_rodtid.as_bytes(),fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature));
-
-                                match fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature) {
+                                match fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature) {
                                     Ok(is_verified) => {
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
                                         }
@@ -523,13 +518,7 @@ impl Tunn {
                         match PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
                             Ok(fetched_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
-                                let clone_peer_rodt_id = peer_handshake_response.rodt_id;
-                                        // If the verification is successful, print the debugging message
-                                        println!("Debugging: Compare Verifications string, bytes, signature bytes, signature string {:?} {:?} {:?} {:?}"
-                                        ,clone_peer_rodt_id,fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature)
-                                        ,peer_string_rodtid.as_bytes(),fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature));
-
-                                match fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature) {
+                                match fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature) {
                                     Ok(is_verified) => {
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
                                         }
