@@ -416,7 +416,6 @@ impl Tunn {
                         match PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
                             Ok(fetched_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
-                                let clone_peer_rodt_id = peer_handshake_init.rodt_id;
                                 match fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature) {
                                     Ok(is_verified) => {
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
@@ -487,7 +486,8 @@ impl Tunn {
         let peer_slice_rodtid: &[u8] = &peer_handshake_response.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Failed to convert byte slice to string");
-
+        .trim_end_matches('\0');
+        
         // CG: We receive this and we have to use it to validate the peer
         println!("Debugging: RODT ID received as response {}",peer_string_rodtid);        
         println!("Debugging: RODT ID Signature received as response {:?}",peer_handshake_response.rodt_id_signature);
