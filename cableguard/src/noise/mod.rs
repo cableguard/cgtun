@@ -155,7 +155,7 @@ impl Tunn {
                 encrypted_static: &src[40..88], // SIZE u8;32, 88-40 = 48 bytes, seems too big for the spec (32)
                 encrypted_timestamp: &src[88..116], // SIZE u8;12, 116-88 = 28 bytes, seems too big for the spec (12)
                 rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[116..244])
-                    .expect("length already checked above"), // SIZE u8;128, 244-116 = 18 bytes
+                    .expect("length already checked above"), // SIZE u8;128, 244-116 = 128 bytes
                 rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[244..308])
                     .expect("length already checked above"), // SIZE u8;64, 308-244 = 64 bytes
                 }),
@@ -170,10 +170,10 @@ impl Tunn {
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("length already checked above"),
                 encrypted_nothing: &src[44..60], // SIZE 60-44 = 16 bytes
-                rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[60..124])
-                    .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
-                rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[124..188])
-                    .expect("length already checked above"), // SIZE u8;64, 180-116 = 64 bytes
+                rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[60..188])
+                    .expect("length already checked above"), // SIZE u8;128, 180-60 = 128 bytes
+                rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[188..252])
+                    .expect("length already checked above"), // SIZE u8;64, 252-188 = 64 bytes
             }),
             (COOKIE_REPLY, COOKIE_REPLY_SZ) => Packet::PacketCookieReply(PacketCookieReply {
                 receiver_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()),
