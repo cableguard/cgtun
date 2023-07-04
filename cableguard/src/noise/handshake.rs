@@ -857,9 +857,11 @@ impl Handshake {
 
         // CG: Our rodt_id values to transfer over the wire
         rodt_id.copy_from_slice(&self.params.rodt_id);
-        tracing::debug!("Debugging: HSI RODT ID {:?}",rodt_id);
+        // CG: Muting this
+        // tracing::debug!("Debugging: HSI RODT ID {:?}",rodt_id);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
-        tracing::debug!("Debugging: HSI RODT SIGNATURE {:?}",rodt_id_signature);
+        // CG: Muting this
+        // tracing::debug!("Debugging: HSI RODT SIGNATURE {:?}",rodt_id_signature);
 
         // CG:: Check if the conversion was successful
         let string_rodt_id = String::from_utf8(self.params.rodt_id.to_vec());
@@ -870,12 +872,12 @@ impl Handshake {
             }
             Err(error) => {
                 // Conversion failed, handle the error
-                println!("[u8:128 to String conversion error: {:?}", error);
+                println!("[u8:128] to String conversion error: {:?}", error);
             }
         }
-
-        tracing::debug!("Debugging: Initiation RODT_ID {:?}", self.params.rodt_id);
-        tracing::debug!("Debugging: Initiation Signature of the RODT_ID {:?}",rodt_id_signature);
+        // CG: Muting this
+        // tracing::debug!("Debugging: Initiation RODT_ID {:?}", self.params.rodt_id);
+        // tracing::debug!("Debugging: Initiation Signature of the RODT_ID {:?}",rodt_id_signature);
 
         let time_now = Instant::now();
         self.previous = std::mem::replace(
@@ -984,9 +986,7 @@ impl Handshake {
         // initiator.receiving_key_counter = 0
 
         rodt_id.copy_from_slice(&self.params.rodt_id);
-        tracing::debug!("Debugging: Are RODT SIGNATURE (this) and COPY FROM SLICE the same? {:?}",rodt_id_signature);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
-        tracing::debug!("Debugging: Are RODT SIGNATURE and COPY FROM SLICE (this) the same? {:?}",rodt_id_signature);
 
         tracing::debug!("Debugging: Response RODT_ID {:?}", self.params.rodt_id);
         tracing::debug!("Debugging: Response Signature of the RODT_ID {:?}",rodt_id_signature);

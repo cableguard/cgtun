@@ -243,7 +243,8 @@ impl Tunn {
         rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
         rodt_id[rodt_length] = 0;
 
-        tracing::debug!("Debugging: RODT ID {} as passed {:?}", string_rodt_id, rodt_id);
+        // CG: Muting this
+        // tracing::debug!("Debugging: RODT ID {} as passed {:?}", string_rodt_id, rodt_id);
 
         let tunn = Tunn {
             handshake: Handshake::new(
