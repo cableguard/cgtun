@@ -417,13 +417,13 @@ impl Tunn {
                             Ok(fetched_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
                                 let clone_peer_rodt_id = peer_handshake_init.rodt_id;
+                                println!("Debugging: Compare Verifications bytes or string {:?} {:?}"
+                                        ,fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature)
+                                        ,fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature));
                                 match fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature) {
                                     Ok(is_verified) => {
                                         // If the verification is successful, print the debugging message
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
-                                        println!("Debugging: Compare Verifications bytes or string {:?} {:?}"
-                                        ,fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature)
-                                        ,fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature));
                                     }
                                     Err(_) => {
                                     // Err(PeerEd25519SingnatureVerificationFailed) => {
@@ -522,8 +522,11 @@ impl Tunn {
                         match PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
                             Ok(fetched_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
-                                let clone_handshake_response_rodt_id = peer_handshake_response.rodt_id;
-                                match fetched_publickey_ed25519_public_key.verify(clone_handshake_response_rodt_id, &signature) {
+                                let clone_peer_rodt_id = peer_handshake_response.rodt_id;
+                                println!("Debugging: Compare Verifications bytes or string {:?} {:?}"
+                                        ,fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature)
+                                        ,fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature));
+                                match fetched_publickey_ed25519_public_key.verify(clone_peer_rodt_id, &signature) {
                                     Ok(is_verified) => {
                                         // If the verification is successful, print the debugging message
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
