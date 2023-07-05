@@ -286,7 +286,7 @@ impl Device {
     /// Register the api handler for this Device. The api handler receives stream connections on a Unix socket
     /// with a known path: /var/run/wireguard/{tun_name}.sock.
     pub fn register_api_handler(&mut self) -> Result<(), Error> {
-        let path = format!("{}/{}.sock", SOCK_DIR, self.iface.name()?);
+        let path = format!("{}/{}.sock", SOCK_DIR, self.interface.name()?);
 
         produce_sock_dir();
 
@@ -375,7 +375,7 @@ impl Device {
                 }
 
                 // Periodically read the mtu of the interface in case it changes
-                if let Ok(mtu) = thisnetworkdevice.iface.mtu() {
+                if let Ok(mtu) = thisnetworkdevice.interface.mtu() {
                     thisnetworkdevice.mtu.store(mtu, Ordering::Relaxed);
                 }
 
@@ -538,7 +538,7 @@ fn api_set_peer(
     let mut keepalive = None;
     let mut clone_peer_publickey_public_key = peer_publickey_public_key;
     let mut preshared_key = None;
-    // The following two parameters are not really used and are there just to keep several update_peer functions variable similar
+    
     let mut allowed_ips: Vec<AllowedIP> = vec![];
     while readerbufferdevice.read_line(&mut cmd).is_ok() {
         cmd.pop(); // remove newline if any

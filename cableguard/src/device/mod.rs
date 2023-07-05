@@ -95,7 +95,7 @@ pub enum Error {
     #[cfg(target_os = "linux")]
     #[error("{0}")]
     Timer(io::Error),
-    #[error("iface read: {0}")]
+    #[error("interface read: {0}")]
     IfaceRead(io::Error),
     #[error("{0}")]
     DropPrivileges(String),
@@ -155,7 +155,7 @@ pub struct Device {
     queue: Arc<EventPoll<Handler>>,
     listen_port: u16,
     fwmark: Option<u32>,
-    iface: Arc<TunSocket>,
+    interface: Arc<TunSocket>,
     udp4: Option<socket2::Socket>,
     udp6: Option<socket2::Socket>,
     yield_notice: Option<EventRef>,
@@ -174,7 +174,7 @@ pub struct Device {
 }
 
 struct ThreadData {
-    iface: Arc<TunSocket>,
+    interface: Arc<TunSocket>,
     src_buf: [u8; MAX_UDP_SIZE],
     dst_buf: [u8; MAX_UDP_SIZE],
 }
@@ -229,13 +229,13 @@ impl DeviceHandle {
         let mut thread_local = ThreadData {
             src_buf: [0u8; MAX_UDP_SIZE],
             dst_buf: [0u8; MAX_UDP_SIZE],
-            iface: if _i == 0 || !device.read().config.use_multi_queue {
-                // For the first thread use the original iface
-                Arc::clone(&device.read().iface)
+            interface: if _i == 0 || !device.read().config.use_multi_queue {
+                // For the first thread use the original interface
+                Arc::clone(&device.read().interface)
             } else {
-                // For for the rest create a new iface queue
+                // For for the rest create a new interface queue
                 let iface_local = Arc::new(
-                    TunSocket::new(&device.read().iface.name().unwrap())
+                    TunSocket::new(&device.read().interface.name().unwrap())
                         .unwrap()
                         .set_non_blocking()
                         .unwrap(),
@@ -254,7 +254,7 @@ impl DeviceHandle {
         let mut thread_local = ThreadData {
             src_buf: [0u8; MAX_UDP_SIZE],
             dst_buf: [0u8; MAX_UDP_SIZE],
-            iface: Arc::clone(&device.read().iface),
+            interface: Arc::clone(&device.read().interface),
         };
 
         #[cfg(not(target_os = "linux"))]
@@ -391,8 +391,8 @@ impl Device {
         let poll = EventPoll::<Handler>::new()?;
 
         // Create a tunnel device
-        let iface = Arc::new(TunSocket::new(name)?.set_non_blocking()?);
-        let mtu = iface.mtu()?;
+        let interface = Arc::new(TunSocket::new(name)?.set_non_blocking()?);
+        let mtu = interface.mtu()?;
 
         #[cfg(not(target_os = "linux"))]
         let uapi_fd = -1;
@@ -401,7 +401,7 @@ impl Device {
 
         let mut device = Device {
             queue: Arc::new(poll),
-            iface,
+            interface,
             config,
             exit_notice: Default::default(),
             yield_notice: Default::default(),
@@ -426,7 +426,7 @@ impl Device {
         } else {
             device.register_api_handler()?;
         }
-        device.register_iface_handler(Arc::clone(&device.iface))?;
+        device.register_iface_handler(Arc::clone(&device.interface))?;
         device.register_notifiers()?;
         device.register_timers()?;
 
@@ -435,7 +435,7 @@ impl Device {
             // Only for macOS write the actual socket name into WG_TUN_NAME_FILE
             if let Ok(name_file) = std::env::var("WG_TUN_NAME_FILE") {
                 if name == "utun" {
-                    std::fs::write(&name_file, device.iface.name().unwrap().as_bytes()).unwrap();
+                    std::fs::write(&name_file, device.interface.name().unwrap().as_bytes()).unwrap();
                     device.cleanup_paths.push(name_file);
                 }
             }
@@ -779,12 +779,12 @@ impl Device {
                         }
                         TunnResult::WriteToTunnelV4(packet, addr) => {
                             if p.is_allowed_ip(addr) {
-                                t.iface.write4(packet);
+                                t.interface.write4(packet);
                             }
                         }
                         TunnResult::WriteToTunnelV6(packet, addr) => {
                             if p.is_allowed_ip(addr) {
-                                t.iface.write6(packet);
+                                t.interface.write6(packet);
                             }
                         } 
                     };
@@ -832,7 +832,7 @@ impl Device {
                 // The conn_handler handles packet received from a connected UDP socket, associated
                 // with a known peer, this saves us the hustle of finding the right peer. If another
                 // peer gets the same ip, it will be ignored until the socket does not expire.
-                let iface = &t.iface;
+                let interface = &t.interface;
                 let mut iter = MAX_ITR;
 
                 // Safety: the `recv_from` implementation promises not to write uninitialised
@@ -856,12 +856,12 @@ impl Device {
                         }
                         TunnResult::WriteToTunnelV4(packet, addr) => {
                             if p.is_allowed_ip(addr) {
-                                iface.write4(packet);
+                                interface.write4(packet);
                             }
                         }
                         TunnResult::WriteToTunnelV6(packet, addr) => {
                             if p.is_allowed_ip(addr) {
-                                iface.write6(packet);
+                                interface.write6(packet);
                             }
                         }
                     };
@@ -886,9 +886,9 @@ impl Device {
         Ok(())
     }
 
-    fn register_iface_handler(&self, iface: Arc<TunSocket>) -> Result<(), Error> {
+    fn register_iface_handler(&self, interface: Arc<TunSocket>) -> Result<(), Error> {
         self.queue.new_event(
-            iface.as_raw_fd(),
+            interface.as_raw_fd(),
             Box::new(move |d, t| {
                 // The iface_handler handles packets received from the WireGuard virtual network
                 // interface. The flow is as follows:
@@ -903,7 +903,7 @@ impl Device {
 
                 let peers = &d.peerslisted_by_ip;
                 for _ in 0..MAX_ITR {
-                    let src = match iface.read(&mut t.src_buf[..mtu]) {
+                    let src = match interface.read(&mut t.src_buf[..mtu]) {
                         Ok(src) => src,
                         Err(Error::IfaceRead(e)) => {
                             let ek = e.kind();
