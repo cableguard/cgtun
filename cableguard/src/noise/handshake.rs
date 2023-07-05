@@ -909,7 +909,7 @@ impl Handshake {
                 peer_index,
             } => (chaining_key, hash, peer_ephemeral_public, peer_index),
             _ => {
-                panic!("Unexpected attempt to call send_handshake_response");
+                panic!("Unexpected attempt to call produce_handshake_response");
             }
         };
 
