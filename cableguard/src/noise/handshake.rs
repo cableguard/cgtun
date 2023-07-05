@@ -366,6 +366,11 @@ pub fn consume_handshake_anonymous(
         &hash,
     )?;
 
+    // CG: THIS HERE NOW
+    // We add a peer if the validation of the RODt is positive
+    // How to access the device?
+    device.api_set_peer_internal(peer_static_public);
+
     Ok(HalfHandshake {
         peer_index,
         peer_static_public,
@@ -857,9 +862,6 @@ impl Handshake {
                 println!("[u8:128] to String conversion error: {:?}", error);
             }
         }
-        // CG: Muting this
-        // tracing::debug!("Debugging: Initiation RODT_ID {:?}", self.params.rodt_id);
-        // tracing::debug!("Debugging: Initiation Signature of the RODT_ID {:?}",rodt_id_signature);
 
         let time_now = Instant::now();
         self.previous = std::mem::replace(

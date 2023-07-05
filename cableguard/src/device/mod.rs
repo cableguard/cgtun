@@ -354,16 +354,6 @@ impl Device {
         .as_ref()
         .expect("Self private key must be set before adding peers");
     
-        // CG: Muting key snooping
-        // let peer_string_public_key = peer_publickey_public_key.encode_hex::<String>();
-        // let own_string_private_key = device_key_pair.0.encode_hex::<String>();
-        // let own_string_public_key = device_key_pair.1.encode_hex::<String>();
-        // tracing::debug!("Debugging:peer_publickey_public_key of the peer: {}, private_key: {}, public_key: {} in fn updated_peers",
-        //     peer_string_public_key,
-        //     own_string_private_key,
-        //     own_string_public_key
-        // );
-
         // CG: Creating the own signature of the rodt_id
         let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Invalid private key bytes");
@@ -755,24 +745,11 @@ impl Device {
                         Err(_) => continue,
                     };
                     
-                    // CG: Would be good to understand this code
                     let peer = match &parsed_packet {
                         Packet::HandshakeInit(p) => {
                             consume_handshake_anonymous(own_bytes_private_key, own_bytes_public_key, p)
                                 .ok()
-                                .and_then(|hh| {
-                                    // let own_string_private_key = own_bytes_private_key.encode_hex::<String>();
-                                    // let own_string_public_key = own_bytes_public_key.encode_hex::<String>();
-                                    // let peer_static_public_str = hh.peer_static_public.encode_hex::<String>();
-                    
-                                    // Display the converted values in the trace
-                                    // CG: Muting this
-                                    // tracing::debug!("Debugging: own_bytes_private_key: {}, own_bytes_public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
-                                    //     own_string_private_key,
-                                    //    own_string_public_key,
-                                    //    peer_static_public_str
-                                    // );
-                    
+                                .and_then(|hh| {                    
                                     d.peers.get(&x25519::PublicKey::from(hh.peer_static_public))
                                 })
                         }

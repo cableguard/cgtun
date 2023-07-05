@@ -414,8 +414,6 @@ impl Tunn {
                                 match fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature) {
                                     Ok(is_verified) => {
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
-                                        // CG: THIS HERE NOW
-                                        device.api_set_peer_internal(peer_static_public);
                                         }
                                     Err(_) => {
                                     // Err(PeerEd25519SingnatureVerificationFailed) => {
@@ -588,14 +586,14 @@ impl Tunn {
 
     /// Update the index of the currently used session, if needed
     fn set_current_session(&mut self, new_index: usize) {
-        let cur_index = self.current;
-        if cur_index == new_index {
+        let current_index = self.current;
+        if current_index == new_index {
             // There is nothing to do, already using this session, this is the common case
             return;
         }
-        if self.sessions[cur_index % N_SESSIONS].is_none()
+        if self.sessions[current_index % N_SESSIONS].is_none()
             || self.timers.session_timers[new_index % N_SESSIONS]
-                >= self.timers.session_timers[cur_index % N_SESSIONS]
+                >= self.timers.session_timers[current_index % N_SESSIONS]
         {
             self.current = new_index;
             tracing::debug!(message = "Info: New session", session = new_index);
@@ -608,20 +606,20 @@ impl Tunn {
         packet: PacketData,
         dst: &'a mut [u8],
     ) -> Result<TunnResult<'a>, WireGuardError> {
-        let r_index = packet.peer_index as usize;
-        let idx = r_index % N_SESSIONS;
+        let receiving_index = packet.peer_index as usize;
+        let idx = receiving_index % N_SESSIONS;
 
         // Get the (probably) right session
         let decapsulated_packet = {
             let session = self.sessions[idx].as_ref();
             let session = session.ok_or_else(|| {
-                tracing::trace!(message = "Info: No current session available", sender_index = r_index);
+                tracing::trace!(message = "Info: No current session available", sender_index = receiving_index);
                 WireGuardError::NoCurrentSession
             })?;
             session.receive_packet_data(packet, dst)?
         };
 
-        self.set_current_session(r_index);
+        self.set_current_session(receiving_index);
 
         self.timer_tick(TimerName::TimeLastPacketReceived);
 

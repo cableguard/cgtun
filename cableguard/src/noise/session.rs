@@ -153,13 +153,13 @@ impl ReceivingKeyCounterValidator {
 
 impl Session {
     pub(super) fn new(
-        local_index: u32,
+        own_index: u32,
         peer_index: u32,
         receiving_key: [u8; 32],
         sending_key: [u8; 32],
     ) -> Session {
         Session {
-            receiving_index: local_index,
+            receiving_index: own_index,
             sending_index: peer_index,
             receiver: LessSafeKey::new(
                 UnboundKey::new(&CHACHA20_POLY1305, &receiving_key).unwrap(),
