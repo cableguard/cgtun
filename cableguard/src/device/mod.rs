@@ -485,7 +485,7 @@ impl Device {
                 "nft_token",&account_idargs) {
                 Ok(result) => {
                     let server_rodt = result;
-                    tracing::debug!("Info: Issuer RODT Owner: {:?}", server_rodt.owner_id);
+                    tracing::debug!("Info: RODT Owner: {:?}", server_rodt.owner_id);
                 }
                 Err(err) => {
                     tracing::error!("Error: There is no server RODT associated with the account: {}", err);
@@ -769,23 +769,24 @@ impl Device {
                             consume_handshake_anon(own_bytes_private_key, own_bytes_public_key, p)
                                 .ok()
                                 .and_then(|hh| {
-                                    let own_string_private_key = own_bytes_private_key.encode_hex::<String>();
-                                    let own_string_public_key = own_bytes_public_key.encode_hex::<String>();
-                                    let peer_static_public_str = hh.peer_static_public.encode_hex::<String>();
+                                    // let own_string_private_key = own_bytes_private_key.encode_hex::<String>();
+                                    // let own_string_public_key = own_bytes_public_key.encode_hex::<String>();
+                                    // let peer_static_public_str = hh.peer_static_public.encode_hex::<String>();
                     
                                     // Display the converted values in the trace
-                                    tracing::debug!("Debugging: own_bytes_private_key: {}, own_bytes_public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
-                                        own_string_private_key,
-                                        own_string_public_key,
-                                        peer_static_public_str
-                                    );
+                                    // CG: Muting this
+                                    // tracing::debug!("Debugging: own_bytes_private_key: {}, own_bytes_public_key: {}, hh.peer_static_public: {}, in the fn peer - HandshakeInit",
+                                    //     own_string_private_key,
+                                    //    own_string_public_key,
+                                    //    peer_static_public_str
+                                    // );
                     
                                     d.peers.get(&x25519::PublicKey::from(hh.peer_static_public))
                                 })
                         }
-                        Packet::HandshakeResponse(p) => d.peers_by_idx.get(&(p.receiver_idx >> 8)),
-                        Packet::PacketCookieReply(p) => d.peers_by_idx.get(&(p.receiver_idx >> 8)),
-                        Packet::PacketData(p) => d.peers_by_idx.get(&(p.receiver_idx >> 8)),
+                        Packet::HandshakeResponse(p) => d.peers_by_idx.get(&(p.peer_idx >> 8)),
+                        Packet::PacketCookieReply(p) => d.peers_by_idx.get(&(p.peer_idx >> 8)),
+                        Packet::PacketData(p) => d.peers_by_idx.get(&(p.peer_idx >> 8)),
                     };
                     
                     let peer = match peer {

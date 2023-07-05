@@ -627,8 +627,8 @@ impl Handshake {
     ) -> Result<Session, WireGuardError> {
         // Check if there is a handshake awaiting a response and return the correct one
         let (state, is_previous) = match (&self.state, &self.previous) {
-            (HandshakeState::InitSent(s), _) if s.local_index == packet.receiver_idx => (s, false),
-            (_, HandshakeState::InitSent(s)) if s.local_index == packet.receiver_idx => (s, true),
+            (HandshakeState::InitSent(s), _) if s.local_index == packet.peer_idx => (s, false),
+            (_, HandshakeState::InitSent(s)) if s.local_index == packet.peer_idx => (s, true),
             _ => return Err(WireGuardError::UnexpectedPacket),
         };
 
@@ -719,7 +719,7 @@ impl Handshake {
         };
 
         let local_index = self.cookies.index;
-        if packet.receiver_idx != local_index {
+        if packet.peer_idx != local_index {
             return Err(WireGuardError::WrongIndex);
         }
         // msg.encrypted_cookie = XAEAD(HASH(LABEL_COOKIE || responder.static_public), msg.nonce, cookie, last_received_msg.mac1)
@@ -857,9 +857,11 @@ impl Handshake {
 
         // CG: Our rodt_id values to transfer over the wire
         rodt_id.copy_from_slice(&self.params.rodt_id);
-        tracing::debug!("Debugging: HSI RODT ID {:?}",rodt_id);
+        // CG: Muting this
+        // tracing::debug!("Debugging: HSI RODT ID {:?}",rodt_id);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
-        tracing::debug!("Debugging: HSI RODT SIGNATURE {:?}",rodt_id_signature);
+        // CG: Muting this
+        // tracing::debug!("Debugging: HSI RODT SIGNATURE {:?}",rodt_id_signature);
 
         // CG:: Check if the conversion was successful
         let string_rodt_id = String::from_utf8(self.params.rodt_id.to_vec());
@@ -870,12 +872,12 @@ impl Handshake {
             }
             Err(error) => {
                 // Conversion failed, handle the error
-                println!("[u8:128 to String conversion error: {:?}", error);
+                println!("[u8:128] to String conversion error: {:?}", error);
             }
         }
-
-        tracing::debug!("Debugging: Initiation RODT_ID {:?}", self.params.rodt_id);
-        tracing::debug!("Debugging: Initiation Signature of the RODT_ID {:?}",rodt_id_signature);
+        // CG: Muting this
+        // tracing::debug!("Debugging: Initiation RODT_ID {:?}", self.params.rodt_id);
+        // tracing::debug!("Debugging: Initiation Signature of the RODT_ID {:?}",rodt_id_signature);
 
         let time_now = Instant::now();
         self.previous = std::mem::replace(
@@ -984,9 +986,7 @@ impl Handshake {
         // initiator.receiving_key_counter = 0
 
         rodt_id.copy_from_slice(&self.params.rodt_id);
-        tracing::debug!("Debugging: Are RODT SIGNATURE (this) and COPY FROM SLICE the same? {:?}",rodt_id_signature);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
-        tracing::debug!("Debugging: Are RODT SIGNATURE and COPY FROM SLICE (this) the same? {:?}",rodt_id_signature);
 
         tracing::debug!("Debugging: Response RODT_ID {:?}", self.params.rodt_id);
         tracing::debug!("Debugging: Response Signature of the RODT_ID {:?}",rodt_id_signature);
