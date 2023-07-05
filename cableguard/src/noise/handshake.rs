@@ -379,7 +379,7 @@ pub fn consume_handshake_anon(
     //);
 
     Ok(HalfHandshake {
-        sender_index,
+        peer_index,
         peer_static_public,
     })
 }
@@ -614,7 +614,7 @@ impl Handshake {
                 chaining_key,
                 hash,
                 peer_ephemeral_public,
-                sender_index,
+                peer_index,
             },
         );
 
