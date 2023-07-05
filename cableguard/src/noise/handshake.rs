@@ -332,7 +332,7 @@ pub fn consume_handshake_anon(
     static_public: &x25519::PublicKey,
     packet: &HandshakeInit,
 ) -> Result<HalfHandshake, WireGuardError> {
-    let peer_index = packet.sender_idx;
+    let sender_index = packet.sender_index;
     // initiator.chaining_key = HASH(CONSTRUCTION)
     let mut chaining_key = INITIAL_CHAIN_KEY;
     // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
@@ -379,7 +379,7 @@ pub fn consume_handshake_anon(
     //);
 
     Ok(HalfHandshake {
-        peer_index,
+        sender_index,
         peer_static_public,
     })
 }
@@ -449,7 +449,7 @@ impl Handshake {
         static_private: x25519::StaticSecret,
         static_public: x25519::PublicKey,
         peer_static_public: x25519::PublicKey,
-        global_idx: u32,
+        global_index: u32,
         preshared_key: Option<[u8; 32]>,
         rodt_id: [u8; RODT_ID_SZ],
         rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
@@ -465,7 +465,7 @@ impl Handshake {
 
         Ok(Handshake {
             params,
-            next_index: global_idx,
+            next_index: global_index,
             previous: HandshakeState::None,
             state: HandshakeState::None,
             last_handshake_timestamp: Tai64N::zero(),
@@ -545,7 +545,7 @@ impl Handshake {
         // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         hash = b2s_hash(&hash, self.params.static_public.as_bytes());
         // msg.sender_index = little_endian(initiator.sender_index)
-        let peer_index = packet.sender_idx;
+        let sender_index = packet.sender_index;
         // msg.unencrypted_ephemeral = DH_PUBKEY(initiator.ephemeral_private)
         let peer_ephemeral_public = x25519::PublicKey::from(*packet.unencrypted_ephemeral);
         // initiator.hash = HASH(initiator.hash || msg.unencrypted_ephemeral)
@@ -614,7 +614,7 @@ impl Handshake {
                 chaining_key,
                 hash,
                 peer_ephemeral_public,
-                peer_index,
+                sender_index,
             },
         );
 
@@ -627,12 +627,12 @@ impl Handshake {
     ) -> Result<Session, WireGuardError> {
         // Check if there is a handshake awaiting a response and return the correct one
         let (state, is_previous) = match (&self.state, &self.previous) {
-            (HandshakeState::InitSent(s), _) if s.local_index == packet.peer_idx => (s, false),
-            (_, HandshakeState::InitSent(s)) if s.local_index == packet.peer_idx => (s, true),
+            (HandshakeState::InitSent(s), _) if s.local_index == packet.peer_index => (s, false),
+            (_, HandshakeState::InitSent(s)) if s.local_index == packet.peer_index => (s, true),
             _ => return Err(WireGuardError::UnexpectedPacket),
         };
 
-        let peer_index = packet.sender_idx;
+        let sender_index = packet.sender_index;
         let local_index = state.local_index;
 
          // msg.unencrypted_ephemeral = DH_PUBKEY(responder.ephemeral_private)
@@ -704,7 +704,7 @@ impl Handshake {
             self.state = HandshakeState::None;
         }
 
-        Ok(Session::new(local_index, peer_index, temp3, temp2))
+        Ok(Session::new(local_index, sender_index, temp3, temp2))
     }
 
     pub(super) fn receive_cookie_reply(
@@ -719,7 +719,7 @@ impl Handshake {
         };
 
         let local_index = self.cookies.index;
-        if packet.peer_idx != local_index {
+        if packet.peer_index != local_index {
             return Err(WireGuardError::WrongIndex);
         }
         // msg.encrypted_cookie = XAEAD(HASH(LABEL_COOKIE || responder.static_public), msg.nonce, cookie, last_received_msg.mac1)
@@ -917,7 +917,7 @@ impl Handshake {
 
         let (message_type, rest) = dst.split_at_mut(4);
         let (sender_index, rest) = rest.split_at_mut(4);
-        let (receiver_index, rest) = rest.split_at_mut(4);
+        let (own_index, rest) = rest.split_at_mut(4);
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_nothing, rest) = rest.split_at_mut(16);
         // CG: The response also has 2 additional fields so both sides can authenticate each other
@@ -932,8 +932,8 @@ impl Handshake {
         message_type.copy_from_slice(&super::HANDSHAKE_RESP.to_le_bytes());
         // msg.sender_index = little_endian(responder.sender_index)
         sender_index.copy_from_slice(&local_index.to_le_bytes());
-        // msg.receiver_index = little_endian(initiator.sender_index)
-        receiver_index.copy_from_slice(&peer_index.to_le_bytes());
+        // msg.own_index = little_endian(initiator.sender_index)
+        own_index.copy_from_slice(&peer_index.to_le_bytes());
         // msg.unencrypted_ephemeral = DH_PUBKEY(initiator.ephemeral_private)
         unencrypted_ephemeral
             .copy_from_slice(x25519::PublicKey::from(&ephemeral_private).as_bytes());

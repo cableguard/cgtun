@@ -91,7 +91,7 @@ const DATA_OVERHEAD_SZ: usize = 32;
 
 #[derive(Debug,Copy, Clone)]
 pub struct HandshakeInit<'a> {
-    sender_idx: u32,
+    sender_index: u32,
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_static: &'a [u8],
     encrypted_timestamp: &'a [u8],
@@ -101,8 +101,8 @@ pub struct HandshakeInit<'a> {
 
 #[derive(Debug,Copy, Clone)]
 pub struct HandshakeResponse<'a> {
-    sender_idx: u32,
-    pub peer_idx: u32,
+    sender_index: u32,
+    pub peer_index: u32,
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_nothing: &'a [u8],
     rodt_id: &'a [u8; RODT_ID_SZ],
@@ -111,14 +111,14 @@ pub struct HandshakeResponse<'a> {
 
 #[derive(Debug)]
 pub struct PacketCookieReply<'a> {
-    pub peer_idx: u32,
+    pub peer_index: u32,
     nonce: &'a [u8],
     encrypted_cookie: &'a [u8],
 }
 
 #[derive(Debug)]
 pub struct PacketData<'a> {
-    pub peer_idx: u32,
+    pub peer_index: u32,
     counter: u64,
     encrypted_encapsulated_packet: &'a [u8],
 }
@@ -149,7 +149,7 @@ impl Tunn {
                 //    u8 encrypted_static[AEAD_LEN(32)]
                 //    u8 encrypted_timestamp[AEAD_LEN(12)]
                 //} TOTAL SIZE WAS 148 (with MAC), now plus 128
-                sender_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()), // SIZE u32 = 4 times 8, 8-4 = 4 bytes
+                sender_index: u32::from_le_bytes(src[4..8].try_into().unwrap()), // SIZE u32 = 4 times 8, 8-4 = 4 bytes
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[8..40]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("length already checked above"),
                 encrypted_static: &src[40..88], // SIZE u8;32, 88-40 = 48 bytes, seems too big for the spec (32)
@@ -161,12 +161,12 @@ impl Tunn {
                 }),
                 (HANDSHAKE_RESP, HANDSHAKE_RESP_SZ) => Packet::HandshakeResponse(HandshakeResponse {
                 //    u32 sender_index
-                //    u32 receiver_index
+                //    u32 own_index
                 //    u8 unencrypted_ephemeral[32]
                 //    u8 encrypted_nothing[AEAD_LEN(0)]
                 //} TOTAL SIZE WAS 92 (with MAC), now plus 128
-                sender_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()), // SIZE u32 = 4 times 8, 8-4 = 4 bytes
-                peer_idx: u32::from_le_bytes(src[8..12].try_into().unwrap()), // SIZE u32 = 4 times 8, 12-8 = 4 bytes
+                sender_index: u32::from_le_bytes(src[4..8].try_into().unwrap()), // SIZE u32 = 4 times 8, 8-4 = 4 bytes
+                peer_index: u32::from_le_bytes(src[8..12].try_into().unwrap()), // SIZE u32 = 4 times 8, 12-8 = 4 bytes
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("length already checked above"),
                 encrypted_nothing: &src[44..60], // SIZE 60-44 = 16 bytes
@@ -176,12 +176,12 @@ impl Tunn {
                     .expect("length already checked above"), // SIZE u8;64, 252-188 = 64 bytes
             }),
             (COOKIE_REPLY, COOKIE_REPLY_SZ) => Packet::PacketCookieReply(PacketCookieReply {
-                peer_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()),
+                peer_index: u32::from_le_bytes(src[4..8].try_into().unwrap()),
                 nonce: &src[8..32],
                 encrypted_cookie: &src[32..64],
             }),
             (DATA, DATA_OVERHEAD_SZ..=std::usize::MAX) => Packet::PacketData(PacketData {
-                peer_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()),
+                peer_index: u32::from_le_bytes(src[4..8].try_into().unwrap()),
                 counter: u64::from_le_bytes(src[8..16].try_into().unwrap()),
                 encrypted_encapsulated_packet: &src[16..],
             }),
@@ -373,7 +373,7 @@ impl Tunn {
     ) -> Result<TunnResult<'a>, WireGuardError> {
         tracing::debug!(
             message = "Info: Received handshake_initiation",
-            peer_idx = peer_handshake_init.sender_idx
+            sender_index = peer_handshake_init.sender_index
         );
 
         let (packet, session) = self.handshake.consume_received_handshake_initiation(peer_handshake_init, dst)?;
@@ -465,7 +465,7 @@ impl Tunn {
         self.timer_tick(TimerName::TimeLastPacketSent);
         self.timer_tick_session_established(false, index); // New session established, we are not the initiator
 
-        tracing::debug!(message = "Info: Sending handshake_response", own_idx = index);
+        tracing::debug!(message = "Info: Sending handshake_response", own_index = index);
 
         Ok(TunnResult::WriteToNetwork(packet))
     }
@@ -477,8 +477,8 @@ impl Tunn {
     ) -> Result<TunnResult<'a>, WireGuardError> {
         tracing::debug!(
             message = "Info: Received peer_handshake_response",
-            own_idx = peer_handshake_response.peer_idx,
-            peer_idx = peer_handshake_response.sender_idx
+            own_index = peer_handshake_response.peer_index,
+            sender_index = peer_handshake_response.sender_index
         );
 
         let session = self.handshake.consume_received_handshake_response(peer_handshake_response)?;
@@ -562,13 +562,13 @@ impl Tunn {
 
         let keepalive_packet = session.produce_packet_data(&[], dst);
         // Store new session in ring buffer
-        let l_idx = session.local_index();
-        let index = l_idx % N_SESSIONS;
+        let l_index = session.local_index();
+        let index = l_index % N_SESSIONS;
         self.sessions[index] = Some(session);
 
         self.timer_tick(TimerName::TimeLastPacketReceived);
         self.timer_tick_session_established(true, index); // New session established, we are the initiator
-        self.set_current_session(l_idx);
+        self.set_current_session(l_index);
 
         tracing::debug!("Info: Sending keepalive");
 
@@ -581,7 +581,7 @@ impl Tunn {
     ) -> Result<TunnResult<'a>, WireGuardError> {
         tracing::debug!(
             message = "Info: Received cookie_reply",
-            own_idx = p.peer_idx
+            own_index = p.peer_index
         );
 
         self.handshake.receive_cookie_reply(p)?;
@@ -594,18 +594,18 @@ impl Tunn {
     }
 
     /// Update the index of the currently used session, if needed
-    fn set_current_session(&mut self, new_idx: usize) {
-        let cur_idx = self.current;
-        if cur_idx == new_idx {
+    fn set_current_session(&mut self, new_index: usize) {
+        let cur_index = self.current;
+        if cur_index == new_index {
             // There is nothing to do, already using this session, this is the common case
             return;
         }
-        if self.sessions[cur_idx % N_SESSIONS].is_none()
-            || self.timers.session_timers[new_idx % N_SESSIONS]
-                >= self.timers.session_timers[cur_idx % N_SESSIONS]
+        if self.sessions[cur_index % N_SESSIONS].is_none()
+            || self.timers.session_timers[new_index % N_SESSIONS]
+                >= self.timers.session_timers[cur_index % N_SESSIONS]
         {
-            self.current = new_idx;
-            tracing::debug!(message = "Info: New session", session = new_idx);
+            self.current = new_index;
+            tracing::debug!(message = "Info: New session", session = new_index);
         }
     }
 
@@ -615,20 +615,20 @@ impl Tunn {
         packet: PacketData,
         dst: &'a mut [u8],
     ) -> Result<TunnResult<'a>, WireGuardError> {
-        let r_idx = packet.peer_idx as usize;
-        let idx = r_idx % N_SESSIONS;
+        let r_index = packet.peer_index as usize;
+        let idx = r_index % N_SESSIONS;
 
         // Get the (probably) right session
         let decapsulated_packet = {
             let session = self.sessions[idx].as_ref();
             let session = session.ok_or_else(|| {
-                tracing::trace!(message = "Info: No current session available", peer_idx = r_idx);
+                tracing::trace!(message = "Info: No current session available", sender_index = r_index);
                 WireGuardError::NoCurrentSession
             })?;
             session.receive_packet_data(packet, dst)?
         };
 
-        self.set_current_session(r_idx);
+        self.set_current_session(r_index);
 
         self.timer_tick(TimerName::TimeLastPacketReceived);
 
@@ -748,14 +748,14 @@ impl Tunn {
     }
 
     fn estimate_loss(&self) -> f32 {
-        let session_idx = self.current;
+        let session_index = self.current;
 
         let mut weight = 9.0;
         let mut cur_avg = 0.0;
         let mut total_weight = 0.0;
 
         for i in 0..N_SESSIONS {
-            if let Some(ref session) = self.sessions[(session_idx.wrapping_sub(i)) % N_SESSIONS] {
+            if let Some(ref session) = self.sessions[(session_index.wrapping_sub(i)) % N_SESSIONS] {
                 let (expected, received) = session.current_packet_cnt();
 
                 let loss = if expected == 0 {
@@ -803,11 +803,11 @@ mod tests {
     fn produce_two_tuns() -> (Tunn, Tunn) {
         let own_staticsecret_private_key = x25519::StaticSecret::random_from_rng(OsRng);
         let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
-        let my_idx = OsRng.next_u32();
+        let my_index = OsRng.next_u32();
 
         let their_staticsecret_private_key = x25519::StaticSecret::random_from_rng(OsRng);
         let their_publickey_public_key = x25519::PublicKey::from(&their_secret_key);
-        let their_idx = OsRng.next_u32();
+        let their_index = OsRng.next_u32();
 
         // Convert the keys to strings
         let own_string_private_key = encode_hex(own_staticsecret_private_key.to_bytes());
@@ -823,8 +823,8 @@ mod tests {
             their_string_public_key
         );
 
-        let my_tun = Tunn::new(own_staticsecret_private_key, their_publickey_public_key, None, None, my_idx, None).unwrap();
-        let their_tun = Tunn::new(their_staticsecret_private_key, own_publickey_public_key, None, None, their_idx, None).unwrap();
+        let my_tun = Tunn::new(own_staticsecret_private_key, their_publickey_public_key, None, None, my_index, None).unwrap();
+        let their_tun = Tunn::new(their_staticsecret_private_key, own_publickey_public_key, None, None, their_index, None).unwrap();
 
         (my_tun, their_tun)
     }

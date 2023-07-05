@@ -161,8 +161,8 @@ pub struct Device {
     yield_notice: Option<EventRef>,
     exit_notice: Option<EventRef>,
     peers: HashMap<x25519::PublicKey, Arc<Mutex<Peer>>>,
-    peers_by_ip: AllowedIps<Arc<Mutex<Peer>>>,
-    peers_by_idx: HashMap<u32, Arc<Mutex<Peer>>>,
+    peerslisted_by_ip: AllowedIps<Arc<Mutex<Peer>>>,
+    peerslisted_by_index: HashMap<u32, Arc<Mutex<Peer>>>,
     next_index: IndexLfsr,
     config: DeviceConfig,
     cleanup_paths: Vec<String>,
@@ -316,9 +316,9 @@ impl Device {
             {
                 let p = peer.lock();
                 p.shutdown_endpoint(); // close open udp socket and free the closure
-                self.peers_by_idx.remove(&p.index());
+                self.peerslisted_by_index.remove(&p.index());
             }
-            self.peers_by_ip
+            self.peerslisted_by_ip
                 .remove(&|p: &Arc<Mutex<Peer>>| Arc::ptr_eq(&peer, p));
 
             tracing::info!("Info: Peer removed");
@@ -388,10 +388,10 @@ impl Device {
         let peer = Peer::new(tunn, next_index, endpoint, allowed_ips, preshared_key);
         let peer = Arc::new(Mutex::new(peer));
         self.peers.insert(peer_publickey_public_key, Arc::clone(&peer));
-        self.peers_by_idx.insert(next_index, Arc::clone(&peer));
+        self.peerslisted_by_index.insert(next_index, Arc::clone(&peer));
 
         for AllowedIP { addr, cidr } in allowed_ips {
-            self.peers_by_ip
+            self.peerslisted_by_ip
                 .insert(*addr, *cidr as _, Arc::clone(&peer));
         }
         tracing::debug!("Debugging: Peer added");
@@ -420,8 +420,8 @@ impl Device {
             listen_port: Default::default(),
             next_index: Default::default(),
             peers: Default::default(),
-            peers_by_idx: Default::default(),
-            peers_by_ip: AllowedIps::new(),
+            peerslisted_by_index: Default::default(),
+            peerslisted_by_ip: AllowedIps::new(),
             udp4: Default::default(),
             udp6: Default::default(),
             cleanup_paths: Default::default(),
@@ -641,8 +641,8 @@ impl Device {
 
     fn clear_peers(&mut self) {
         self.peers.clear();
-        self.peers_by_idx.clear();
-        self.peers_by_ip.clear();
+        self.peerslisted_by_index.clear();
+        self.peerslisted_by_ip.clear();
     }
 
     fn register_notifiers(&mut self) -> Result<(), Error> {
@@ -784,9 +784,9 @@ impl Device {
                                     d.peers.get(&x25519::PublicKey::from(hh.peer_static_public))
                                 })
                         }
-                        Packet::HandshakeResponse(p) => d.peers_by_idx.get(&(p.peer_idx >> 8)),
-                        Packet::PacketCookieReply(p) => d.peers_by_idx.get(&(p.peer_idx >> 8)),
-                        Packet::PacketData(p) => d.peers_by_idx.get(&(p.peer_idx >> 8)),
+                        Packet::HandshakeResponse(p) => d.peerslisted_by_index.get(&(p.peer_index >> 8)),
+                        Packet::PacketCookieReply(p) => d.peerslisted_by_index.get(&(p.peer_index >> 8)),
+                        Packet::PacketData(p) => d.peerslisted_by_index.get(&(p.peer_index >> 8)),
                     };
                     
                     let peer = match peer {
@@ -932,7 +932,7 @@ impl Device {
                 let udp4 = d.udp4.as_ref().expect("Not connected");
                 let udp6 = d.udp6.as_ref().expect("Not connected");
 
-                let peers = &d.peers_by_ip;
+                let peers = &d.peerslisted_by_ip;
                 for _ in 0..MAX_ITR {
                     let src = match iface.read(&mut t.src_buf[..mtu]) {
                         Ok(src) => src,

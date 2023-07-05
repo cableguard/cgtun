@@ -128,10 +128,10 @@ impl Tunn {
     pub(super) fn timer_tick_session_established(
         &mut self,
         is_initiator: bool,
-        session_idx: usize,
+        session_index: usize,
     ) {
         self.timer_tick(TimeSessionEstablished);
-        self.timers.session_timers[session_idx % crate::noise::N_SESSIONS] =
+        self.timers.session_timers[session_index % crate::noise::N_SESSIONS] =
             self.timers[TimeCurrent];
         self.timers.is_initiator = is_initiator;
     }

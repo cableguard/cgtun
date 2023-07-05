@@ -128,15 +128,15 @@ impl RateLimiter {
         }
 
         let (message_type, rest) = dst.split_at_mut(4);
-        let (receiver_index, rest) = rest.split_at_mut(4);
+        let (own_index, rest) = rest.split_at_mut(4);
         let (nonce, rest) = rest.split_at_mut(24);
         let (encrypted_cookie, _) = rest.split_at_mut(16 + 16);
 
         // msg.message_type = 3
         // msg.reserved_zero = { 0, 0, 0 }
         message_type.copy_from_slice(&super::COOKIE_REPLY.to_le_bytes());
-        // msg.receiver_index = little_endian(initiator.sender_index)
-        receiver_index.copy_from_slice(&idx.to_le_bytes());
+        // msg.own_index = little_endian(initiator.sender_index)
+        own_index.copy_from_slice(&idx.to_le_bytes());
         nonce.copy_from_slice(&self.nonce()[..]);
 
         let cipher = XChaCha20Poly1305::new(&self.cookie_key);
@@ -163,8 +163,8 @@ impl RateLimiter {
         let packet = Tunn::consume_incoming_packet(src)?;
 
         // Verify and rate limit handshake messages only
-        if let Packet::HandshakeInit(HandshakeInit { sender_idx, .. })
-        | Packet::HandshakeResponse(HandshakeResponse { sender_idx, .. }) = packet
+        if let Packet::HandshakeInit(HandshakeInit { sender_index, .. })
+        | Packet::HandshakeResponse(HandshakeResponse { sender_index, .. }) = packet
         {
             let (msg, macs) = src.split_at(src.len() - 32);
             let (mac1, mac2) = macs.split_at(16);
@@ -185,7 +185,7 @@ impl RateLimiter {
 
                 if verify_slices_are_equal(&computed_mac2[..16], mac2).is_err() {
                     let cookie_packet = self
-                        .produce_cookie_reply(sender_idx, cookie, mac1, dst)
+                        .produce_cookie_reply(sender_index, cookie, mac1, dst)
                         .map_err(TunnResult::Err)?;
                     return Err(TunnResult::WriteToNetwork(cookie_packet));
                 }

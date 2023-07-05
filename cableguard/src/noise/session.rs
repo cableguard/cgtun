@@ -49,34 +49,34 @@ struct ReceivingKeyCounterValidator {
 impl ReceivingKeyCounterValidator {
     #[inline(always)]
     fn set_bit(&mut self, idx: u64) {
-        let bit_idx = idx % N_BITS;
-        let word = (bit_idx / WORD_SIZE) as usize;
-        let bit = (bit_idx % WORD_SIZE) as usize;
+        let bit_index = idx % N_BITS;
+        let word = (bit_index / WORD_SIZE) as usize;
+        let bit = (bit_index % WORD_SIZE) as usize;
         self.bitmap[word] |= 1 << bit;
     }
 
     #[inline(always)]
     fn clear_bit(&mut self, idx: u64) {
-        let bit_idx = idx % N_BITS;
-        let word = (bit_idx / WORD_SIZE) as usize;
-        let bit = (bit_idx % WORD_SIZE) as usize;
+        let bit_index = idx % N_BITS;
+        let word = (bit_index / WORD_SIZE) as usize;
+        let bit = (bit_index % WORD_SIZE) as usize;
         self.bitmap[word] &= !(1u64 << bit);
     }
 
     /// Clear the word that contains idx
     #[inline(always)]
     fn clear_word(&mut self, idx: u64) {
-        let bit_idx = idx % N_BITS;
-        let word = (bit_idx / WORD_SIZE) as usize;
+        let bit_index = idx % N_BITS;
+        let word = (bit_index / WORD_SIZE) as usize;
         self.bitmap[word] = 0;
     }
 
     /// Returns true if bit is set, false otherwise
     #[inline(always)]
     fn check_bit(&self, idx: u64) -> bool {
-        let bit_idx = idx % N_BITS;
-        let word = (bit_idx / WORD_SIZE) as usize;
-        let bit = (bit_idx % WORD_SIZE) as usize;
+        let bit_index = idx % N_BITS;
+        let word = (bit_index / WORD_SIZE) as usize;
+        let bit = (bit_index % WORD_SIZE) as usize;
         ((self.bitmap[word] >> bit) & 1) == 1
     }
 
@@ -201,11 +201,11 @@ impl Session {
         let sending_key_counter = self.sending_key_counter.fetch_add(1, Ordering::Relaxed) as u64;
 
         let (message_type, rest) = dst.split_at_mut(4);
-        let (receiver_index, rest) = rest.split_at_mut(4);
+        let (own_index, rest) = rest.split_at_mut(4);
         let (counter, data) = rest.split_at_mut(8);
 
         message_type.copy_from_slice(&super::DATA.to_le_bytes());
-        receiver_index.copy_from_slice(&self.sending_index.to_le_bytes());
+        own_index.copy_from_slice(&self.sending_index.to_le_bytes());
         counter.copy_from_slice(&sending_key_counter.to_le_bytes());
 
         // TODO: spec requires padding to 16 bytes, but actually works fine without it
@@ -243,7 +243,7 @@ impl Session {
             // This is a very incorrect use of the library, therefore panic and not error
             panic!("The destination buffer is too small");
         }
-        if packet.peer_idx != self.receiving_index {
+        if packet.peer_index != self.receiving_index {
             return Err(WireGuardError::WrongIndex);
         }
         // Don't reuse counters, in case this is a replay attack we want to quickly check the counter without running expensive decryption
