@@ -102,7 +102,7 @@ pub struct HandshakeInit<'a> {
 #[derive(Debug,Copy, Clone)]
 pub struct HandshakeResponse<'a> {
     sender_idx: u32,
-    pub receiver_idx: u32,
+    pub peer_idx: u32,
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_nothing: &'a [u8],
     rodt_id: &'a [u8; RODT_ID_SZ],
@@ -111,14 +111,14 @@ pub struct HandshakeResponse<'a> {
 
 #[derive(Debug)]
 pub struct PacketCookieReply<'a> {
-    pub receiver_idx: u32,
+    pub peer_idx: u32,
     nonce: &'a [u8],
     encrypted_cookie: &'a [u8],
 }
 
 #[derive(Debug)]
 pub struct PacketData<'a> {
-    pub receiver_idx: u32,
+    pub peer_idx: u32,
     counter: u64,
     encrypted_encapsulated_packet: &'a [u8],
 }
@@ -166,7 +166,7 @@ impl Tunn {
                 //    u8 encrypted_nothing[AEAD_LEN(0)]
                 //} TOTAL SIZE WAS 92 (with MAC), now plus 128
                 sender_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()), // SIZE u32 = 4 times 8, 8-4 = 4 bytes
-                receiver_idx: u32::from_le_bytes(src[8..12].try_into().unwrap()), // SIZE u32 = 4 times 8, 12-8 = 4 bytes
+                peer_idx: u32::from_le_bytes(src[8..12].try_into().unwrap()), // SIZE u32 = 4 times 8, 12-8 = 4 bytes
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("length already checked above"),
                 encrypted_nothing: &src[44..60], // SIZE 60-44 = 16 bytes
@@ -176,12 +176,12 @@ impl Tunn {
                     .expect("length already checked above"), // SIZE u8;64, 252-188 = 64 bytes
             }),
             (COOKIE_REPLY, COOKIE_REPLY_SZ) => Packet::PacketCookieReply(PacketCookieReply {
-                receiver_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()),
+                peer_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()),
                 nonce: &src[8..32],
                 encrypted_cookie: &src[32..64],
             }),
             (DATA, DATA_OVERHEAD_SZ..=std::usize::MAX) => Packet::PacketData(PacketData {
-                receiver_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()),
+                peer_idx: u32::from_le_bytes(src[4..8].try_into().unwrap()),
                 counter: u64::from_le_bytes(src[8..16].try_into().unwrap()),
                 encrypted_encapsulated_packet: &src[16..],
             }),
@@ -373,7 +373,7 @@ impl Tunn {
     ) -> Result<TunnResult<'a>, WireGuardError> {
         tracing::debug!(
             message = "Info: Received handshake_initiation",
-            remote_idx = peer_handshake_init.sender_idx
+            peer_idx = peer_handshake_init.sender_idx
         );
 
         let (packet, session) = self.handshake.consume_received_handshake_initiation(peer_handshake_init, dst)?;
@@ -465,7 +465,7 @@ impl Tunn {
         self.timer_tick(TimerName::TimeLastPacketSent);
         self.timer_tick_session_established(false, index); // New session established, we are not the initiator
 
-        tracing::debug!(message = "Info: Sending handshake_response", local_idx = index);
+        tracing::debug!(message = "Info: Sending handshake_response", own_idx = index);
 
         Ok(TunnResult::WriteToNetwork(packet))
     }
@@ -477,8 +477,8 @@ impl Tunn {
     ) -> Result<TunnResult<'a>, WireGuardError> {
         tracing::debug!(
             message = "Info: Received peer_handshake_response",
-            local_idx = peer_handshake_response.receiver_idx,
-            remote_idx = peer_handshake_response.sender_idx
+            own_idx = peer_handshake_response.peer_idx,
+            peer_idx = peer_handshake_response.sender_idx
         );
 
         let session = self.handshake.consume_received_handshake_response(peer_handshake_response)?;
@@ -581,7 +581,7 @@ impl Tunn {
     ) -> Result<TunnResult<'a>, WireGuardError> {
         tracing::debug!(
             message = "Info: Received cookie_reply",
-            local_idx = p.receiver_idx
+            own_idx = p.peer_idx
         );
 
         self.handshake.receive_cookie_reply(p)?;
@@ -615,14 +615,14 @@ impl Tunn {
         packet: PacketData,
         dst: &'a mut [u8],
     ) -> Result<TunnResult<'a>, WireGuardError> {
-        let r_idx = packet.receiver_idx as usize;
+        let r_idx = packet.peer_idx as usize;
         let idx = r_idx % N_SESSIONS;
 
         // Get the (probably) right session
         let decapsulated_packet = {
             let session = self.sessions[idx].as_ref();
             let session = session.ok_or_else(|| {
-                tracing::trace!(message = "Info: No current session available", remote_idx = r_idx);
+                tracing::trace!(message = "Info: No current session available", peer_idx = r_idx);
                 WireGuardError::NoCurrentSession
             })?;
             session.receive_packet_data(packet, dst)?

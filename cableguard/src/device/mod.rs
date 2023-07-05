@@ -784,9 +784,9 @@ impl Device {
                                     d.peers.get(&x25519::PublicKey::from(hh.peer_static_public))
                                 })
                         }
-                        Packet::HandshakeResponse(p) => d.peers_by_idx.get(&(p.receiver_idx >> 8)),
-                        Packet::PacketCookieReply(p) => d.peers_by_idx.get(&(p.receiver_idx >> 8)),
-                        Packet::PacketData(p) => d.peers_by_idx.get(&(p.receiver_idx >> 8)),
+                        Packet::HandshakeResponse(p) => d.peers_by_idx.get(&(p.peer_idx >> 8)),
+                        Packet::PacketCookieReply(p) => d.peers_by_idx.get(&(p.peer_idx >> 8)),
+                        Packet::PacketData(p) => d.peers_by_idx.get(&(p.peer_idx >> 8)),
                     };
                     
                     let peer = match peer {

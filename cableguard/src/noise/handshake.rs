@@ -627,8 +627,8 @@ impl Handshake {
     ) -> Result<Session, WireGuardError> {
         // Check if there is a handshake awaiting a response and return the correct one
         let (state, is_previous) = match (&self.state, &self.previous) {
-            (HandshakeState::InitSent(s), _) if s.local_index == packet.receiver_idx => (s, false),
-            (_, HandshakeState::InitSent(s)) if s.local_index == packet.receiver_idx => (s, true),
+            (HandshakeState::InitSent(s), _) if s.local_index == packet.peer_idx => (s, false),
+            (_, HandshakeState::InitSent(s)) if s.local_index == packet.peer_idx => (s, true),
             _ => return Err(WireGuardError::UnexpectedPacket),
         };
 
@@ -719,7 +719,7 @@ impl Handshake {
         };
 
         let local_index = self.cookies.index;
-        if packet.receiver_idx != local_index {
+        if packet.peer_idx != local_index {
             return Err(WireGuardError::WrongIndex);
         }
         // msg.encrypted_cookie = XAEAD(HASH(LABEL_COOKIE || responder.static_public), msg.nonce, cookie, last_received_msg.mac1)
