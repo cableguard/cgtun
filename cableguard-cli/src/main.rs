@@ -283,7 +283,7 @@ fn main() {
         }
     }
     
-    // Notify parent that tunnel initiation succeeded
+    // Notify parent that tunnel initiation success
     sock1.send(&[1]).unwrap();
     drop(sock1);
     

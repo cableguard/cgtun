@@ -416,26 +416,26 @@ impl Tunn {
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
                                         }
                                     Err(_) => {
-                                    // Err(PeerEd25519SingnatureVerificationFailed) => {
+                                    // Err(PeerEd25519SignatureVerificationFailure) => {
                                         // If the verification fails, handle the error and propagate it
-                                        tracing::error!("Error: PeerEd25519SingnatureVerificationFailed");
-                                        return Err(WireGuardError::PeerEd25519SingnatureVerificationFailed);
+                                        tracing::error!("Error: PeerEd25519SignatureVerificationFailure");
+                                        return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
                                     }
                                 };
                                 // Rest of the code if verification is successful
                             }
                             Err(_) => {
                                 // If the public key parsing fails, handle the error and propagate it
-                                tracing::error!("Error: PeerEd25519PublicKeyParsingFailed");
-                                return Err(WireGuardError::PeerEd25519PublicKeyParsingFailed);
+                                tracing::error!("Error: PeerEd25519PublicKeyParsingFailure");
+                                return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure);
                             }
                         };
                         // Rest of the code if public key parsing is successful
                     }
                     Err(_) => {
                         // If the signature parsing fails, handle the error and propagate it
-                        tracing::error!("Error: PeerEd25519SingnatureParsingFailed");
-                        return Err(WireGuardError::PeerEd25519SingnatureParsingFailed);
+                        tracing::error!("Error: PeerEd25519SignatureParsingFailure");
+                        return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
                     }
                 };
                 // Rest of the code if signature parsing is successful
@@ -474,82 +474,15 @@ impl Tunn {
 
         let session = self.handshake.consume_received_handshake_response(peer_handshake_response)?;
 
-        // CG: Beginning of RODT verification
-        let peer_slice_rodtid: &[u8] = &peer_handshake_response.rodt_id[..];
-        let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
-        .expect("Failed to convert byte slice to string")
-        .trim_end_matches('\0');
-        
-        // CG: We receive this and we have to use it to validate the peer
-        println!("Debugging: RODT ID received as response {}",peer_string_rodtid);        
-        println!("Debugging: RODT ID Signature received as response {:?}",peer_handshake_response.rodt_id_signature);
-
-        let account_idargs = "{\"token_id\": \"".to_owned() 
-        + &peer_string_rodtid+ "\"}";
-        tracing::debug!("Info: account idargs: {:?}", account_idargs);
-        match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
-            Ok(result) => {
-                // If the function call is successful, execute this block
-                let fetched_rodt = result;
-                tracing::debug!("RODT Owner Init Received: {:?}", fetched_rodt.owner_id);
-                
-                // Convert the owner_id string to a Vec<u8> by decoding it from hex
-                let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id)
-                    .expect("Failed to decode hex string");
-                
-                // Convert the bytes to a [u8; 32] array
-                let fetched_bytes_ed25519_public_key: [u8; 32] = fetched_vec_ed25519_public_key
-                    .try_into()
-                    .expect("Invalid byte array length");
-        
-                // Parse the signature bytes from packet.rodt_id_signature
-                // and assign it to the signature variable
-                match Signature::from_bytes(&*peer_handshake_response.rodt_id_signature) {
-                    Ok(signature) => {
-                        // If the signature parsing is successful, execute this block
-                        match PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
-                            Ok(fetched_publickey_ed25519_public_key) => {
-                                // If the public key parsing is successful, execute this block
-                                match fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature) {
-                                    Ok(is_verified) => {
-                                        println!("Debugging: Is Response Verified {:?}", is_verified);
-                                        }
-                                    Err(_) => {
-                                    // Err(PeerEd25519SingnatureVerificationFailed) => {
-                                        // If the verification fails, handle the error and propagate it
-                                        tracing::error!("Error: PeerEd25519SingnatureVerificationFailed");
-                                        return Err(WireGuardError::PeerEd25519SingnatureVerificationFailed);
-                                    }
-                                };
-                                // Rest of the code if verification is successful
-                            }
-                            Err(_) => {
-                                // If the public key parsing fails, handle the error and propagate it
-                                tracing::error!("Error: PeerEd25519PublicKeyParsingFailed");
-                                return Err(WireGuardError::PeerEd25519PublicKeyParsingFailed);
-                            }
-                        };
-                        // Rest of the code if public key parsing is successful
-                    }
-                    Err(_) => {
-                        // If the signature parsing fails, handle the error and propagate it
-                        tracing::error!("Error: PeerEd25519SingnatureParsingFailed");
-                        return Err(WireGuardError::PeerEd25519SingnatureParsingFailed);
-                    }
-                };
-                // Rest of the code if signature parsing is successful
+        match verify_rodt_id_signature(peer_handshake_response.rodt_id,peer_handshake_response.rodt_id_signature){
+            Ok(is_good) => {
+                tracing::debug!("Info: PeerEd25519SignatureVerification Success");
             }
-            Err(err) => {
-                // If the nearorg_rpc_token function call returns an error, execute this block
-                tracing::error!("Error: There is no server RODT associated with the account: {}", err);
-                std::process::exit(1);
-            }
+            Err(_) => {
+                    tracing::error!("Error: PeerEd25519SignatureVerificationFailure");
+                    return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
+                }
         }
-        // CG: Find the peer and check if
-        // IsTrusted(rodt.metadata.authornftcontractid);
-        // ,checking if the Issuer smart contract has published a TXT 
-        // entry with the token_id of the server
-        // CG: End of RODT verification
 
         let keepalive_packet = session.produce_packet_data(&[], dst);
         // Store new session in ring buffer
@@ -1002,4 +935,88 @@ mod tests {
         };
         assert_eq!(sent_packet_buf, recv_packet_buf);
     }
+}
+
+pub fn verify_rodt_id_signature (
+        rodt_id: &str,
+        rodt_id_signature: [u8;64],
+    ) -> bool, WireGuardError> {
+
+    // CG: THIS HAS TO BE A FUNCTION, too many calls Beginning of RODT verification
+let slice_rodtid: &[u8] = &rodt_id[..];
+let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
+.expect("Failed to convert byte slice to string")
+.trim_end_matches('\0');
+
+// CG: We receive this and we have to use it to validate the peer
+println!("Debugging: RODT ID {}",string_rodtid);        
+println!("Debugging: RODT ID Signature {:?}",rodt_id_signature);
+
+let account_idargs = "{\"token_id\": \"".to_owned() 
+    + &string_rodtid+ "\"}";
+tracing::debug!("Info: account idargs: {:?}", account_idargs);
+
+    match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
+        Ok(result) => {
+            // If the function call is successful, execute this block
+            let fetched_rodt = result;
+            tracing::debug!("RODT Owner Init Received: {:?}", fetched_rodt.owner_id);
+        
+            // Convert the owner_id string to a Vec<u8> by decoding it from hex
+            let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id)
+                .expect("Failed to decode hex string");
+        
+            // Convert the bytes to a [u8; 32] array
+            let fetched_bytes_ed25519_public_key: [u8; 32] = fetched_vec_ed25519_public_key
+                .try_into()
+                .expect("Invalid byte array length");
+
+            // Parse the signature bytes from packet.rodt_id_signature
+            // and assign it to the signature variable
+            match Signature::from_bytes(&*rodt_id_signature) {
+                Ok(signature) => {
+                    // If the signature parsing is successful, execute this block
+                    match PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
+                        Ok(fetched_publickey_ed25519_public_key) => {
+                            // If the public key parsing is successful, execute this block
+                            match fetched_publickey_ed25519_public_key.verify(string_rodtid.as_bytes(), &signature) {
+                                Ok(is_verified) => {
+                                    println!("Debugging: Is Response Verified {:?}", is_verified);
+                                    // Positive return if it is verified
+                                    return is_verified;
+                                    }
+                            Err(_) => {
+                                    tracing::error!("Error: PeerEd25519SignatureVerificationFailure");
+                                    return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
+                                }
+                            };
+                            // Rest of the code if verification is successful
+                        }
+                        Err(_) => {
+                            // If the public key parsing fails, handle the error and propagate it
+                            tracing::error!("Error: PeerEd25519PublicKeyParsingFailuree");
+                            return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure);
+                        }
+                    };
+                // Rest of the code if public key parsing is successful
+                }
+                Err(_) => {
+                    // If the signature parsing fails, handle the error and propagate it
+                    tracing::error!("Error: PeerEd25519SignatureParsingFailure");
+                    return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
+                }
+            };
+            // Rest of the code if signature parsing is successful
+        }
+        Err(err) => {
+        // If the nearorg_rpc_token function call returns an error, execute this block
+            tracing::error!("Error: There is no server RODT associated with the account: {}", err);
+            std::process::exit(1);
+        }
+    }
+    // CG: Find the peer and check if
+    // IsTrusted(rodt.metadata.authornftcontractid);
+    // ,checking if the Issuer smart contract has published a TXT 
+    // entry with the token_id of the server
+    // CG: End of RODT verification
 }

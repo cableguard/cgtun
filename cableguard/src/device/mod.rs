@@ -35,7 +35,7 @@ use crate::x25519::{PublicKey,StaticSecret};
 use crate::serialization::{KeyBytes, self};
 use crate::device::api::Rodt;
 use crate::noise::errors::WireGuardError;
-use crate::noise::handshake::consume_handshake_anonymous;
+use crate::noise::handshake::consume_handshake_peer_2blisted;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use ed25519_dalek::{Keypair,Signer};
@@ -717,13 +717,13 @@ impl Device {
         self.queue.new_event(
             udp.as_raw_fd(),
             Box::new(move |d, t| {
-                // Handler that handles anonymous packets over UDP
+                // Handler that handles peer_2blisted packets over UDP
                 let mut iter = MAX_ITR;
                 let (own_bytes_private_key, own_bytes_public_key) = d.key_pair.as_ref().expect("Key not set");
 
                 let rate_limiter = d.rate_limiter.as_ref().unwrap();
 
-                // Loop while we have packets on the anonymous connection
+                // Loop while we have packets on the peer_2blisted connection
 
                 // Safety: the `recv_from` implementation promises not to write uninitialised
                 // bytes to the buffer, so this casting is safe.
@@ -747,9 +747,14 @@ impl Device {
                     
                     let peer = match &parsed_packet {
                         Packet::HandshakeInit(p) => {
-                            consume_handshake_anonymous(own_bytes_private_key, own_bytes_public_key, p)
+                            // CG: THIS HERE NOW, obtain rodt id and rodt id signature and perform validation here
+                            consume_handshake_peer_2blisted(own_bytes_private_key, own_bytes_public_key, p)
                                 .ok()
                                 .and_then(|hh| {                    
+                                    // Check if known then fetch index, if not known then add and fetch index
+                                    // Add a peer if rodt id authenticates
+                                    d.api_set_peer_internal(hh.peer_static_public);
+                                    // Fetch index of existing peer
                                     d.peers.get(&x25519::PublicKey::from(hh.peer_static_public))
                                 })
                         }

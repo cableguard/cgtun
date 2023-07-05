@@ -20,7 +20,7 @@ pub enum WireGuardError {
     LockFailed,
     ConnectionExpired,
     UnderLoad,
-    PeerEd25519PublicKeyParsingFailed,
-    PeerEd25519SingnatureVerificationFailed,
-    PeerEd25519SingnatureParsingFailed,
+    PeerEd25519PublicKeyParsingFailure,
+    PeerEd25519SignatureVerificationFailure,
+    PeerEd25519SignatureParsingFailure,
 }

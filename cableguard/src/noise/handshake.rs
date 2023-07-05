@@ -327,7 +327,7 @@ pub struct HalfHandshake {
     pub peer_static_public: [u8; 32],
 }
 
-pub fn consume_handshake_anonymous(
+pub fn consume_handshake_peer_2blisted(
     static_private: &x25519::StaticSecret,
     static_public: &x25519::PublicKey,
     packet: &HandshakeInit,
@@ -364,12 +364,7 @@ pub fn consume_handshake_anonymous(
         0,
         packet.encrypted_static,
         &hash,
-    )?;
-
-    // CG: THIS HERE NOW
-    // We add a peer if the validation of the RODt is positive
-    // How to access the device?
-    device.api_set_peer_internal(peer_static_public);
+    )?
 
     Ok(HalfHandshake {
         peer_index,
@@ -854,7 +849,7 @@ impl Handshake {
         let string_rodt_id = String::from_utf8(self.params.rodt_id.to_vec());
         match string_rodt_id {
             Ok(string) => {
-                // Conversion succeeded, use the resulting string
+                // Conversion success, use the resulting string
                 tracing::debug!("Debugging: Initiation RODT_ID sent {}",string);
             }
             Err(error) => {
