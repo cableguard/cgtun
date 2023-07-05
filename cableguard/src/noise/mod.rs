@@ -230,12 +230,6 @@ impl Tunn {
     ) -> Result<Self, &'static str> {
         let static_public = x25519::PublicKey::from(&static_private);
 
-        // CG: Muting snooping into public keys
-        // let static_public_string = encode_hex(static_public);
-        // let peer_static_public_string =  encode_hex(peer_static_public);
-        // tracing::debug!("Debugging: static_public = {} in fn new/Tunn", static_public_string);
-        // tracing::debug!("Debugging: peer_static_public = {} in fn new/Tunn", peer_static_public_string);
-
         // CG: Copying the rodt_id to the Tunn safely
         let bytes_rodt_id = string_rodt_id.as_bytes();
         let mut rodt_id: [u8;RODT_ID_SZ] = [0;RODT_ID_SZ];
@@ -376,7 +370,7 @@ impl Tunn {
             sender_index = peer_handshake_init.sender_index
         );
 
-        let (packet, session) = self.handshake.consume_received_handshake_initiation(peer_handshake_init, dst)?;
+        let (packet, session) = self.handshake.consume_received_handshake_initiation(peer_handshake_init,dst,peer_static_public,peer_static_public)?;
 
         // CG: Beginning of RODT verification
         let peer_slice_rodtid: &[u8] = &peer_handshake_init.rodt_id[..];
@@ -420,6 +414,8 @@ impl Tunn {
                                 match fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature) {
                                     Ok(is_verified) => {
                                         println!("Debugging: Is Response Verified {:?}", is_verified);
+                                        // CG: THIS HERE NOW
+                                        device.api_set_peer_internal(peer_static_public);
                                         }
                                     Err(_) => {
                                     // Err(PeerEd25519SingnatureVerificationFailed) => {
@@ -460,13 +456,10 @@ impl Tunn {
 
         let index = session.local_index();
         self.sessions[index % N_SESSIONS] = Some(session);
-
         self.timer_tick(TimerName::TimeLastPacketReceived);
         self.timer_tick(TimerName::TimeLastPacketSent);
         self.timer_tick_session_established(false, index); // New session established, we are not the initiator
-
         tracing::debug!(message = "Info: Sending handshake_response", own_index = index);
-
         Ok(TunnResult::WriteToNetwork(packet))
     }
 
@@ -562,13 +555,13 @@ impl Tunn {
 
         let keepalive_packet = session.produce_packet_data(&[], dst);
         // Store new session in ring buffer
-        let l_index = session.local_index();
-        let index = l_index % N_SESSIONS;
+        let local_index = session.local_index();
+        let index = local_index % N_SESSIONS;
         self.sessions[index] = Some(session);
 
         self.timer_tick(TimerName::TimeLastPacketReceived);
         self.timer_tick_session_established(true, index); // New session established, we are the initiator
-        self.set_current_session(l_index);
+        self.set_current_session(local_index);
 
         tracing::debug!("Info: Sending keepalive");
 

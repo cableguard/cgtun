@@ -35,7 +35,7 @@ use crate::x25519::{PublicKey,StaticSecret};
 use crate::serialization::{KeyBytes, self};
 use crate::device::api::Rodt;
 use crate::noise::errors::WireGuardError;
-use crate::noise::handshake::consume_handshake_anon;
+use crate::noise::handshake::consume_handshake_anonymous;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use ed25519_dalek::{Keypair,Signer};
@@ -364,7 +364,7 @@ impl Device {
         //     own_string_public_key
         // );
 
-        // CG2: Creating the own signature of the rodt_id
+        // CG: Creating the own signature of the rodt_id
         let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Invalid private key bytes");
 
@@ -492,14 +492,6 @@ impl Device {
                     std::process::exit(1);        }
             }
         }
-
-        // CG: THIS HERE NOW Prime the peers public key list with a constant value so they complete the handshake successfully
-        //let constprivate_key = StaticSecret::random_from_rng(&mut OsRng);
-        //let constpublic_key: PublicKey = (&constprivate_key).into();   
-        // let const_public_key_u832: [u8; 32] = constpublic_key.as_bytes().clone(); 
-        // let const_own_string_public_key: &str = &hex::encode_hex(const_public_key_u832);
-        // device.api_set_internal("set_peer_public_key", &const_own_string_public_key);
-        //device.api_set_peer_internal(constpublic_key);
 
         Ok(device)
     }
@@ -766,7 +758,7 @@ impl Device {
                     // CG: Would be good to understand this code
                     let peer = match &parsed_packet {
                         Packet::HandshakeInit(p) => {
-                            consume_handshake_anon(own_bytes_private_key, own_bytes_public_key, p)
+                            consume_handshake_anonymous(own_bytes_private_key, own_bytes_public_key, p)
                                 .ok()
                                 .and_then(|hh| {
                                     // let own_string_private_key = own_bytes_private_key.encode_hex::<String>();

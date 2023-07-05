@@ -327,7 +327,7 @@ pub struct HalfHandshake {
     pub peer_static_public: [u8; 32],
 }
 
-pub fn consume_handshake_anon(
+pub fn consume_handshake_anonymous(
     static_private: &x25519::StaticSecret,
     static_public: &x25519::PublicKey,
     packet: &HandshakeInit,
@@ -365,18 +365,6 @@ pub fn consume_handshake_anon(
         packet.encrypted_static,
         &hash,
     )?;
-
-    // CG: Muting display the keys 
-    // let own_static_string_private_key = static_private.to_bytes().encode_hex::<String>();
-    // let own_static_string_public_key = static_public.as_bytes().encode_hex::<String>();
-    // let peer_ephemeral_string_public_key = peer_ephemeral_public.as_bytes().encode_hex::<String>();
-    // let peer_static_string_public_key = peer_static_public.encode_hex::<String>();
-    // tracing::debug!("Debugging: static_private: {}, static_public: {}, peer_ephemeral_public: {}, peer_static_public: {} in fn consume_handshake_anon",
-    //    own_static_string_private_key,
-    //    own_static_string_public_key,
-    //    peer_ephemeral_string_public_key,
-    //    peer_static_string_public_key
-    //);
 
     Ok(HalfHandshake {
         peer_index,
@@ -519,14 +507,7 @@ impl Handshake {
     self.params.set_static_private(private_key, public_key)
     }
 
-    // CG: NOW HERE THIS This is where we receive the token_id, so
-    // we can cross check with the blockchain that there is a match
-    // between token_id declared and controlling peer public key
-    // also we need to check one of:
-    // token_id matches our authornftcontractid (for clients that receive a server
-    // connection)
-    // or token_id signature found in the blockchain is true as matches what 
-    // would be generated with the server owns private key
+    // CG: NOW HERE THIS 
     // Additional checks include: not accepting notafter and notbefore dates for RODT
     // Self configuring the DNS
     // Running postup and postdown commands
@@ -537,6 +518,7 @@ impl Handshake {
         &mut self,
         packet: HandshakeInit,
         dst: &'a mut [u8],
+        let mut peer_static_public_decrypted = [0u8; KEY_LEN],
     ) -> Result<(&'a mut [u8], Session), WireGuardError> {
 
         // initiator.chaining_key = HASH(CONSTRUCTION)
@@ -567,7 +549,7 @@ impl Handshake {
         // key = HMAC(temp, initiator.chaining_key || 0x2)
         let key = b2s_hmac2(&temp, &chaining_key, &[0x02]);
 
-        let mut peer_static_public_decrypted = [0u8; KEY_LEN];
+        // let mut peer_static_public_decrypted = [0u8; KEY_LEN];
         // msg.encrypted_static = AEAD(key, 0, initiator.static_public, initiator.hash)
         aead_chacha20_open(
             &mut peer_static_public_decrypted,
