@@ -753,7 +753,8 @@ impl Device {
                                 .and_then(|hh| {                    
                                     // Check if known then fetch index, if not known then add and fetch index
                                     // Add a peer if rodt id authenticates
-                                    d.api_set_peer_internal(hh.peer_static_public);
+				    let clone_hh_peer_static_public = x25519::PublicKey::from(hh.peer_static_public);
+                                    d.api_set_peer_internal(clone_hh_peer_static_public);
                                     // Fetch index of existing peer
                                     d.peers.get(&x25519::PublicKey::from(hh.peer_static_public))
                                 })

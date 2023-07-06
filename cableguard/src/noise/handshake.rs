@@ -364,7 +364,7 @@ pub fn consume_handshake_peer_2blisted(
         0,
         packet.encrypted_static,
         &hash,
-    )?
+    )?;
 
     Ok(HalfHandshake {
         peer_index,
@@ -518,7 +518,7 @@ impl Handshake {
         &mut self,
         packet: HandshakeInit,
         dst: &'a mut [u8],
-        let mut peer_static_public_decrypted = [0u8; KEY_LEN],
+        mut peer_static_public_decrypted: [u8; KEY_LEN],
     ) -> Result<(&'a mut [u8], Session), WireGuardError> {
 
         // initiator.chaining_key = HASH(CONSTRUCTION)

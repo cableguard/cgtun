@@ -43,6 +43,8 @@ const MAX_QUEUE_DEPTH: usize = 256;
 /// number of sessions in the ring, better keep a PoT
 const N_SESSIONS: usize = 8;
 
+const KEY_LEN: usize = 32;
+
 #[derive(Debug)]
 pub enum TunnResult<'a> {
     Done,
@@ -369,8 +371,8 @@ impl Tunn {
             message = "Info: Received handshake_initiation",
             sender_index = peer_handshake_init.sender_index
         );
-
-        let (packet, session) = self.handshake.consume_received_handshake_initiation(peer_handshake_init,dst,peer_static_public,peer_static_public)?;
+        let peer_static_public: [u8; KEY_LEN] = [0; KEY_LEN];
+        let (packet, session) = self.handshake.consume_received_handshake_initiation(peer_handshake_init,dst,peer_static_public)?;
 
         // CG: Beginning of RODT verification
         let peer_slice_rodtid: &[u8] = &peer_handshake_init.rodt_id[..];
@@ -408,6 +410,7 @@ impl Tunn {
                 match Signature::from_bytes(&*peer_handshake_init.rodt_id_signature) {
                     Ok(signature) => {
                         // If the signature parsing is successful, execute this block
+                        // CG: Danger Will Robinson, we are using a PublicKey type that can be either X25519 or Ed25519
                         match PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
                             Ok(fetched_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
@@ -474,9 +477,9 @@ impl Tunn {
 
         let session = self.handshake.consume_received_handshake_response(peer_handshake_response)?;
 
-        match verify_rodt_id_signature(peer_handshake_response.rodt_id,peer_handshake_response.rodt_id_signature){
-            Ok(is_good) => {
-                tracing::debug!("Info: PeerEd25519SignatureVerification Success");
+        match verify_rodt_id_signature(*peer_handshake_response.rodt_id,*peer_handshake_response.rodt_id_signature){
+            Ok(_) => {
+                tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
             }
             Err(_) => {
                     tracing::error!("Error: PeerEd25519SignatureVerificationFailure");
@@ -937,10 +940,10 @@ mod tests {
     }
 }
 
-pub fn verify_rodt_id_signature (
-        rodt_id: &str,
-        rodt_id_signature: [u8;64],
-    ) -> bool, WireGuardError> {
+pub fn verify_rodt_id_signature(
+    rodt_id: [u8;RODT_ID_SZ],
+    rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
+) -> Result<bool, WireGuardError> {
 
     // CG: THIS HAS TO BE A FUNCTION, too many calls Beginning of RODT verification
 let slice_rodtid: &[u8] = &rodt_id[..];
@@ -973,7 +976,7 @@ tracing::debug!("Info: account idargs: {:?}", account_idargs);
 
             // Parse the signature bytes from packet.rodt_id_signature
             // and assign it to the signature variable
-            match Signature::from_bytes(&*rodt_id_signature) {
+            match Signature::from_bytes(&rodt_id_signature) {
                 Ok(signature) => {
                     // If the signature parsing is successful, execute this block
                     match PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
@@ -983,7 +986,7 @@ tracing::debug!("Info: account idargs: {:?}", account_idargs);
                                 Ok(is_verified) => {
                                     println!("Debugging: Is Response Verified {:?}", is_verified);
                                     // Positive return if it is verified
-                                    return is_verified;
+                                    Ok::<bool, WireGuardError>(true)
                                     }
                             Err(_) => {
                                     tracing::error!("Error: PeerEd25519SignatureVerificationFailure");
@@ -1007,6 +1010,7 @@ tracing::debug!("Info: account idargs: {:?}", account_idargs);
                 }
             };
             // Rest of the code if signature parsing is successful
+            Ok::<bool, WireGuardError>(true)
         }
         Err(err) => {
         // If the nearorg_rpc_token function call returns an error, execute this block
