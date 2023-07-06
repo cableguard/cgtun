@@ -753,8 +753,29 @@ impl Device {
                                 .and_then(|hh| {                    
                                     // Check if known then fetch index, if not known then add and fetch index
                                     // Add a peer if rodt id authenticates
-				    let clone_hh_peer_static_public = x25519::PublicKey::from(hh.peer_static_public);
-                                    d.api_set_peer_internal(clone_hh_peer_static_public);
+                                    let clone_hh_peer_publickey_public_key = x25519::PublicKey::from(hh.peer_static_public);
+                                    let mut allowed_ips: Vec<AllowedIP> = vec![];
+                                    // This is own IP we need peer IP
+                                    let ip: IpAddr = self.config.rodt.metadata.endpoint.parse().expect("Invalid IP address");
+                                    // This is own Port we need peer Port
+                                    let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Invalid port");
+                                    let endpoint_listenport = SocketAddr::new(ip,port);         
+                                    // This is own CIDR we need peer CIDR 
+                                    let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
+                                    let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
+                                    // CG: Add IPv6
+                                    //   let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
+                                    //   let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
+                                    allowed_ips.push(allowed_ip);
+                                    // Don't remove, don't replace IPs, no keepalive
+                                    // Ok, so we need to update a peer from a HalfHandshake
+                                    hh.update_peer(
+                                        clone_hh_peer_publickey_public_key,false,false,
+                                        Some(endpoint_listenport),
+                                        &allowed_ips,None,None,
+                                        );                    
+                                    allowed_ips.clear();
+
                                     // Fetch index of existing peer
                                     d.peers.get(&x25519::PublicKey::from(hh.peer_static_public))
                                 })
