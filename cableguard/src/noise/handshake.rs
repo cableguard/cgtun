@@ -321,11 +321,13 @@ struct Cookies {
     write_cookie: Option<[u8; 16]>,
 }
 
+// CG: Adding rotd_id and signature to half handshake
 #[derive(Debug)]
 pub struct HalfHandshake {
     pub peer_index: u32,
     pub peer_static_public: [u8; 32],
-    pub peer_index: [u8; 32],
+//    pub rodt_id: [u8; RODT_ID_SZ],
+//    pub rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
 }
 
 pub fn consume_received_handshake_peer_2blisted(
@@ -370,6 +372,8 @@ pub fn consume_received_handshake_peer_2blisted(
     Ok(HalfHandshake {
         peer_index,
         peer_static_public,
+//        rodt_id,
+//        rodt_id_signature,
     })
 }
 

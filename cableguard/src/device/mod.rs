@@ -36,6 +36,7 @@ use crate::serialization::{KeyBytes, self};
 use crate::device::api::Rodt;
 use crate::noise::errors::WireGuardError;
 use crate::noise::handshake::consume_received_handshake_peer_2blisted;
+use crate::noise::verify_rodt_id_signature;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use ed25519_dalek::{Keypair,Signer};
@@ -129,8 +130,8 @@ pub struct DeviceConfig {
     pub uapi_fd: i32,
     pub rodt: Rodt,
     pub own_bytes_ed25519_private_key: [u8;64],
-    pub x25519_private_key:[u8;32],
-    pub x25519_public_key:[u8;32],
+    pub x25519_private_key:[u8; 32],
+    pub x25519_public_key:[u8; 32],
 }
 
 impl Default for DeviceConfig {
@@ -744,13 +745,14 @@ impl Device {
                         Err(_) => continue,
                     };
                     
+                    // CG: This block obtains a known peer if there is one in the parsed packet
                     let peer = match &parsed_packet {
                         Packet::HandshakeInit(p) => {
                             consume_received_handshake_peer_2blisted(own_bytes_private_key, own_bytes_public_key, p)
                                 .ok()
                                 .and_then(|half_handshake| {                    
                                 // Fetch index of existing peer
-                                d.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public))
+                                device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public))
                                 })
                         }
                         Packet::HandshakeResponse(p) => device.peerslisted_by_index.get(&(p.peer_index >> 8)),
@@ -758,43 +760,46 @@ impl Device {
                         Packet::PacketData(p) => device.peerslisted_by_index.get(&(p.peer_index >> 8)),
                     };
                     
+                    // CG: In this block we add a peer that is not known (Packet::HandshakeInit) if it passes authentication
+                    // if it doesn't pass authentication we continue 
                     let peer = match peer {
                         None => {
-                        // CG: THIS HERE NOW, obtain rodt id and rodt id signature and perform validation here
-                        // Add a peer if rodt id authenticates and fetch index
-                        // Probably best to display available info
-                        // peer_static_public
-                        // sp is a HandshakeInit
-                        // rodt_id: &'a [u8; RODT_ID_SZ],
-                        // rodt_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
-                        let clone_hh_peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);
-                        let mut allowed_ips: Vec<AllowedIP> = vec![];
-                        // We need peer IP, it seems it will be either peer_addr src_addr or addr
-                        // Look below it seems SocketAddress has been taken care of
-                        let ip: IpAddr = device.config.rodt.metadata.endpoint.parse().expect("Invalid IP address");
-                        // We need peer Port
-                        let port: u16 = device.config.rodt.metadata.listenport.parse().expect("Invalid port");
-                        let endpoint_listenport = SocketAddr::new(ip,port);         
-                        // We need peer CIDR 
-                        let allowed_ip_str = &device.config.rodt.metadata.cidrblock;
-                        let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
-                        // CG: Add IPv6
-                        //   let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
-                        //   let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
-                        allowed_ips.push(allowed_ip);
-                        // Don't remove, don't replace IPs, no keepalive
-                        // We need to update a peer from a HalfHandshake
-                        d.update_peer(
-                            clone_hh_peer_publickey_public_key,false,false,
-                            Some(endpoint_listenport),
-                            &allowed_ips,None,None,
-                            );                    
-                        allowed_ips.clear();
-                        device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public))
+                            match &parsed_packet {
+                                Packet::HandshakeInit(p) => {
+                                    let half_handshake = consume_received_handshake_peer_2blisted(own_bytes_private_key, own_bytes_public_key, p).ok();
+                                    let peer_publickey_public_key = x25519::PublicKey::from(*half_handshake.peer_static_public);
+                                    let evaluation = verify_rodt_id_signature(*p.rodt_id ,*p.rodt_id_signature);
+                                    match evaluation {
+                                        Ok((verification_result, rodt)) => {
+                                            // CG: Adding the new peer here
+                                            
+                                            let endpoint_listenport = addr.as_socket().unwrap();        
+                                            let mut allowed_ips: Vec<AllowedIP> = vec![];
+                                            let allowed_ip_str = rodt.metadata.allowedips;
+                                            let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
+                                            allowed_ips.push(allowed_ip);
+                                            device.update_peer(
+                                                peer_publickey_public_key,false,false,
+                                                Some(endpoint_listenport),
+                                                &allowed_ips,None,None,
+                                                );                    
+                                            allowed_ips.clear();
+                                            device.peers.get(&x25519::PublicKey::from(p.peer_static_public)) 
+                                        }
+                                        Err(err) => {
+                                            // Handle the WireGuardError
+                                        }
+                                    }
+                                }
+                                Packet::HandshakeResponse(p) => continue,
+                                Packet::PacketCookieReply(p) => continue,
+                                Packet::PacketData(p) => continue,
+                            }
+                            // The rest of your code
+                            continue;
                         }
-                        Some(peer) => { peer }
+                        Some(peer) => peer,
                     };
-
                     let mut p = peer.lock();
 
                     // We found a peer, use it to decapsulate the message

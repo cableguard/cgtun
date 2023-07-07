@@ -16,7 +16,7 @@ use std::convert::{TryFrom, TryInto};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::Arc;
 use std::time::Duration;
-use crate::device::api::nearorg_rpc_token;
+use crate::device::api::{nearorg_rpc_token,Rodt};
 use crate::device::api::constants::SMART_CONTRACT;
 use crate::device::api::constants::BLOCKCHAIN_NETWORK;
 use ed25519_dalek::{PublicKey,Verifier,Signature};
@@ -97,8 +97,8 @@ pub struct HandshakeInit<'a> {
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_static: &'a [u8],
     encrypted_timestamp: &'a [u8],
-    rodt_id: &'a [u8; RODT_ID_SZ],
-    rodt_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
+    pub rodt_id: &'a [u8; RODT_ID_SZ],
+    pub rodt_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
 }
 
 #[derive(Debug,Copy, Clone)]
@@ -935,7 +935,7 @@ mod tests {
 pub fn verify_rodt_id_signature(
     rodt_id: [u8;RODT_ID_SZ],
     rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
-) -> Result<bool, WireGuardError> {
+) -> Result<(bool,Rodt), WireGuardError> {
 
     // CG: THIS HAS TO BE A FUNCTION, too many calls Beginning of RODT verification
 let slice_rodtid: &[u8] = &rodt_id[..];
@@ -980,7 +980,7 @@ tracing::debug!("Info: account idargs: {:?}", account_idargs);
                                     // Positive return if it is verified
                                     Ok::<bool, WireGuardError>(true)
                                     }
-                            Err(_) => {
+                                Err(_) => {
                                     tracing::error!("Error: PeerEd25519SignatureVerificationFailure");
                                     return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
                                 }
@@ -1002,7 +1002,7 @@ tracing::debug!("Info: account idargs: {:?}", account_idargs);
                 }
             };
             // Rest of the code if signature parsing is successful
-            Ok::<bool, WireGuardError>(true)
+            Ok::<(bool,Rodt), WireGuardError>(true)
         }
         Err(err) => {
         // If the nearorg_rpc_token function call returns an error, execute this block
