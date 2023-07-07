@@ -325,9 +325,10 @@ struct Cookies {
 pub struct HalfHandshake {
     pub peer_index: u32,
     pub peer_static_public: [u8; 32],
+    pub peer_index: [u8; 32],
 }
 
-pub fn consume_handshake_peer_2blisted(
+pub fn consume_received_handshake_peer_2blisted(
     static_private: &x25519::StaticSecret,
     static_public: &x25519::PublicKey,
     packet: &HandshakeInit,
