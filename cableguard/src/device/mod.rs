@@ -333,7 +333,7 @@ impl Device {
         remove: bool,
         _replace_ips: bool,
         endpoint: Option<SocketAddr>,
-        allowed_ips: &[AllowedIP],
+        allowed_ips_listed: &[AllowedIP],
         keepalive: Option<u16>,
         preshared_key: Option<[u8; 32]>,
     ) {
@@ -376,12 +376,12 @@ impl Device {
         .unwrap();
         
         // CG: Creation and insertion of a peer
-        let peer = Peer::new(tunn, next_index, endpoint, allowed_ips, preshared_key);
+        let peer = Peer::new(tunn, next_index, endpoint, allowed_ips_listed, preshared_key);
         let peer = Arc::new(Mutex::new(peer));
         self.peers.insert(peer_publickey_public_key, Arc::clone(&peer));
         self.peerslisted_by_index.insert(next_index, Arc::clone(&peer));
 
-        for AllowedIP { addr, cidr } in allowed_ips {
+        for AllowedIP { addr, cidr } in allowed_ips_listed {
             self.peerslisted_by_ip
                 .insert(*addr, *cidr as _, Arc::clone(&peer));
         }
@@ -760,40 +760,42 @@ impl Device {
                         Packet::PacketData(p) => device.peerslisted_by_index.get(&(p.peer_index >> 8)),
                     };
                     
-                    // CG: In this block we add a peer that is not known (Packet::HandshakeInit) if it passes authentication
+                    // CG: In this block we want to add a peer that is not known (Packet::HandshakeInit) if it passes authentication
                     // if it doesn't pass authentication we continue 
                     let peer = match peer {
                         None => {
                             match &parsed_packet {
                                 Packet::HandshakeInit(p) => {
                                     let half_handshake = consume_received_handshake_peer_2blisted(own_bytes_private_key, own_bytes_public_key, p).ok();
-                                    let peer_publickey_public_key = x25519::PublicKey::from(*half_handshake.peer_static_public);
-                                    let evaluation = verify_rodt_id_signature(*p.rodt_id ,*p.rodt_id_signature);
-                                    match evaluation {
-                                        Ok((verification_result, rodt)) => {
-                                            // CG: Adding the new peer here
-                                            
-                                            let endpoint_listenport = addr.as_socket().unwrap();        
-                                            let mut allowed_ips: Vec<AllowedIP> = vec![];
-                                            let allowed_ip_str = rodt.metadata.allowedips;
-                                            let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
-                                            allowed_ips.push(allowed_ip);
-                                            device.update_peer(
-                                                peer_publickey_public_key,false,false,
-                                                Some(endpoint_listenport),
-                                                &allowed_ips,None,None,
-                                                );                    
-                                            allowed_ips.clear();
-                                            device.peers.get(&x25519::PublicKey::from(p.peer_static_public)) 
-                                        }
-                                        Err(err) => {
-                                            // Handle the WireGuardError
+                                    if let Some(half_handshake) = half_handshake {
+                                        let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);
+                                        let evaluation = verify_rodt_id_signature(*p.rodt_id ,*p.rodt_id_signature);
+                                        match evaluation {
+                                            Ok((verification_result, rodt)) => {
+                                                // CG: Adding the new peer here
+                                                if verification_result {
+                                                    let endpoint_listenport = addr.as_socket().unwrap();        
+                                                    let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
+                                                    let allowed_ip_str = rodt.metadata.allowedips;
+                                                    let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
+                                                    allowed_ips_listed.push(allowed_ip);
+                                                    device.update_peer(
+                                                        peer_publickey_public_key,false,false,
+                                                        Some(endpoint_listenport),
+                                                        &allowed_ips_listed,None,None,
+                                                        );                    
+                                                    allowed_ips_listed.clear();
+                                                }
+                                            device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public));
+                                            }
+                                            Err(_) => {
+                                            }
                                         }
                                     }
                                 }
-                                Packet::HandshakeResponse(p) => continue,
-                                Packet::PacketCookieReply(p) => continue,
-                                Packet::PacketData(p) => continue,
+                                Packet::HandshakeResponse(_p) => continue,
+                                Packet::PacketCookieReply(_p) => continue,
+                                Packet::PacketData(_p) => continue,
                             }
                             // The rest of your code
                             continue;
@@ -845,7 +847,6 @@ impl Device {
                                 .unwrap();
                         }
                     }
-
                     iter -= 1;
                     if iter == 0 {
                         break;
@@ -1058,7 +1059,7 @@ impl Device {
         let keepalive = None;
         let clone_peer_publickey_public_key = peer_publickey_public_key;
         let preshared_key = None;
-        let mut allowed_ips: Vec<AllowedIP> = vec![];
+        let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
 
         let ip: IpAddr = self.config.rodt.metadata.endpoint.parse().expect("Invalid IP address");
         let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Invalid port");
@@ -1076,17 +1077,17 @@ impl Device {
         //   let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
 
         // Create or update peer
-        allowed_ips.push(allowed_ip);
+        allowed_ips_listed.push(allowed_ip);
         self.update_peer(
             clone_peer_publickey_public_key,
             remove,
             replace_ips,
             Some(endpoint_listenport),
-            &allowed_ips,
+            &allowed_ips_listed,
             keepalive,
             preshared_key,
             );                    
-        allowed_ips.clear();
+        allowed_ips_listed.clear();
     }
 }
 

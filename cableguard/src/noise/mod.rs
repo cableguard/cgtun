@@ -958,7 +958,7 @@ tracing::debug!("Info: account idargs: {:?}", account_idargs);
             tracing::debug!("RODT Owner Init Received: {:?}", fetched_rodt.owner_id);
         
             // Convert the owner_id string to a Vec<u8> by decoding it from hex
-            let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id)
+            let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id.clone())
                 .expect("Failed to decode hex string");
         
             // Convert the bytes to a [u8; 32] array
@@ -1002,7 +1002,7 @@ tracing::debug!("Info: account idargs: {:?}", account_idargs);
                 }
             };
             // Rest of the code if signature parsing is successful
-            Ok::<(bool,Rodt), WireGuardError>(true)
+            Ok::<(bool,Rodt), WireGuardError>((true,fetched_rodt))
         }
         Err(err) => {
         // If the nearorg_rpc_token function call returns an error, execute this block

@@ -22,7 +22,7 @@ pub struct Peer {
     /// The index the tunnel uses
     index: u32,
     endpoint: RwLock<Endpoint>,
-    allowed_ips: AllowedIps<()>,
+    allowed_ips_listed: AllowedIps<()>,
     preshared_key: Option<[u8; 32]>,
 }
 
@@ -55,7 +55,7 @@ impl Peer {
         tunnel: Tunn,
         index: u32,
         endpoint: Option<SocketAddr>,
-        allowed_ips: &[AllowedIP],
+        allowed_ips_listed: &[AllowedIP],
         preshared_key: Option<[u8; 32]>,
     ) -> Peer {
         Peer {
@@ -65,7 +65,7 @@ impl Peer {
                 addr: endpoint,
                 conn: None,
             }),
-            allowed_ips: allowed_ips.iter().map(|ip| (ip, ())).collect(),
+            allowed_ips_listed: allowed_ips_listed.iter().map(|ip| (ip, ())).collect(),
             preshared_key,
         }
     }
@@ -145,11 +145,11 @@ impl Peer {
     }
 
     pub fn is_allowed_ip<I: Into<IpAddr>>(&self, addr: I) -> bool {
-        self.allowed_ips.find(addr.into()).is_some()
+        self.allowed_ips_listed.find(addr.into()).is_some()
     }
 
-    pub fn allowed_ips(&self) -> impl Iterator<Item = (IpAddr, u8)> + '_ {
-        self.allowed_ips.iter().map(|(_, ip, cidr)| (ip, cidr))
+    pub fn allowed_ips_listed(&self) -> impl Iterator<Item = (IpAddr, u8)> + '_ {
+        self.allowed_ips_listed.iter().map(|(_, ip, cidr)| (ip, cidr))
     }
 
     pub fn time_since_last_handshake(&self) -> Option<std::time::Duration> {

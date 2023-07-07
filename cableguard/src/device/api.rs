@@ -430,7 +430,7 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
             writeln!(writerbufferdevice, "endpoint={}", addr);
         }
 
-        for (ip, cidr) in peer.allowed_ips() {
+        for (ip, cidr) in peer.allowed_ips_listed() {
             writeln!(writerbufferdevice, "allowed_ip={}/{}", ip, cidr);
         }
 
@@ -539,7 +539,7 @@ fn api_set_peer(
     let mut clone_peer_publickey_public_key = peer_publickey_public_key;
     let mut preshared_key = None;
     
-    let mut allowed_ips: Vec<AllowedIP> = vec![];
+    let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
     while readerbufferdevice.read_line(&mut cmd).is_ok() {
         cmd.pop(); // remove newline if any
         if cmd.is_empty() {
@@ -548,11 +548,11 @@ fn api_set_peer(
                 remove,
                 replace_ips,
                 endpoint,
-                allowed_ips.as_slice(),
+                allowed_ips_listed.as_slice(),
                 keepalive,
                 preshared_key,
             );
-            allowed_ips.clear(); //clear the vector content after update
+            allowed_ips_listed.clear(); //clear the vector content after update
             return 0; // Done
         }
         {
@@ -585,7 +585,7 @@ fn api_set_peer(
                     Err(_) => return EINVAL,
                 },
                 "allowed_ip" => match value.parse::<AllowedIP>() {
-                    Ok(ip) => allowed_ips.push(ip),
+                    Ok(ip) => allowed_ips_listed.push(ip),
                     Err(_) => return EINVAL,
                 },
                 "public_key" => {
@@ -596,11 +596,11 @@ fn api_set_peer(
                         remove,
                         replace_ips,
                         endpoint,
-                        allowed_ips.as_slice(),
+                        allowed_ips_listed.as_slice(),
                         keepalive,
                         preshared_key,
                     );
-                    allowed_ips.clear(); //clear the vector content after update
+                    allowed_ips_listed.clear(); //clear the vector content after update
                     match value.parse::<KeyBytes>() {
                         Ok(own_static_bytes_key_pair) => clone_peer_publickey_public_key = own_static_bytes_key_pair.0.into(),
                         Err(_) => return EINVAL,

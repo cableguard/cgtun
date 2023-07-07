@@ -16,13 +16,13 @@ pub struct AllowedIps<D> {
 
 impl<'a, D> FromIterator<(&'a AllowedIP, D)> for AllowedIps<D> {
     fn from_iter<I: IntoIterator<Item = (&'a AllowedIP, D)>>(iter: I) -> Self {
-        let mut allowed_ips = AllowedIps::new();
+        let mut allowed_ips_listed = AllowedIps::new();
 
         for (ip, data) in iter {
-            allowed_ips.insert(ip.addr, ip.cidr as u32, data);
+            allowed_ips_listed.insert(ip.addr, ip.cidr as u32, data);
         }
 
-        allowed_ips
+        allowed_ips_listed
     }
 }
 

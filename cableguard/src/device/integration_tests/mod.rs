@@ -53,7 +53,7 @@ mod tests {
     struct Peer {
         key: StaticSecret,
         endpoint: SocketAddr,
-        allowed_ips: Vec<AllowedIp>,
+        allowed_ips_listed: Vec<AllowedIp>,
         container_name: Option<String>,
     }
 
@@ -86,11 +86,11 @@ mod tests {
 
     impl Peer {
         /// Create a new peer with a given endpoint and a list of allowed IPs
-        fn new(endpoint: SocketAddr, allowed_ips: Vec<AllowedIp>) -> Peer {
+        fn new(endpoint: SocketAddr, allowed_ips_listed: Vec<AllowedIp>) -> Peer {
             Peer {
                 key: StaticSecret::random_from_rng(OsRng),
                 endpoint,
-                allowed_ips,
+                allowed_ips_listed,
                 container_name: None,
             }
         }
@@ -104,7 +104,7 @@ mod tests {
         ) -> String {
             let mut conf = String::from("[Interface]\n");
             // Each allowed ip, becomes a possible address in the config
-            for ip in &self.allowed_ips {
+            for ip in &self.allowed_ips_listed {
                 let _ = writeln!(conf, "Address = {}/{}", ip.ip, ip.cidr);
             }
 
@@ -177,7 +177,7 @@ mod tests {
         }
 
         fn connect(&self) -> std::net::TcpStream {
-            let http_addr = SocketAddr::new(self.allowed_ips[0].ip, 80);
+            let http_addr = SocketAddr::new(self.allowed_ips_listed[0].ip, 80);
             for _i in 0..5 {
                 let res = std::net::TcpStream::connect(http_addr);
                 if let Err(err) = res {
@@ -323,7 +323,7 @@ mod tests {
 
             // Add each peer to the routing table
             for p in &self.peers {
-                for r in &p.allowed_ips {
+                for r in &p.allowed_ips_listed {
                     let inet_flag = match r.ip {
                         IpAddr::V4(_) => "-inet",
                         IpAddr::V6(_) => "-inet6",
@@ -380,7 +380,7 @@ mod tests {
 
             // Add each peer to the routing table
             for p in &self.peers {
-                for r in &p.allowed_ips {
+                for r in &p.allowed_ips_listed {
                     Command::new("ip")
                         .args([
                             "route",
@@ -435,10 +435,10 @@ mod tests {
             &self,
             key: &PublicKey,
             ep: &SocketAddr,
-            allowed_ips: &[AllowedIp],
+            allowed_ips_listed: &[AllowedIp],
         ) -> String {
             let mut req = format!("public_key={}\nendpoint={}", encode_hex(key.as_bytes()), ep);
-            for AllowedIp { ip, cidr } in allowed_ips {
+            for AllowedIp { ip, cidr } in allowed_ips_listed {
                 let _ = write!(req, "\nallowed_ip={}/{}", ip, cidr);
             }
 
@@ -450,7 +450,7 @@ mod tests {
             self.wg_set_peer(
                 &PublicKey::from(&peer.key),
                 &peer.endpoint,
-                &peer.allowed_ips,
+                &peer.allowed_ips_listed,
             );
             self.peers.push(peer);
         }
@@ -500,7 +500,7 @@ mod tests {
         let peer_key = StaticSecret::random_from_rng(OsRng);
         let peer_pub_key = PublicKey::from(&peer_key);
         let endpoint = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(172, 0, 0, 1)), 50001);
-        let allowed_ips = [
+        let allowed_ips_listed = [
             AllowedIp {
                 ip: IpAddr::V4(Ipv4Addr::new(172, 0, 0, 2)),
                 cidr: 32,
@@ -512,7 +512,7 @@ mod tests {
         ];
 
         assert_eq!(
-            wg.wg_set_peer(&peer_pub_key, &endpoint, &allowed_ips),
+            wg.wg_set_peer(&peer_pub_key, &endpoint, &allowed_ips_listed),
             "errno=0\n\n"
         );
 
@@ -533,10 +533,10 @@ mod tests {
                 port,
                 encode_hex(peer_pub_key.as_bytes()),
                 endpoint,
-                allowed_ips[0].ip,
-                allowed_ips[0].cidr,
-                allowed_ips[1].ip,
-                allowed_ips[1].cidr
+                allowed_ips_listed[0].ip,
+                allowed_ips_listed[0].cidr,
+                allowed_ips_listed[1].ip,
+                allowed_ips_listed[1].cidr
             )
         );
     }
