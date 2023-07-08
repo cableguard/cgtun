@@ -504,6 +504,16 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                             Ok(false) => {}
                             Err(_) => return EINVAL,
                         },
+                        "set_peer_public_key" => match value.parse::<KeyBytes>() {
+                            Ok(peer_keybytes_key) => {
+                                    return api_set_peer(
+                                        readerbufferdevice,
+                                        device,
+                                        x25519::PublicKey::from(peer_keybytes_key.0),
+                                    )
+                                }
+                                Err(_) => return EINVAL,
+                            },
                         "public_key" => match value.parse::<KeyBytes>() {
                             Ok(own_static_bytes_key_pair) => {
                                 return api_set_peer(
