@@ -66,14 +66,14 @@ impl AsRawFd for TunSocket {
 }
 
 // On Darwin tunnel can only be named utunXXX
-pub fn consume_utun_name(name: &str) -> Result<u32, Error> {
-    if !name.starts_with("utun") {
+pub fn consume_utun_name(tunname: &str) -> Result<u32, Error> {
+    if !tunname.starts_with("utun") {
         return Err(Error::InvalidTunnelName);
     }
 
-    match name.get(4..) {
+    match tunname.get(4..) {
         None | Some("") => {
-            // The name is simply "utun"
+            // The tun name is simply "utun"
             Ok(0)
         }
         Some(idx) => {
@@ -115,8 +115,8 @@ impl TunSocket {
         }
     }
 
-    pub fn new(name: &str) -> Result<TunSocket, Error> {
-        let idx = consume_utun_name(name)?;
+    pub fn new(tunname: &str) -> Result<TunSocket, Error> {
+        let idx = consume_utun_name(tunname)?;
 
         let fd = match unsafe { socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL) } {
             -1 => return Err(Error::Socket(io::Error::last_os_error())),
@@ -197,8 +197,8 @@ impl TunSocket {
             fd => fd,
         };
 
-        let name = self.name()?;
-        let iface_name: &[u8] = name.as_ref();
+        let tunname = self.name()?;
+        let iface_name: &[u8] = tunname.as_ref();
         let mut ifr = ifreq {
             ifr_name: [0; IF_NAMESIZE],
             ifr_ifru: IfrIfru { ifru_mtu: 0 },

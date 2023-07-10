@@ -39,7 +39,7 @@ pub struct ifreq {
 #[derive(Default, Debug)]
 pub struct TunSocket {
     fd: RawFd,
-    name: String,
+    pub name: String,
 }
 
 impl Drop for TunSocket {

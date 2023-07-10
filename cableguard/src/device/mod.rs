@@ -40,6 +40,7 @@ use crate::noise::verify_rodt_id_signature;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use ed25519_dalek::{Keypair,Signer};
+// use base64::encode as base64encode;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
@@ -181,9 +182,9 @@ struct ThreadData {
 }
 
 impl DeviceHandle {
-    pub fn new(name: &str, config: &DeviceConfig) -> Result<DeviceHandle, Error> {
+    pub fn new(tunname: &str, config: &DeviceConfig) -> Result<DeviceHandle, Error> {
         let n_threads = config.n_threads;
-        let mut wg_interface = Device::new(name, config.clone())?;
+        let mut wg_interface = Device::new(tunname, config.clone())?;
         match config.rodt.metadata.listenport.parse::<u16>() {
             // port = 0 when the it is a random choice of port
             Ok(port) => match wg_interface.open_listen_socket(port) {
@@ -385,11 +386,11 @@ impl Device {
         tracing::debug!("Debugging: Peer added");
     }
 
-    pub fn new(name: &str, config: DeviceConfig) -> Result<Device, Error> {
+    pub fn new(tunname: &str, config: DeviceConfig) -> Result<Device, Error> {
         let poll = EventPoll::<Handler>::new()?;
 
         // Create a tunnel device
-        let interface = Arc::new(TunSocket::new(name)?.set_non_blocking()?);
+        let interface = Arc::new(TunSocket::new(tunname)?.set_non_blocking()?);
         let mtu = interface.mtu()?;
 
         #[cfg(not(target_os = "linux"))]
@@ -432,7 +433,7 @@ impl Device {
         {
             // Only for macOS write the actual socket name into WG_TUN_NAME_FILE
             if let Ok(name_file) = std::env::var("WG_TUN_NAME_FILE") {
-                if name == "utun" {
+                if tunname == "utun" {
                     std::fs::write(&name_file, device.interface.name().unwrap().as_bytes()).unwrap();
                     device.cleanup_paths.push(name_file);
                 }
@@ -442,7 +443,7 @@ impl Device {
         // CG: We are adding here addtional device building:
         // add IPs, set private key, add initial peer
         // should add bringing the device UP?
-        let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ name;
+        let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ tunname;
         let output = Command::new("bash")
             .arg("-c")
             .arg(command)
@@ -712,7 +713,7 @@ impl Device {
     }
 
     fn register_udp_handler(&self, udp: socket2::Socket) -> Result<(), Error> {
-        
+
         self.queue.new_event(
             udp.as_raw_fd(),
             Box::new(move |device, threaddata| {
@@ -745,7 +746,7 @@ impl Device {
                     
                     let peer = match &parsed_packet {
                         Packet::HandshakeInit(p) => {
-                            consume_received_handshake_peer_2blisted(own_bytes_private_key, own_bytes_public_key, p)
+                            consume_received_handshake_peer_2blisted(&own_bytes_private_key, &own_bytes_public_key, p)
                                 .ok()
                                 .and_then(|half_handshake| {                    
                                 // Fetch index of existing peers
@@ -763,17 +764,16 @@ impl Device {
                         None => {
                             match &parsed_packet {
                                 Packet::HandshakeInit(p) => {
-                                    let half_handshake = consume_received_handshake_peer_2blisted(own_bytes_private_key, own_bytes_public_key, p).ok();
+                                    let half_handshake = consume_received_handshake_peer_2blisted(&own_bytes_private_key, &own_bytes_public_key, p).ok();
                                     if let Some(half_handshake) = half_handshake {
-                                        // let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);
                                         let evaluation = verify_rodt_id_signature(*p.rodt_id ,*p.rodt_id_signature);
                                         match evaluation {
                                             Ok((verification_result, rodt)) => {
                                                 // CG: Adding the new peer here
                                                 // Poor's man hack: Do it via command line
                                                 if verification_result {
-                                                    println!("Ok man"); /*
-                                                    let endpoint_listenport = addr.as_socket().unwrap();        
+                                                    /*let endpoint_listenport = addr.as_socket().unwrap();
+                                                    let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);     
                                                     let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
                                                     let allowed_ip_str = rodt.metadata.allowedips;
                                                     let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
@@ -802,7 +802,6 @@ impl Device {
                                                     self.peerslisted_by_ip
                                                     .insert(addr, cidr as _, Arc::clone(&peer));
                                                     }
-                                                    // End of the update peer function
                                                     allowed_ips_listed.clear(); */
                                                 }
                                             device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public));
@@ -872,36 +871,8 @@ impl Device {
                     }
                 }
                 Action::Continue
-            }
-            ),
+            }),
         )?;
-        // Code from inside the closure taken outside
-
- 
-
-
-        println!{"something something {:?} {:?}", p, *peer};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // Code from inside the closure taken outside
         Ok(())
     }
 
