@@ -301,7 +301,7 @@ enum HandshakeState {
 pub struct Handshake {
     params: NoiseParams,
     /// Index of the next session
-    next_index: u32,
+    next_session_index: u32,
     /// Allow to have two outgoing handshakes in flight, because sometimes we may receive a delayed response to a handshake with bad networks
     previous: HandshakeState,
     /// Current handshake state
@@ -333,7 +333,7 @@ pub fn consume_received_handshake_peer_2blisted(
     static_public: &x25519::PublicKey,
     packet: &HandshakeInit,
 ) -> Result<HalfHandshake, WireGuardError> {
-    let peer_index = packet.sender_index;
+    let peer_index = packet.sender_session_index;
     // initiator.chaining_key = HASH(CONSTRUCTION)
     let mut chaining_key = INITIAL_CHAIN_KEY;
     // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
@@ -454,7 +454,7 @@ impl Handshake {
 
         Ok(Handshake {
             params,
-            next_index: global_index,
+            next_session_index: global_index,
             previous: HandshakeState::None,
             state: HandshakeState::None,
             last_handshake_timestamp: Tai64N::zero(),
@@ -494,10 +494,10 @@ impl Handshake {
 
     // The index used is 24 bits for peer index, allowing for 16M active peers per server and 8 bits for cyclic session index
     fn inc_index(&mut self) -> u32 {
-        let index = self.next_index;
+        let index = self.next_session_index;
         let idx8 = index as u8;
-        self.next_index = (index & !0xff) | u32::from(idx8.wrapping_add(1));
-        self.next_index
+        self.next_session_index = (index & !0xff) | u32::from(idx8.wrapping_add(1));
+        self.next_session_index
     }
 
     pub(crate) fn set_static_private(
@@ -528,7 +528,7 @@ impl Handshake {
         // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         hash = b2s_hash(&hash, self.params.static_public.as_bytes());
         // msg.sender_index = little_endian(initiator.sender_index)
-        let peer_index = packet.sender_index;
+        let peer_index = packet.sender_session_index;
         // msg.unencrypted_ephemeral = DH_PUBKEY(initiator.ephemeral_private)
         let peer_ephemeral_public = x25519::PublicKey::from(*packet.unencrypted_ephemeral);
         // initiator.hash = HASH(initiator.hash || msg.unencrypted_ephemeral)
@@ -610,12 +610,12 @@ impl Handshake {
     ) -> Result<Session, WireGuardError> {
         // Check if there is a handshake awaiting a response and return the correct one
         let (state, is_previous) = match (&self.state, &self.previous) {
-            (HandshakeState::InitSent(s), _) if s.local_index == packet.peer_index => (s, false),
-            (_, HandshakeState::InitSent(s)) if s.local_index == packet.peer_index => (s, true),
+            (HandshakeState::InitSent(s), _) if s.local_index == packet.receiver_session_index => (s, false),
+            (_, HandshakeState::InitSent(s)) if s.local_index == packet.receiver_session_index => (s, true),
             _ => return Err(WireGuardError::UnexpectedPacket),
         };
 
-        let sender_index = packet.sender_index;
+        let sender_index = packet.sender_session_index;
         let local_index = state.local_index;
 
          // msg.unencrypted_ephemeral = DH_PUBKEY(responder.ephemeral_private)
@@ -702,7 +702,7 @@ impl Handshake {
         };
 
         let local_index = self.cookies.index;
-        if packet.peer_index != local_index {
+        if packet.receiver_session_index != local_index {
             return Err(WireGuardError::WrongIndex);
         }
         // msg.encrypted_cookie = XAEAD(HASH(LABEL_COOKIE || responder.static_public), msg.nonce, cookie, last_received_msg.mac1)

@@ -163,9 +163,9 @@ pub struct Device {
     yield_notice: Option<EventRef>,
     exit_notice: Option<EventRef>,
     peers: HashMap<x25519::PublicKey, Arc<Mutex<Peer>>>,
-    peerslisted_by_ip: AllowedIps<Arc<Mutex<Peer>>>,
-    peerslisted_by_index: HashMap<u32, Arc<Mutex<Peer>>>,
-    next_index: IndexLfsr,
+    listbyip_peer_index: AllowedIps<Arc<Mutex<Peer>>>,
+    listof_peer_index: HashMap<u32, Arc<Mutex<Peer>>>,
+    next_peer_index: IndexLfsr,
     config: DeviceConfig,
     cleanup_paths: Vec<String>,
     mtu: AtomicUsize,
@@ -305,8 +305,8 @@ impl Device {
     const XNET:&str= BLOCKCHAIN_NETWORK;
     const SMART_CONTRACT:&str = SMART_CONTRACT;
 
-    fn next_index(&mut self) -> u32 {
-        self.next_index.next()
+    fn next_peer_index(&mut self) -> u32 {
+        self.next_peer_index.next()
     }
 
     fn remove_peer(&mut self, peer_publickey_public_key: &x25519::PublicKey) {
@@ -315,9 +315,9 @@ impl Device {
             {
                 let p = peer.lock();
                 p.shutdown_endpoint(); // close open udp socket and free the closure
-                self.peerslisted_by_index.remove(&p.index());
+                self.listof_peer_index.remove(&p.index());
             }
-            self.peerslisted_by_ip
+            self.listbyip_peer_index
                 .remove(&|p: &Arc<Mutex<Peer>>| Arc::ptr_eq(&peer, p));
 
             tracing::info!("Info: Peer removed");
@@ -347,7 +347,7 @@ impl Device {
             return
         }
 
-        let next_index = self.next_index();
+        let next_peer_index = self.next_peer_index();
         let device_key_pair = self
         .key_pair
         .as_ref()
@@ -368,19 +368,19 @@ impl Device {
             self.config.rodt.token_id.clone(), // Own RODT ID
             rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
             keepalive,
-            next_index,
+            next_peer_index,
             None,
         )
         .unwrap();
         
         // CG: Creation and insertion of a peer
-        let peer = Peer::new(tunn, next_index, endpoint, allowed_ips_listed, preshared_key);
+        let peer = Peer::new(tunn, next_peer_index, endpoint, allowed_ips_listed, preshared_key);
         let peer = Arc::new(Mutex::new(peer));
         self.peers.insert(peer_publickey_public_key, Arc::clone(&peer));
-        self.peerslisted_by_index.insert(next_index, Arc::clone(&peer));
+        self.listof_peer_index.insert(next_peer_index, Arc::clone(&peer));
 
         for AllowedIP { addr, cidr } in allowed_ips_listed {
-            self.peerslisted_by_ip
+            self.listbyip_peer_index
                 .insert(*addr, *cidr as _, Arc::clone(&peer));
         }
         tracing::debug!("Debugging: Peer added");
@@ -407,10 +407,10 @@ impl Device {
             fwmark: Default::default(),
             key_pair: Default::default(),
             listen_port: Default::default(),
-            next_index: Default::default(),
+            next_peer_index: Default::default(),
             peers: Default::default(),
-            peerslisted_by_index: Default::default(),
-            peerslisted_by_ip: AllowedIps::new(),
+            listof_peer_index: Default::default(),
+            listbyip_peer_index: AllowedIps::new(),
             udp4: Default::default(),
             udp6: Default::default(),
             cleanup_paths: Default::default(),
@@ -622,8 +622,8 @@ impl Device {
 
     fn clear_peers(&mut self) {
         self.peers.clear();
-        self.peerslisted_by_index.clear();
-        self.peerslisted_by_ip.clear();
+        self.listof_peer_index.clear();
+        self.listbyip_peer_index.clear();
     }
 
     fn register_notifiers(&mut self) -> Result<(), Error> {
@@ -753,9 +753,9 @@ impl Device {
                                 device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public))
                                 })
                         }
-                        Packet::HandshakeResponse(p) => device.peerslisted_by_index.get(&(p.peer_index >> 8)),
-                        Packet::PacketCookieReply(p) => device.peerslisted_by_index.get(&(p.peer_index >> 8)),
-                        Packet::PacketData(p) => device.peerslisted_by_index.get(&(p.peer_index >> 8)),
+                        Packet::HandshakeResponse(p) => device.listof_peer_index.get(&(p.receiver_session_index >> 8)),
+                        Packet::PacketCookieReply(p) => device.listof_peer_index.get(&(p.receiver_session_index >> 8)),
+                        Packet::PacketData(p) => device.listof_peer_index.get(&(p.receiver_session_index >> 8)),
                     };
                     
                     // CG: In this block we want to add a peers that is not known (Packet::HandshakeInit)
@@ -779,7 +779,7 @@ impl Device {
                                                     let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
                                                     allowed_ips_listed.push(allowed_ip);
                                                     peer.expect("to write").lock();
-                                                    let next_index = self.next_index();
+                                                    let next_peer_index = self.next_peer_index();
                                                     let device_key_pair = self.key_pair.as_ref()
                                                     .expect("Error: Self private key must be set before adding peers");
                                                     let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
@@ -792,14 +792,14 @@ impl Device {
                                                         self.config.rodt.token_id.clone(), // Own RODT ID
                                                         rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
                                                         None,
-                                                        next_index,
+                                                        next_peer_index,
                                                         None,).unwrap();
-                                                    let peer = Peer::new(tunn, next_index,Some(endpoint_listenport), &allowed_ips_listed, None);
+                                                    let peer = Peer::new(tunn, next_peer_index,Some(endpoint_listenport), &allowed_ips_listed, None);
                                                     let peer = Arc::new(Mutex::new(peer));
                                                     self.peers.insert(peer_publickey_public_key, Arc::clone(&peer));
-                                                    self.peerslisted_by_index.insert(next_index, Arc::clone(&peer));
+                                                    self.listof_peer_index.insert(next_peer_index, Arc::clone(&peer));
                                                     for AllowedIP { addr, cidr } in allowed_ips_listed {
-                                                    self.peerslisted_by_ip
+                                                    self.listbyip_peer_index
                                                     .insert(addr, cidr as _, Arc::clone(&peer));
                                                     }
                                                     allowed_ips_listed.clear(); */
@@ -957,7 +957,7 @@ impl Device {
                 let udp4 = d.udp4.as_ref().expect("Not connected");
                 let udp6 = d.udp6.as_ref().expect("Not connected");
 
-                let peers = &d.peerslisted_by_ip;
+                let peers = &d.listbyip_peer_index;
                 for _ in 0..MAX_ITR {
                     let src = match interface.read(&mut t.src_buf[..mtu]) {
                         Ok(src) => src,

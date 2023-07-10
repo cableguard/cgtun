@@ -243,7 +243,7 @@ impl Session {
             // This is a very incorrect use of the library, therefore panic and not error
             panic!("The destination buffer is too small");
         }
-        if packet.peer_index != self.receiving_index {
+        if packet.receiver_session_index != self.receiving_index {
             return Err(WireGuardError::WrongIndex);
         }
         // Don't reuse counters, in case this is a replay attack we want to quickly check the counter without running expensive decryption

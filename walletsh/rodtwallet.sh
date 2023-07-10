@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export BLOCKCHAIN_NETWORK="testnet"
+export BLOCKCHAIN_NETWORK="mainnet"
 VERSION="1.3.5"
 export NFTCONTRACTID=$(cat ./walletsh/dev-account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_NETWORK "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
