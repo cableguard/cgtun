@@ -219,7 +219,7 @@ impl Tunn {
         string_rodt_id: String,
         rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
         persistent_keepalive: Option<u16>,
-        index: u32,
+        session_index: u32,
         rate_limiter: Option<Arc<RateLimiter>>,
     ) -> Result<Self, &'static str> {
         let static_public = x25519::PublicKey::from(&static_private);
@@ -231,15 +231,12 @@ impl Tunn {
         rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
         rodt_id[rodt_length] = 0;
 
-        // CG: Muting this
-        // tracing::debug!("Debugging: RODT ID {} as passed {:?}", string_rodt_id, rodt_id);
-
         let tunn = Tunn {
             handshake: Handshake::new(
                 static_private,
                 static_public,
                 peer_static_public,
-                index << 8,
+                session_index << 8,
                 preshared_key,
                 rodt_id,
                 rodt_id_signature,

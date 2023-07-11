@@ -772,14 +772,18 @@ impl Device {
                                                 // CG: Adding the new peer here
                                                 // Poor's man hack: Do it via command line
                                                 if verification_result {
-                                                    /*let endpoint_listenport = addr.as_socket().unwrap();
+                                                    /* let endpoint_listenport = addr.as_socket().unwrap();
                                                     let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);     
                                                     let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
                                                     let allowed_ip_str = rodt.metadata.allowedips;
                                                     let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
                                                     allowed_ips_listed.push(allowed_ip);
                                                     peer.expect("to write").lock();
-                                                    let next_peer_index = self.next_peer_index();
+
+                                                    let next_peer_index = Arc::new(Mutex::new(&self.next_peer_index()));
+                                                    
+                                                    let clone_next_peer_index = next_peer_index.lock();
+
                                                     let device_key_pair = self.key_pair.as_ref()
                                                     .expect("Error: Self private key must be set before adding peers");
                                                     let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
@@ -792,12 +796,12 @@ impl Device {
                                                         self.config.rodt.token_id.clone(), // Own RODT ID
                                                         rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
                                                         None,
-                                                        next_peer_index,
+                                                        *(*clone_next_peer_index),
                                                         None,).unwrap();
-                                                    let peer = Peer::new(tunn, next_peer_index,Some(endpoint_listenport), &allowed_ips_listed, None);
+                                                    let peer = Peer::new(tunn, *(*clone_next_peer_index),Some(endpoint_listenport), &allowed_ips_listed, None);
                                                     let peer = Arc::new(Mutex::new(peer));
                                                     self.peers.insert(peer_publickey_public_key, Arc::clone(&peer));
-                                                    self.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peer));
+                                                    self.listbysession_peer_index.insert(*(*clone_next_peer_index), Arc::clone(&peer));
                                                     for AllowedIP { addr, cidr } in allowed_ips_listed {
                                                     self.listbyip_peer_index
                                                     .insert(addr, cidr as _, Arc::clone(&peer));
@@ -957,7 +961,7 @@ impl Device {
                 let udp4 = d.udp4.as_ref().expect("Not connected");
                 let udp6 = d.udp6.as_ref().expect("Not connected");
 
-                let peers = &d.listbyip_peer_index;
+                let listofpeers = &d.listbyip_peer_index;
                 for _ in 0..MAX_ITR {
                     let src = match interface.read(&mut t.src_buf[..mtu]) {
                         Ok(src) => src,
@@ -980,7 +984,7 @@ impl Device {
                         None => continue,
                     };
 
-                    let mut peer = match peers.find(dst_addr) {
+                    let mut peer = match listofpeers.find(dst_addr) {
                         Some(peer) => peer.lock(),
                         None => continue,
                     };
