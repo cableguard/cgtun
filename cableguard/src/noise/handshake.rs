@@ -292,7 +292,7 @@ enum HandshakeState {
         hash: [u8; KEY_LEN],
         chaining_key: [u8; KEY_LEN],
         peer_ephemeral_public: x25519::PublicKey,
-        peer_index: u32,
+        received_session_index: u32,
     },
     /// Handshake was established too long ago (implies no handshake is in progress)
     Expired,
@@ -324,7 +324,7 @@ struct Cookies {
 // CG: Adding rotd_id and signature to half handshake
 #[derive(Debug)]
 pub struct HalfHandshake {
-    pub peer_index: u32,
+    pub received_session_index: u32,
     pub peer_static_public: [u8; 32],
 }
 
@@ -333,7 +333,7 @@ pub fn consume_received_handshake_peer_2blisted(
     static_public: &x25519::PublicKey,
     packet: &HandshakeInit,
 ) -> Result<HalfHandshake, WireGuardError> {
-    let peer_index = packet.sender_session_index;
+    let received_session_index = packet.sender_session_index;
     // initiator.chaining_key = HASH(CONSTRUCTION)
     let mut chaining_key = INITIAL_CHAIN_KEY;
     // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
@@ -368,7 +368,7 @@ pub fn consume_received_handshake_peer_2blisted(
     )?;
 
     Ok(HalfHandshake {
-        peer_index,
+        received_session_index,
         peer_static_public,
     })
 }
@@ -528,7 +528,7 @@ impl Handshake {
         // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         hash = b2s_hash(&hash, self.params.static_public.as_bytes());
         // msg.sender_index = little_endian(initiator.sender_index)
-        let peer_index = packet.sender_session_index;
+        let received_session_index = packet.sender_session_index;
         // msg.unencrypted_ephemeral = DH_PUBKEY(initiator.ephemeral_private)
         let peer_ephemeral_public = x25519::PublicKey::from(*packet.unencrypted_ephemeral);
         // initiator.hash = HASH(initiator.hash || msg.unencrypted_ephemeral)
@@ -597,7 +597,7 @@ impl Handshake {
                 chaining_key,
                 hash,
                 peer_ephemeral_public,
-                peer_index,
+                received_session_index,
             },
         );
 
@@ -703,7 +703,7 @@ impl Handshake {
 
         let local_index = self.cookies.index;
         if packet.receiver_session_index != local_index {
-            return Err(WireGuardError::WrongIndex);
+            return Err(WireGuardError::WrongSessionIndex);
         }
         // msg.encrypted_cookie = XAEAD(HASH(LABEL_COOKIE || responder.static_public), msg.nonce, cookie, last_received_msg.mac1)
         let key = b2s_hash(LABEL_COOKIE, self.params.peer_static_public.as_bytes()); // TODO: pre-compute
@@ -883,13 +883,13 @@ impl Handshake {
         }
 
         let state = std::mem::replace(&mut self.state, HandshakeState::None);
-        let (mut chaining_key, mut hash, peer_ephemeral_public, peer_index) = match state {
+        let (mut chaining_key, mut hash, peer_ephemeral_public, received_session_index) = match state {
             HandshakeState::InitReceived {
                 chaining_key,
                 hash,
                 peer_ephemeral_public,
-                peer_index,
-            } => (chaining_key, hash, peer_ephemeral_public, peer_index),
+                received_session_index,
+            } => (chaining_key, hash, peer_ephemeral_public, received_session_index),
             _ => {
                 panic!("Unexpected attempt to call produce_handshake_response");
             }
@@ -913,7 +913,7 @@ impl Handshake {
         // msg.sender_index = little_endian(responder.sender_index)
         sender_index.copy_from_slice(&local_index.to_le_bytes());
         // msg.own_index = little_endian(initiator.sender_index)
-        own_index.copy_from_slice(&peer_index.to_le_bytes());
+        own_index.copy_from_slice(&received_session_index.to_le_bytes());
         // msg.unencrypted_ephemeral = DH_PUBKEY(initiator.ephemeral_private)
         unencrypted_ephemeral
             .copy_from_slice(x25519::PublicKey::from(&ephemeral_private).as_bytes());
@@ -973,7 +973,7 @@ impl Handshake {
 
         let dst = self.append_mac1_and_mac2(local_index, &mut dst[..super::HANDSHAKE_RESP_SZ])?;
 
-        Ok((dst, Session::new(local_index, peer_index, temp2, temp3)))
+        Ok((dst, Session::new(local_index, received_session_index, temp2, temp3)))
     }
 }
 

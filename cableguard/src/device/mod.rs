@@ -164,7 +164,7 @@ pub struct Device {
     exit_notice: Option<EventRef>,
     peers: HashMap<x25519::PublicKey, Arc<Mutex<Peer>>>,
     listbyip_peer_index: AllowedIps<Arc<Mutex<Peer>>>,
-    listof_peer_index: HashMap<u32, Arc<Mutex<Peer>>>,
+    listbysession_peer_index: HashMap<u32, Arc<Mutex<Peer>>>,
     next_peer_index: IndexLfsr,
     config: DeviceConfig,
     cleanup_paths: Vec<String>,
@@ -315,7 +315,7 @@ impl Device {
             {
                 let p = peer.lock();
                 p.shutdown_endpoint(); // close open udp socket and free the closure
-                self.listof_peer_index.remove(&p.index());
+                self.listbysession_peer_index.remove(&p.index());
             }
             self.listbyip_peer_index
                 .remove(&|p: &Arc<Mutex<Peer>>| Arc::ptr_eq(&peer, p));
@@ -377,7 +377,7 @@ impl Device {
         let peer = Peer::new(tunn, next_peer_index, endpoint, allowed_ips_listed, preshared_key);
         let peer = Arc::new(Mutex::new(peer));
         self.peers.insert(peer_publickey_public_key, Arc::clone(&peer));
-        self.listof_peer_index.insert(next_peer_index, Arc::clone(&peer));
+        self.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peer));
 
         for AllowedIP { addr, cidr } in allowed_ips_listed {
             self.listbyip_peer_index
@@ -409,7 +409,7 @@ impl Device {
             listen_port: Default::default(),
             next_peer_index: Default::default(),
             peers: Default::default(),
-            listof_peer_index: Default::default(),
+            listbysession_peer_index: Default::default(),
             listbyip_peer_index: AllowedIps::new(),
             udp4: Default::default(),
             udp6: Default::default(),
@@ -622,7 +622,7 @@ impl Device {
 
     fn clear_peers(&mut self) {
         self.peers.clear();
-        self.listof_peer_index.clear();
+        self.listbysession_peer_index.clear();
         self.listbyip_peer_index.clear();
     }
 
@@ -753,9 +753,9 @@ impl Device {
                                 device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public))
                                 })
                         }
-                        Packet::HandshakeResponse(p) => device.listof_peer_index.get(&(p.receiver_session_index >> 8)),
-                        Packet::PacketCookieReply(p) => device.listof_peer_index.get(&(p.receiver_session_index >> 8)),
-                        Packet::PacketData(p) => device.listof_peer_index.get(&(p.receiver_session_index >> 8)),
+                        Packet::HandshakeResponse(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
+                        Packet::PacketCookieReply(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
+                        Packet::PacketData(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                     };
                     
                     // CG: In this block we want to add a peers that is not known (Packet::HandshakeInit)
@@ -797,7 +797,7 @@ impl Device {
                                                     let peer = Peer::new(tunn, next_peer_index,Some(endpoint_listenport), &allowed_ips_listed, None);
                                                     let peer = Arc::new(Mutex::new(peer));
                                                     self.peers.insert(peer_publickey_public_key, Arc::clone(&peer));
-                                                    self.listof_peer_index.insert(next_peer_index, Arc::clone(&peer));
+                                                    self.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peer));
                                                     for AllowedIP { addr, cidr } in allowed_ips_listed {
                                                     self.listbyip_peer_index
                                                     .insert(addr, cidr as _, Arc::clone(&peer));
@@ -1124,7 +1124,7 @@ struct IndexLfsr {
 
 impl IndexLfsr {
     /// Generate a random 24-bit nonzero integer
-    fn random_index() -> u32 {
+    fn random_peer_index() -> u32 {
         const LFSR_MAX: u32 = 0xffffff; // 24-bit seed
         loop {
             let i = OsRng.next_u32() & LFSR_MAX;
@@ -1149,11 +1149,11 @@ impl IndexLfsr {
 
 impl Default for IndexLfsr {
     fn default() -> Self {
-        let seed = Self::random_index();
+        let seed = Self::random_peer_index();
         IndexLfsr {
             initial: seed,
             lfsr: seed,
-            mask: Self::random_index(),
+            mask: Self::random_peer_index(),
         }
     }
 }

@@ -154,13 +154,13 @@ impl ReceivingKeyCounterValidator {
 impl Session {
     pub(super) fn new(
         own_index: u32,
-        peer_index: u32,
+        sender_index: u32,
         receiving_key: [u8; 32],
         sending_key: [u8; 32],
     ) -> Session {
         Session {
             receiving_index: own_index,
-            sending_index: peer_index,
+            sending_index: sender_index,
             receiver: LessSafeKey::new(
                 UnboundKey::new(&CHACHA20_POLY1305, &receiving_key).unwrap(),
             ),
@@ -244,7 +244,7 @@ impl Session {
             panic!("The destination buffer is too small");
         }
         if packet.receiver_session_index != self.receiving_index {
-            return Err(WireGuardError::WrongIndex);
+            return Err(WireGuardError::WrongSessionIndex);
         }
         // Don't reuse counters, in case this is a replay attack we want to quickly check the counter without running expensive decryption
         self.receiving_counter_quick_check(packet.counter)?;

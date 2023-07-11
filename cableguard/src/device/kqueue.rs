@@ -256,9 +256,9 @@ impl<H: Send + Sync> EventPoll<H> {
 
     pub fn trigger_notification(&self, notification_event: &EventRef) {
         let events = self.custom.lock();
-        let ev_index = -notification_event.trigger - 1; // Custom events have negative index from -1
+        let event_index = -notification_event.trigger - 1; // Custom events have negative index from -1
 
-        let event_ref = &(*events)[ev_index as usize];
+        let event_ref = &(*events)[event_index as usize];
         let event_data = event_ref.as_ref().expect("Expected an event");
 
         if event_data.kind != EventKind::Notifier {
@@ -273,9 +273,9 @@ impl<H: Send + Sync> EventPoll<H> {
 
     pub fn stop_notification(&self, notification_event: &EventRef) {
         let events = self.custom.lock();
-        let ev_index = -notification_event.trigger - 1; // Custom events have negative index from -1
+        let event_index = -notification_event.trigger - 1; // Custom events have negative index from -1
 
-        let event_ref = &(*events)[ev_index as usize];
+        let event_ref = &(*events)[event_index as usize];
         let event_data = event_ref.as_ref().expect("Expected an event");
 
         if event_data.kind != EventKind::Notifier {

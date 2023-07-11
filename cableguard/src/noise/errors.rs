@@ -7,7 +7,7 @@ pub enum WireGuardError {
     IncorrectPacketLength,
     UnexpectedPacket,
     WrongPacketType,
-    WrongIndex,
+    WrongSessionIndex,
     WrongKey,
     InvalidTai64nTimestamp,
     WrongTai64nTimestamp,
