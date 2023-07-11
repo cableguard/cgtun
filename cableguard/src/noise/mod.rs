@@ -480,7 +480,7 @@ impl Tunn {
         }
 
         let keepalive_packet = session.produce_packet_data(&[], dst);
-        // Store new session in ring buffer
+        // CG: Store new session in ring buffer
         let local_index = session.local_index();
         let index = local_index % N_SESSIONS;
         self.sessions[index] = Some(session);
