@@ -28,7 +28,6 @@ You may want to add to .bashrc these lines:
 - sudo setcap cap_net_admin+epi ./<path>/cableguard-cli
 - export BLOCKCHAIN_ENV=testnet (for testnet, mainnet for mainnet)
 
-
 ## How to Use
 To start a tunnel use:
 `cableguard-cli [-f/--foreground] <filewithaccount.json>`
@@ -42,8 +41,8 @@ It may be possible to use with [wg-quick](https://git.zx2c4.com/WireGuard/about/
 `sudo WG_QUICK_USERSPACE_IMPLEMENTATION=cableguard-cli WG_SUDO=1 wg-quick up CONFIGURATION`
 
 ## Supported platforms
-It has only been tested in AMD/Intel
-`x86-64` architecture is supported.
+- It has only been tested in AMD/Intel
+- `x86-64` architecture is supported.
 
 # Cableguard Ecosystem
 - Cableguard TUN: VPN tunnels
