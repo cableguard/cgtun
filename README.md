@@ -19,9 +19,9 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 If you want to contribute to this project, please contact <vpn@cableguard.org>.
 
 ## How to Install from Source
-sudo apt install pkg-config
-git https://github.com/alanesmizi/cableguardvpn.git
-cargo build --bin cableguard-cli --release
+- sudo apt install pkg-config
+- git https://github.com/alanesmizi/cableguardvpn.git
+- cargo build --bin cableguard-cli --release
 By default the executable is placed in the `./target/release` folder. You can copy it to a desired location manually, or install it using `cargo install --bin cableguard --path .`.
 
 You may want to add to .bashrc these lines:
