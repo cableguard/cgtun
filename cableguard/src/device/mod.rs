@@ -712,6 +712,7 @@ impl Device {
             .stop_notification(self.yield_notice.as_ref().unwrap())
     }
 
+    // CG: In order to add the new peer elsewhere this function needs to return the peer's RODT and the peer_static_public
     fn register_udp_handler(&self, udp: socket2::Socket) -> Result<(), Error> {
 
         self.queue.new_event(

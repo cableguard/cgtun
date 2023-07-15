@@ -219,18 +219,18 @@ pub fn nearorg_rpc_token(
 
     let result_array = parsed_json["result"]["result"].as_array().ok_or("Result is not an array")?;
 
-    tracing::info!("result_array: {}", result_array);
+    tracing::info!("result_array: {:?}", result_array);
 
     let result_bytes: Vec<u8> = result_array
         .iter()
         .map(|v| v.as_u64().unwrap() as u8)
         .collect();
 
-    tracing::info!("result_bytes: {}", result_bytes);
+    tracing::info!("result_bytes: {:?}", result_bytes);
 
     let result_slice: &[u8] = &result_bytes;    
 
-    tracing::info!("result_slice: {}", result_slice);
+    tracing::info!("result_slice: {:?}", result_slice);
 
     let result_string = String::from_utf8(result_slice.to_vec()).unwrap();
     
