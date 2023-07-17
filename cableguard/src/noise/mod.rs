@@ -369,8 +369,8 @@ impl Tunn {
         .trim_end_matches('\0');
         
         // CG: We receive this and we have to use it to validate the peer
-        println!("Debugging: Processing RODT ID received {}",peer_string_rodtid);        
-        println!("Debugging: Processing RODT ID Signature received {:?}",peer_handshake_init.rodt_id_signature);
+        println!("Processing RODT ID received {}",peer_string_rodtid);        
+        println!("Processing RODT ID Signature received {:?}",peer_handshake_init.rodt_id_signature);
         let account_idargs = "{\"token_id\": \"".to_owned() 
         + &peer_string_rodtid+ "\"}";
         tracing::debug!("Info: account idargs: {}", account_idargs);
@@ -384,14 +384,14 @@ impl Tunn {
                 let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id)
                     .expect("Failed to decode hex string");
                 
-                    println!("Debugging: Processing RODT ID received (Vec) {:?}",fetched_vec_ed25519_public_key); 
+                    println!("Processing RODT ID received (Vec) {:?}",fetched_vec_ed25519_public_key); 
                 
                 // Convert the bytes to a [u8; 32] array
                 let fetched_bytes_ed25519_public_key: [u8; 32] = fetched_vec_ed25519_public_key
                     .try_into()
                     .expect("Invalid byte array length");
         
-                println!("Debugging: Processing RODT ID received (Bytes) {:?}",fetched_bytes_ed25519_public_key); 
+                println!("Processing RODT ID received (Bytes) {:?}",fetched_bytes_ed25519_public_key); 
 
                 // Parse the signature bytes from peer_handshake_init.rodt_id_signature
                 // and assign it to the signature variable
@@ -404,7 +404,7 @@ impl Tunn {
                                 // If the public key parsing is successful, execute this block
                                 match fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature) {
                                     Ok(is_verified) => {
-                                        println!("Debugging: Is Response Verified {:?}", is_verified);
+                                        println!("Is Response Verified {:?}", is_verified);
                                         }
                                     Err(_) => {
                                     // Err(PeerEd25519SignatureVerificationFailure) => {
@@ -940,8 +940,8 @@ let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
 .trim_end_matches('\0');
 
 // CG: We receive this and we have to use it to validate the peer
-println!("Debugging: RODT ID {}",string_rodtid);        
-println!("Debugging: RODT ID Signature {:?}",rodt_id_signature);
+println!("RODT ID {}",string_rodtid);        
+println!("RODT ID Signature {:?}",rodt_id_signature);
 
 let account_idargs = "{\"token_id\": \"".to_owned() 
     + &string_rodtid+ "\"}";
@@ -972,7 +972,7 @@ tracing::debug!("Info: account idargs: {:?}", account_idargs);
                             // If the public key parsing is successful, execute this block
                             match fetched_publickey_ed25519_public_key.verify(string_rodtid.as_bytes(), &signature) {
                                 Ok(is_verified) => {
-                                    println!("Debugging: Is Response Verified {:?}", is_verified);
+                                    println!("Is Response Verified {:?}", is_verified);
                                     // Positive return if it is verified
                                     Ok::<bool, WireGuardError>(true)
                                     }
