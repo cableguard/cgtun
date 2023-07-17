@@ -49,11 +49,6 @@ const MAX_ITR: usize = 100; // Number of packets to handle per handler call
 #[cfg(test)]
 mod integration_tests;
 
-// CG: This is an embarrasing bit: I am reimplementing this because I don't know how to import it
-// const SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
-// const BLOCKCHAIN_NETWORK: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
-// This already exist in main.rs
-
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 #[path = "kqueue.rs"]
 pub mod poll;
