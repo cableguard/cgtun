@@ -169,8 +169,8 @@ fn main() {
     let own_staticsecret_private_x25519_key = ed2x_private_key_bytes(own_static_bytes_private_ed25519_key.clone().try_into().unwrap());
     let own_static_bytes_private_x25519_key = own_staticsecret_private_x25519_key.as_bytes();  
     // CG: Stop showing the private key when peers can be added automatically
-    let own_static_b64_private_x25519_key = hex_to_base64(&own_static_bytes_private_x25519_key);
-    println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",own_static_b64_private_x25519_key);
+    // let own_static_b64_private_x25519_key = hex_to_base64(&own_static_bytes_private_x25519_key);
+    // println!("X25519 Private Key Base64 from Ed25519 Private Key: {}",own_static_b64_private_x25519_key);
 
     // Generate the X25519 public key from the X25519 private key of 32 bytes
     let own_static_bytes_public_x25519_key = skx2pkx(own_staticsecret_private_x25519_key.clone());
