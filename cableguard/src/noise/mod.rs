@@ -17,8 +17,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::Arc;
 use std::time::Duration;
 use crate::device::api::{nearorg_rpc_token,Rodt};
-use crate::device::api::constants::SMART_CONTRACT;
-use crate::device::api::constants::BLOCKCHAIN_NETWORK;
+use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use ed25519_dalek::{PublicKey,Verifier,Signature};
 use hex::FromHex;
 

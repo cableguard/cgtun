@@ -39,6 +39,7 @@ use crate::noise::handshake::consume_received_handshake_peer_2blisted;
 use crate::noise::verify_rodt_id_signature;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
+use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use ed25519_dalek::{Keypair,Signer};
 // use base64::encode as base64encode;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
@@ -49,8 +50,8 @@ const MAX_ITR: usize = 100; // Number of packets to handle per handler call
 mod integration_tests;
 
 // CG: This is an embarrasing bit: I am reimplementing this because I don't know how to import it
-const SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
-const BLOCKCHAIN_NETWORK: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
+// const SMART_CONTRACT: &str = "dev-1686226311171-75846299095937";
+// const BLOCKCHAIN_NETWORK: &str = "testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
 // This already exist in main.rs
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -468,7 +469,7 @@ impl Device {
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.rodt.metadata.authornftcontractid + "\"}";
                 // CG: Reactivate this if necessary to debug the RPC call
-                // tracing::debug!("account idargs: {:?}", account_idargs);
+            tracing::debug!("account idargs: {:?}", account_idargs);
             match nearorg_rpc_token(Self::XNET,
                 Self::SMART_CONTRACT,
                 "nft_token",&account_idargs) {
