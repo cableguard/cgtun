@@ -331,7 +331,7 @@ impl Device {
         keepalive: Option<u16>,
         preshared_key: Option<[u8; 32]>,
     ) {
-        // CG: If it wasn't for keeping compability, I would remove the silly logic
+        // If it wasn't for keeping compability, I would remove the silly logic
         if remove {
             // Completely remove a peer
             return self.remove_peer(&peer_publickey_public_key);
@@ -436,9 +436,8 @@ impl Device {
             }
         }
 
-        // CG: We are adding here addtional device building:
+        // We are adding here addtional device building:
         // add IPs, set private key, add initial peer
-        // should add bringing the device UP?
         let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ tunname;
         let output = Command::new("bash")
             .arg("-c")
@@ -463,8 +462,8 @@ impl Device {
             println!("This tunnel uses a server ROTD");    
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.rodt.metadata.authornftcontractid + "\"}";
-                // CG: Reactivate this if necessary to debug the RPC call
-            tracing::debug!("account idargs: {:?}", account_idargs);
+                // Reactivate this if necessary to debug the RPC call
+                // tracing::debug!("account idargs: {:?}", account_idargs);
             match nearorg_rpc_token(Self::XNET,
                 Self::SMART_CONTRACT,
                 "nft_token",&account_idargs) {
@@ -528,24 +527,9 @@ impl Device {
     fn set_key_pair(&mut self, own_staticsecret_private_key: x25519::StaticSecret) {
         let mut bad_peers = vec![];
 
-        // CG: Don't show the private key
-        // CG: Set private_key from the RODT private key
-        // let rodt_string_private_key: &str = &hex::encode_hex(self.config.x25519_private_key);
-        // println!("Debugging: RODT Private Key, fn set_key_pair: {}", rodt_string_private_key);
-
         let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
 
-        // CG: I don't think we need this anymore
-        // let own_bytes_public_key = own_publickey_public_key.to_bytes();
-        // let own_string_public_key = encode_hex(&own_bytes_public_key);
-        // println!("{} {}","Debugging: X25519 Public Key (PublicKey) in Hex, fn set_key_pair: {}", own_string_public_key);
-
-        // CG: Don't show the private key
-        // let own_bytes_private_key = own_staticsecret_private_key.to_bytes();
-        // let own_string_private_key = encode_hex(&own_bytes_private_key);
-        // println!("{} {}","Debugging: X25519 Private Key (after StaticSecret) in Hex, fn FN set_key_pair: {}", own_string_private_key);
-
-        // CG: We are using the input value of the function instead of value from the RODT
+        // We are using the input value of the function instead of value from the RODT
         let own_key_pair = Some((own_staticsecret_private_key.clone(), own_publickey_public_key));
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
@@ -1013,11 +997,10 @@ impl Device {
         Ok(())
     }
 
-    // CG: This instance of api_set operates internally, not talking to wg
+    // This instance of api_set operates internally, not talking to wg
     pub fn api_set_internal(&mut self, option: &str, value: &str) {
         match option {
-            // CG: We can self-serve the private key from the input json wallet file
-            // I think I can call set_key_pair with device.config.x25519_private_key
+            // We can self-serve the private key from the input json wallet file
             "private_key" => match value.parse::<KeyBytes>() {
                 Ok(own_keybytes_private_key) => {
                     let own_string_private_key = serialization::keybytes_to_hex_string(&own_keybytes_private_key);

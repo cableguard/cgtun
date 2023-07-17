@@ -7,7 +7,7 @@
 mod tests {
     use crate::device::{DeviceConfig, DeviceHandle};
     use crate::x25519::{PublicKey, StaticSecret};
-    // CG: So we have two different rand libraries...
+    // CG: We should use only one rand library...
     use rand_core::OsRng;
     use ring::rand::{SecureRandom, SystemRandom};
     use std::fmt::Write as _;

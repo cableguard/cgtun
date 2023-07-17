@@ -242,7 +242,6 @@ struct NoiseParams {
     sending_mac1_key: [u8; KEY_LEN],
     preshared_key: Option<[u8; KEY_LEN]>,
     // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
-    // This needs a known length, RODT_ID_SZ (RODT_ID_SZ) as a limit to accomodate a full RODT ID
     rodt_id: [u8; RODT_ID_SZ],
     // CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
     rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
@@ -508,8 +507,7 @@ impl Handshake {
     self.params.set_static_private(private_key, public_key)
     }
 
-    // CG: NOW HERE THIS 
-    // Additional checks include: not accepting notafter and notbefore dates for RODT
+    // CG: Additional checks include: not accepting notafter and notbefore dates for RODT
     // Self configuring the DNS
     // Running postup and postdown commands
     // Usin   allowedips: 0.0.0.0/0 and endpoint: 127.0.0.1
@@ -561,7 +559,7 @@ impl Handshake {
         )?;
 
         // CG: This is where we compare if we have seen this peer public key,
-        // NOW HERE THIS peer public key is set to a constant as we don't have a list of peers ahead of time
+        // peer public key is set to a constant as we don't have a list of peers ahead of time
         // This will be spot where to check digital signatures and decide on trust
         ring::constant_time::verify_slices_are_equal(
             self.params.peer_static_public.as_bytes(),
@@ -840,11 +838,7 @@ impl Handshake {
 
         // CG: Our rodt_id values to transfer over the wire
         rodt_id.copy_from_slice(&self.params.rodt_id);
-        // CG: Muting this
-        // tracing::debug!("Debugging: HSI RODT ID {:?}",rodt_id);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
-        // CG: Muting this
-        // tracing::debug!("Debugging: HSI RODT SIGNATURE {:?}",rodt_id_signature);
 
         // CG:: Check if the conversion was successful
         let string_rodt_id = String::from_utf8(self.params.rodt_id.to_vec());

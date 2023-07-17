@@ -933,7 +933,7 @@ pub fn verify_rodt_id_signature(
     rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
 ) -> Result<(bool,Rodt), WireGuardError> {
 
-    // CG: THIS HAS TO BE A FUNCTION, too many calls Beginning of RODT verification
+    // CG: Too many calls Beginning of RODT verification
 let slice_rodtid: &[u8] = &rodt_id[..];
 let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
 .expect("Failed to convert byte slice to string")
