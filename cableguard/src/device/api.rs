@@ -95,7 +95,7 @@ pub fn nearorg_rpc_tokens_for_owner(
     args: &str,
 ) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
-    let url: String = "https://rpc.".to_string() + &xnet + "near.org";
+    let url: String = "https://rpc".to_string() + &xnet + "near.org";
     tracing::debug!("Debugging: Blockchain Directory Network: {}",xnet);
     let json_data: String = format!(
         r#"{{
@@ -186,7 +186,7 @@ pub fn nearorg_rpc_token(
     args: &str,
 ) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
-    let url: String = "https://rpc.".to_string() + &xnet + "near.org";
+    let url: String = "https://rpc".to_string() + &xnet + "near.org";
     tracing::debug!("Debugging: Blockchain Directory Network: {}",xnet);
     let json_data: String = format!(
         r#"{{
@@ -247,7 +247,7 @@ pub fn nearorg_rpc_state(
     account_id: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
-    let url: String = "https://rpc.".to_string() + &xnet + "near.org";
+    let url: String = "https://rpc".to_string() + &xnet + "near.org";
     tracing::debug!("Debugging: Blockchain Directory Network: {}",xnet);
     let json_data: String = format!(
         r#"{{
