@@ -268,7 +268,7 @@ fn main() {
         Ok(d) => d,
         Err(e) => {
             // Notify parent that tunnel initiation failed
-            tracing::error!(message = "Error: Failed to initialize tunnel", error=?e);
+            tracing::error!(message = "Error: Failed to initialize tunnel. Check if you are running with sudo", error=?e);
             sock1.send(&[0]).unwrap();
             exit(1);
         }
