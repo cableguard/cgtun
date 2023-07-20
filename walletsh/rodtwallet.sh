@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.3.7m"
+VERSION="1.3.8m"
 export NFTCONTRACTID=$(cat ./walletsh/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
@@ -69,7 +69,7 @@ fi
 
 if [ -n "$1" ]; then
     echo "There is a lag while collecting information from the blockchain"
-    echo "The following is a list of token_ids belonging to the input account:"
+    echo "The following is a list of RODT belonging to the input account:"
     output2=$(near view "$NFTCONTRACTID" nft_tokens_for_owner "{\"account_id\": \"$1\"}")
     filtered_output2=$(echo "$output2" | grep -o "token_id: '[^']*'" | sed "s/token_id: //")
     echo "$filtered_output2"
