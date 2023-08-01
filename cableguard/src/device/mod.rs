@@ -456,10 +456,10 @@ impl Device {
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {
-            println!("This tunnel uses a server ROTD");
+            println!("This tunnel uses a server RODT");
         }
         else{
-            println!("This tunnel uses a server ROTD");    
+            println!("This tunnel uses a server RODT");    
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.rodt.metadata.authornftcontractid + "\"}";
                 // Reactivate this if necessary to debug the RPC call

@@ -125,7 +125,7 @@ fn main() {
     let version = env!("CARGO_PKG_VERSION");
     println!("Cableguard version: {}", version);
     println!("RODT Blockchain Directory: {}", "NEAR.ORG");
-    println!("Blockchain Directory Network: {}", BLOCKCHAIN_NETWORK);
+    println!("Blockchain Directory Network (. for mainnet): {}", BLOCKCHAIN_NETWORK);
     println!("Smart Contract Account in Base58: {}", SMART_CONTRACT);
     println!("RODT owner Account ID in Hex: {}", account_id);
 
