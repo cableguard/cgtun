@@ -355,7 +355,7 @@ impl Tunn {
         peer_handshake_init: HandshakeInit,
         dst: &'a mut [u8],
     ) -> Result<TunnResult<'a>, WireGuardError> {
-        tracing::debug!(
+        tracing::error!(
             message = "Info: Received handshake_initiation",
             sender_session_index = peer_handshake_init.sender_session_index
         );
@@ -373,12 +373,12 @@ impl Tunn {
         println!("Processing RODT ID Signature received {:?}",peer_handshake_init.rodt_id_signature);
         let account_idargs = "{\"token_id\": \"".to_owned() 
         + &peer_string_rodtid+ "\"}";
-        tracing::debug!("Info: account idargs: {}", account_idargs);
+        tracing::error!("Info: account idargs: {}", account_idargs);
         match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
             Ok(result) => {
                 // If the function call is successful, execute this block
                 let fetched_rodt = result;
-                tracing::debug!("RODT Owner Init Received (Original): {}", fetched_rodt.owner_id);
+                tracing::error!("RODT Owner Init Received (Original): {}", fetched_rodt.owner_id);
                 
                 // Convert the owner_id string to a Vec<u8> by decoding it from hex
                 let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id)
@@ -448,7 +448,7 @@ impl Tunn {
         self.timer_tick(TimerName::TimeLastPacketReceived);
         self.timer_tick(TimerName::TimeLastPacketSent);
         self.timer_tick_session_established(false, index); // New session established, we are not the initiator
-        tracing::debug!(message = "Info: Sending handshake_response", own_index = index);
+        tracing::error!(message = "Info: Sending handshake_response", own_index = index);
         Ok(TunnResult::WriteToNetwork(packet))
     }
 
@@ -457,7 +457,7 @@ impl Tunn {
         peer_handshake_response: HandshakeResponse,
         dst: &'a mut [u8],
     ) -> Result<TunnResult<'a>, WireGuardError> {
-        tracing::debug!(
+        tracing::error!(
             message = "Info: Received peer_handshake_response",
             own_index = peer_handshake_response.receiver_session_index,
             sender_session_index = peer_handshake_response.sender_session_index
@@ -467,7 +467,7 @@ impl Tunn {
 
         match verify_rodt_id_signature(*peer_handshake_response.rodt_id,*peer_handshake_response.rodt_id_signature){
             Ok(_) => {
-                tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
+                tracing::error!("Info: PeerEd25519SignatureVerificationSuccess");
             }
             Err(_) => {
                     tracing::error!("Error: PeerEd25519SignatureVerificationFailure");
@@ -485,7 +485,7 @@ impl Tunn {
         self.timer_tick_session_established(true, index); // New session established, we are the initiator
         self.set_current_session(local_index);
 
-        tracing::debug!("Info: Sending keepalive");
+        tracing::error!("Info: Sending keepalive");
 
         Ok(TunnResult::WriteToNetwork(keepalive_packet)) // Send a keepalive as a response
     }
@@ -494,7 +494,7 @@ impl Tunn {
         &mut self,
         p: PacketCookieReply,
     ) -> Result<TunnResult<'a>, WireGuardError> {
-        tracing::debug!(
+        tracing::error!(
             message = "Info: Received cookie_reply",
             own_index = p.receiver_session_index
         );
@@ -503,7 +503,7 @@ impl Tunn {
         self.timer_tick(TimerName::TimeLastPacketReceived);
         self.timer_tick(TimerName::TimeCookieReceived);
 
-        tracing::debug!("Info: Did set cookie");
+        tracing::error!("Info: Did set cookie");
 
         Ok(TunnResult::Done)
     }
@@ -520,7 +520,7 @@ impl Tunn {
                 >= self.timers.session_timers[current_index % N_SESSIONS]
         {
             self.current = new_index;
-            tracing::debug!(message = "Info: New session", session = new_index);
+            tracing::error!(message = "Info: New session", session = new_index);
         }
     }
 
@@ -569,7 +569,7 @@ impl Tunn {
 
         match self.handshake.produce_handshake_initiation(dst) {
             Ok(packet) => {
-                tracing::debug!("Sending handshake_initiation");
+                tracing::error!("Sending handshake_initiation");
 
                 if starting_new_handshake {
                     self.timer_tick(TimerName::TimeLastHandshakeStarted);
@@ -731,7 +731,7 @@ mod tests {
         let their_string_public_key = encode_hex(their_publickey_public_key.as_bytes());
 
         // Display the converted values in the trace
-        tracing::debug!("Debugging: own_staticsecret_private_key: {}, own_publickey_public_key: {}, their_secret_key: {}, their_public_key: {} in fn produce_two_tuns",
+        tracing::error!("Debugging: own_staticsecret_private_key: {}, own_publickey_public_key: {}, their_secret_key: {}, their_public_key: {} in fn produce_two_tuns",
             own_string_private_key,
             own_string_public_key,
             their_string_private_key,
@@ -945,13 +945,13 @@ println!("RODT ID Signature {:?}",rodt_id_signature);
 
 let account_idargs = "{\"token_id\": \"".to_owned() 
     + &string_rodtid+ "\"}";
-tracing::debug!("Info: account idargs: {:?}", account_idargs);
+tracing::error!("Info: account idargs: {:?}", account_idargs);
 
     match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
         Ok(result) => {
             // If the function call is successful, execute this block
             let fetched_rodt = result;
-            tracing::debug!("RODT Owner Init Received: {:?}", fetched_rodt.owner_id);
+            tracing::error!("RODT Owner Init Received: {:?}", fetched_rodt.owner_id);
         
             // Convert the owner_id string to a Vec<u8> by decoding it from hex
             let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id.clone())

@@ -154,7 +154,7 @@ impl Tunn {
         for (i, t) in timers.session_timers.iter_mut().enumerate() {
             if time_now - *t > REJECT_AFTER_TIME {
                 if let Some(session) = self.sessions[i].take() {
-                    tracing::debug!(
+                    tracing::error!(
                         message = "SESSION_EXPIRED(REJECT_AFTER_TIME)",
                         session = session.receiving_index
                     );
@@ -243,7 +243,7 @@ impl Tunn {
                     if session_established < data_packet_sent
                         && now - session_established >= REKEY_AFTER_TIME
                     {
-                        tracing::debug!("HANDSHAKE(REKEY_AFTER_TIME (on send))");
+                        tracing::error!("HANDSHAKE(REKEY_AFTER_TIME (on send))");
                         handshake_initiation_required = true;
                     }
 
@@ -282,7 +282,7 @@ impl Tunn {
                         && now - aut_packet_sent >= KEEPALIVE_TIMEOUT
                         && mem::replace(&mut self.timers.want_keepalive, false)
                     {
-                        tracing::debug!("KEEPALIVE(KEEPALIVE_TIMEOUT)");
+                        tracing::error!("KEEPALIVE(KEEPALIVE_TIMEOUT)");
                         keepalive_required = true;
                     }
 
@@ -291,7 +291,7 @@ impl Tunn {
                         && (now - self.timers[TimePersistentKeepalive]
                             >= Duration::from_secs(persistent_keepalive as _))
                     {
-                        tracing::debug!("KEEPALIVE(PERSISTENT_KEEPALIVE)");
+                        tracing::error!("KEEPALIVE(PERSISTENT_KEEPALIVE)");
                         self.timer_tick(TimePersistentKeepalive);
                         keepalive_required = true;
                     }

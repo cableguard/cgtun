@@ -339,7 +339,7 @@ impl Device {
 
         // Update an existing peer
         if self.peers.get(&peer_publickey_public_key).is_some() {
-            tracing::debug!("Debugging: Peers are dinamically added and removed so it makes no sense to update them. No actions have been performed");
+            tracing::error!("Debugging: Peers are dinamically added and removed so it makes no sense to update them. No actions have been performed");
             return
         }
 
@@ -355,7 +355,7 @@ impl Device {
 
         let rodt_id_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
 
-        tracing::debug!("Debugging: Own RODT ID signature {}",rodt_id_signature);
+        tracing::error!("Debugging: Own RODT ID signature {}",rodt_id_signature);
 
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Own X25519 private key
@@ -379,7 +379,7 @@ impl Device {
             self.listbyip_peer_index
                 .insert(*addr, *cidr as _, Arc::clone(&peer));
         }
-        tracing::debug!("Debugging: Peer added");
+        tracing::error!("Debugging: Peer added");
     }
 
     pub fn new(tunname: &str, config: DeviceConfig) -> Result<Device, Error> {
@@ -446,10 +446,10 @@ impl Device {
             .expect("Error: Failed to execute command");
         if output.status.success() {
             let _stdout = String::from_utf8_lossy(&output.stdout);
-            tracing::debug!("Debugging: Ip addr add command executed successfully: {}",device.config.rodt.metadata.cidrblock);
+            tracing::error!("Debugging: Ip addr add command executed successfully: {}",device.config.rodt.metadata.cidrblock);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            tracing::debug!("Error: Ip addr add command failed to execute {}", stderr);
+            tracing::error!("Error: Ip addr add command failed to execute {}", stderr);
         }
 
         // CG: Proactively setting the Static Private Key for the device
@@ -463,13 +463,13 @@ impl Device {
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.rodt.metadata.authornftcontractid + "\"}";
                 // Reactivate this if necessary to debug the RPC call
-                // tracing::debug!("account idargs: {:?}", account_idargs);
+                // tracing::error!("account idargs: {:?}", account_idargs);
             match nearorg_rpc_token(Self::XNET,
                 Self::SMART_CONTRACT,
                 "nft_token",&account_idargs) {
                 Ok(result) => {
                     let server_rodt = result;
-                    tracing::debug!("Info: RODT Owner: {:?}", server_rodt.owner_id);
+                    tracing::error!("Info: RODT Owner: {:?}", server_rodt.owner_id);
                 }
                 Err(err) => {
                     tracing::error!("Error: There is no server RODT associated with the account: {}", err);
@@ -557,7 +557,7 @@ impl Device {
                 let own_string_public_key = own_publickey_public_key.encode_hex::<String>();
         
                 // Display the converted values in the trace
-                tracing::debug!("Debugging: private_key: {}, public_key: {} in fn set_key_pair",
+                tracing::error!("Debugging: private_key: {}, public_key: {} in fn set_key_pair",
                     own_string_private_key,
                     own_string_public_key
                 );
@@ -1005,7 +1005,7 @@ impl Device {
                 Ok(own_keybytes_private_key) => {
                     let own_string_private_key = serialization::keybytes_to_hex_string(&own_keybytes_private_key);
                     let own_hex_private_key = format!("{:02X?}", own_string_private_key);
-                    tracing::debug!(message = "Debugging: Private_key FN api_set_internal: {}", own_hex_private_key);
+                    tracing::error!(message = "Debugging: Private_key FN api_set_internal: {}", own_hex_private_key);
                     self.set_key_pair(x25519::StaticSecret::from(own_keybytes_private_key.0))
                     }
                 Err(_) => return,
@@ -1013,8 +1013,8 @@ impl Device {
             "listen_port" => match self.config.rodt.metadata.listenport.parse::<u16>() {
                 Ok(port) => match self.open_listen_socket(port) {
                     Ok(()) => {
-                        tracing::debug!("Debugging: Port FN api_set_internal: {}", port);
-                        tracing::debug!("Debugging: Rodt Port  FN api_set_internal: {}", self.config.rodt.metadata.listenport);
+                        tracing::error!("Debugging: Port FN api_set_internal: {}", port);
+                        tracing::error!("Debugging: Rodt Port  FN api_set_internal: {}", self.config.rodt.metadata.listenport);
                     }
                     Err(_) => return,
                 },
@@ -1040,7 +1040,7 @@ impl Device {
             "set_peer_public_key" => match value.parse::<KeyBytes>() {
                 Ok(peer_keybytes_key) => {
                     let peer_hex_public_key = encode_hex(peer_keybytes_key.0);
-                    tracing::debug!("Debugging: Peer Public Key FN api_set_internal {:?}", peer_hex_public_key);
+                    tracing::error!("Debugging: Peer Public Key FN api_set_internal {:?}", peer_hex_public_key);
                         return self.api_set_peer_internal(
                             x25519::PublicKey::from(peer_keybytes_key.0),
                         )

@@ -96,7 +96,7 @@ pub fn nearorg_rpc_tokens_for_owner(
 ) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
-    tracing::debug!("Debugging: Blockchain Directory Network (. for mainnet): {}",xnet);
+    tracing::error!("Debugging: Blockchain Directory Network (. for mainnet): {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -154,22 +154,22 @@ pub fn nearorg_rpc_tokens_for_owner(
     
     if let Some(rodt) = result_iter.next() {
         for rodt in result_struct {
-            tracing::debug!("token_id: {}", rodt.token_id);
-            tracing::debug!("owner_id: {}", rodt.owner_id);
-            tracing::debug!("title: {}", rodt.metadata.title);
-            tracing::debug!("description: {}", rodt.metadata.description);
-            tracing::debug!("notafter: {}", rodt.metadata.notafter);
-            tracing::debug!("notbefore: {}", rodt.metadata.notbefore);
-            tracing::debug!("notbefore: {}", rodt.metadata.listenport);
-            tracing::debug!("cidrblock: {}", rodt.metadata.cidrblock);
-            tracing::debug!("dns: {}", rodt.metadata.dns);
-            tracing::debug!("postup: {}", rodt.metadata.postup);
-            tracing::debug!("postdown: {}", rodt.metadata.postdown);
-            tracing::debug!("allowedips: {}", rodt.metadata.allowedips);
-            tracing::debug!("endpoint: {}", rodt.metadata.endpoint);
-            tracing::debug!("authornftcontractid: {}", rodt.metadata.authornftcontractid);
-            tracing::debug!("authorsignature: {}", rodt.metadata.authorsignature);
-            tracing::debug!("kbpersecond: {}", rodt.metadata.kbpersecond);
+            tracing::error!("token_id: {}", rodt.token_id);
+            tracing::error!("owner_id: {}", rodt.owner_id);
+            tracing::error!("title: {}", rodt.metadata.title);
+            tracing::error!("description: {}", rodt.metadata.description);
+            tracing::error!("notafter: {}", rodt.metadata.notafter);
+            tracing::error!("notbefore: {}", rodt.metadata.notbefore);
+            tracing::error!("notbefore: {}", rodt.metadata.listenport);
+            tracing::error!("cidrblock: {}", rodt.metadata.cidrblock);
+            tracing::error!("dns: {}", rodt.metadata.dns);
+            tracing::error!("postup: {}", rodt.metadata.postup);
+            tracing::error!("postdown: {}", rodt.metadata.postdown);
+            tracing::error!("allowedips: {}", rodt.metadata.allowedips);
+            tracing::error!("endpoint: {}", rodt.metadata.endpoint);
+            tracing::error!("authornftcontractid: {}", rodt.metadata.authornftcontractid);
+            tracing::error!("authorsignature: {}", rodt.metadata.authorsignature);
+            tracing::error!("kbpersecond: {}", rodt.metadata.kbpersecond);
         }
      // Return the first Rodt instance as the result
         return Ok(rodt.clone());
@@ -187,7 +187,7 @@ pub fn nearorg_rpc_token(
 ) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
-    tracing::debug!("Debugging: Blockchain Directory Network (. for mainnet): {}",xnet);
+    tracing::error!("Debugging: Blockchain Directory Network (. for mainnet): {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -236,7 +236,7 @@ pub fn nearorg_rpc_state(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
-    tracing::debug!("Debugging: Blockchain Directory Network (. for mainnet): {}",xnet);
+    tracing::error!("Debugging: Blockchain Directory Network (. for mainnet): {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -476,7 +476,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 // let own_static_b64_private_key = hex_to_base64(&own_static_string_private_key);
                                 // let own_static_hex_private_key = serialization::keybytes_to_hex_string(&own_static_bytes_key_pair);
                                 // let own_static_string_private_key = format!("{:02X?}", own_static_hex_private_key);
-                                // tracing::debug!(message = "Debugging: Private_key FN api_set: {}",own_static_string_private_key);
+                                // tracing::error!(message = "Debugging: Private_key FN api_set: {}",own_static_string_private_key);
                                 device.set_key_pair(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
                             }
                             Err(_) => return EINVAL,
