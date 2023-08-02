@@ -962,8 +962,8 @@ impl Handshake {
         rodt_id.copy_from_slice(&self.params.rodt_id);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
 
-        tracing::error!("Debugging: Response RODT_ID {:?}", self.params.rodt_id);
-        tracing::error!("Debugging: Response Signature of the RODT_ID {:?}",rodt_id_signature);
+        // tracing::error!("Debugging: Response RODT_ID {:?}", self.params.rodt_id);
+        // tracing::error!("Debugging: Response Signature of the RODT_ID {:?}",rodt_id_signature);
 
         let dst = self.append_mac1_and_mac2(local_index, &mut dst[..super::HANDSHAKE_RESP_SZ])?;
 

@@ -469,7 +469,7 @@ impl Device {
                 "nft_token",&account_idargs) {
                 Ok(result) => {
                     let server_rodt = result;
-                    tracing::error!("Info: RODT Owner: {:?}", server_rodt.owner_id);
+                    tracing::error!("Info: Server RODT Owner: {:?}", server_rodt.owner_id);
                 }
                 Err(err) => {
                     tracing::error!("Error: There is no server RODT associated with the account: {}", err);
