@@ -1063,7 +1063,7 @@ impl Device {
         let preshared_key = None;
         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
 
-        let ip: IpAddr = self.config.rodt.metadata.endpoint.parse().expect("Invalid IP address");
+        let ip: IpAddr = self.config.rodt.metadata.issuer_name.parse().expect("Invalid IP address");
         let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Invalid port");
         let endpoint_listenport = SocketAddr::new(ip,port);      
         tracing::info!("Info: Setting Server IP and port {}", endpoint_listenport);     
