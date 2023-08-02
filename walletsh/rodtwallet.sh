@@ -1,7 +1,7 @@
 #!/bin/bash
 
-VERSION="1.3.8m"
-export NFTCONTRACTID=$(cat ./walletsh/account)
+VERSION="1.3.9"
+#export NFTCONTRACTID=$(cat ./walletsh/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
 if [ "$1" == "help" ]; then
