@@ -50,7 +50,7 @@ impl Default for Rodt {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RodtMetadata {
-    pub title: String,
+    pub issuer_name: String,
     pub description: String,
     pub notafter: String,
     pub notbefore: String,
@@ -60,8 +60,8 @@ pub struct RodtMetadata {
     pub postup: String,
     pub postdown: String,
     pub allowedips: String,
-    pub endpoint: String,
-    pub authornftcontractid: String,
+    pub subjectuniqueidentifierURL: String,
+    pub authorrodtcontractid: String,
     pub authorsignature: String,
     pub kbpersecond: String,
 }
@@ -69,7 +69,7 @@ pub struct RodtMetadata {
 impl Default for RodtMetadata {
     fn default() -> Self {
         RodtMetadata {
-            title: String::default(),
+            issuer_name: String::default(),
             description: String::default(),
             notafter: String::default(),
             notbefore: String::default(),
@@ -79,8 +79,8 @@ impl Default for RodtMetadata {
             postup: String::default(),
             postdown: String::default(),
             allowedips: String::default(),
-            endpoint: String::default(),
-            authornftcontractid: String::default(),
+            subjectuniqueidentifierURL: String::default(),
+            authorrodtcontractid: String::default(),
             authorsignature: String::default(),
             kbpersecond: String::default(),
         }
@@ -156,7 +156,7 @@ pub fn nearorg_rpc_tokens_for_owner(
         for rodt in result_struct {
             tracing::error!("token_id: {}", rodt.token_id);
             tracing::error!("owner_id: {}", rodt.owner_id);
-            tracing::error!("title: {}", rodt.metadata.title);
+            tracing::error!("issuer_name: {}", rodt.metadata.issuer_name);
             tracing::error!("description: {}", rodt.metadata.description);
             tracing::error!("notafter: {}", rodt.metadata.notafter);
             tracing::error!("notbefore: {}", rodt.metadata.notbefore);
@@ -166,8 +166,8 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::error!("postup: {}", rodt.metadata.postup);
             tracing::error!("postdown: {}", rodt.metadata.postdown);
             tracing::error!("allowedips: {}", rodt.metadata.allowedips);
-            tracing::error!("endpoint: {}", rodt.metadata.endpoint);
-            tracing::error!("authornftcontractid: {}", rodt.metadata.authornftcontractid);
+            tracing::error!("subjectuniqueidentifierURL: {}", rodt.metadata.subjectuniqueidentifierURL);
+            tracing::error!("authorrodtcontractid: {}", rodt.metadata.authorrodtcontractid);
             tracing::error!("authorsignature: {}", rodt.metadata.authorsignature);
             tracing::error!("kbpersecond: {}", rodt.metadata.kbpersecond);
         }

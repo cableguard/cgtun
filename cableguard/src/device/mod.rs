@@ -455,13 +455,13 @@ impl Device {
         // CG: Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
-        if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authornftcontractid) {
+        if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authorrodtcontractid) {
             println!("This tunnel uses a server RODT");
         }
         else{
             println!("This tunnel uses a server RODT");    
             let account_idargs = "{\"token_id\": \"".to_owned() 
-                + &device.config.rodt.metadata.authornftcontractid + "\"}";
+                + &device.config.rodt.metadata.authorrodtcontractid + "\"}";
                 // Reactivate this if necessary to debug the RPC call
                 // tracing::error!("account idargs: {:?}", account_idargs);
             match nearorg_rpc_token(Self::XNET,

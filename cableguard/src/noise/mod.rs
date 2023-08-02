@@ -438,7 +438,7 @@ impl Tunn {
             }
         }
         // CG: Find the peer and check if
-        // IsTrusted(rodt.metadata.authornftcontractid);
+        // IsTrusted(rodt.metadata.authorrodtcontractid);
         // ,checking if the Issuer smart contract has published a TXT 
         // entry with the token_id of the server
         // CG: End of RODT verification
@@ -1007,7 +1007,7 @@ tracing::error!("Info: account idargs: {:?}", account_idargs);
         }
     }
     // CG: Find the peer and check if
-    // IsTrusted(rodt.metadata.authornftcontractid);
+    // IsTrusted(rodt.metadata.authorrodtcontractid);
     // ,checking if the Issuer smart contract has published a TXT 
     // entry with the token_id of the server
     // CG: End of RODT verification
