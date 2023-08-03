@@ -690,12 +690,12 @@ impl Device {
             .stop_notification(self.yield_notice.as_ref().unwrap())
     }
 
-    // CG: In order to add the new peer elsewhere this function needs to return the peer's RODT and the peer_static_public
-    fn register_udp_handler(&self, udp: socket2::Socket) -> Result<(), Error> {
+    
+    fn register_udp_handler(&mut self, udp: socket2::Socket) -> Result<(), Error> {
 
         self.queue.new_event(
             udp.as_raw_fd(),
-            Box::new(move |device, threaddata| {
+            Box::new(move |mut device, threaddata| {
                 // Handler that handles peer_2blisted packets over UDP
                 let mut iter = MAX_ITR;
                 let (own_bytes_private_key, own_bytes_public_key) = device.key_pair.as_ref().expect("Error: Key not set");
@@ -856,6 +856,21 @@ impl Device {
                 Action::Continue
             }),
         )?;
+
+// CG: In order to add the new peer we need Box to return the peer's RODT and the peer_static_public
+//        if let Some(peer) = self.peers.remove(peer_publickey_public_key) {
+//            // Found a peer to remove, now purge all references to it:
+//            {
+    for peer in self.peers.values_mut() {
+        peer.lock().shutdown_endpoint();
+    }
+//                self.listbysession_peer_index.remove(&p.index());
+//            }
+//            self.listbyip_peer_index
+//                .remove(&|p: &Arc<Mutex<Peer>>| Arc::ptr_eq(&peer, p));
+//            tracing::info!("Info: Peer added");
+//        }
+
         Ok(())
     }
 
