@@ -744,7 +744,7 @@ mod tests {
         (my_tun, their_tun)
     }
     
-    fn send_handshake_init(tun: &mut Tunn) -> Vec<u8> {
+    fn test_send_handshake_init(tun: &mut Tunn) -> Vec<u8> {
         let mut dst = vec![0u8; 2048];
         let own_handshake_init = tun.produce_handshake_initiation(&mut dst, false);
         assert!(matches!(own_handshake_init, TunnResult::WriteToNetwork(_)));
@@ -793,7 +793,7 @@ mod tests {
 
     fn produce_two_tuns_and_handshake() -> (Tunn, Tunn) {
         let (mut my_tun, mut their_tun) = produce_two_tuns();
-        let init = send_handshake_init(&mut my_tun);
+        let init = test_send_handshake_init(&mut my_tun);
         let resp = produce_handshake_response(&mut their_tun, &init);
         let keepalive = consume_handshake_response(&mut my_tun, &resp);
         consume_keepalive(&mut their_tun, &keepalive);
@@ -832,7 +832,7 @@ mod tests {
     #[test]
     fn handshake_init() {
         let (mut my_tun, _their_tun) = produce_two_tuns();
-        let init = send_handshake_init(&mut my_tun);
+        let init = test_send_handshake_init(&mut my_tun);
         let packet = Tunn::consume_incoming_packet(&init).unwrap();
         assert!(matches!(packet, Packet::HandshakeInit(_)));
     }
@@ -840,7 +840,7 @@ mod tests {
     #[test]
     fn handshake_init_and_response() {
         let (mut my_tun, mut their_tun) = produce_two_tuns();
-        let init = send_handshake_init(&mut my_tun);
+        let init = test_send_handshake_init(&mut my_tun);
         let resp = produce_handshake_response(&mut their_tun, &init);
         let packet = Tunn::consume_incoming_packet(&resp).unwrap();
         assert!(matches!(packet, Packet::HandshakeResponse(_)));
@@ -849,7 +849,7 @@ mod tests {
     #[test]
     fn full_handshake() {
         let (mut my_tun, mut their_tun) = produce_two_tuns();
-        let init = send_handshake_init(&mut my_tun);
+        let init = test_send_handshake_init(&mut my_tun);
         let resp = produce_handshake_response(&mut their_tun, &init);
         let keepalive = consume_handshake_response(&mut my_tun, &resp);
         let packet = Tunn::consume_incoming_packet(&keepalive).unwrap();
@@ -893,7 +893,7 @@ mod tests {
     fn handshake_no_resp_rekey_timeout() {
         let (mut my_tun, _their_tun) = produce_two_tuns();
 
-        let init = send_handshake_init(&mut my_tun);
+        let init = test_send_handshake_init(&mut my_tun);
         let packet = Tunn::consume_incoming_packet(&init).unwrap();
         assert!(matches!(packet, Packet::HandshakeInit(_)));
 
