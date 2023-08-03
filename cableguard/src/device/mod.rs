@@ -462,8 +462,6 @@ impl Device {
             println!("This tunnel uses a client RODT");    
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.rodt.metadata.authorrodtcontractid + "\"}";
-                // Reactivate this if necessary to debug the RPC call
-                // tracing::error!("account idargs: {:?}", account_idargs);
             match nearorg_rpc_token(Self::XNET,
                 Self::SMART_CONTRACT,
                 "nft_token",&account_idargs) {
