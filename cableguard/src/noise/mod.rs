@@ -390,8 +390,6 @@ impl Tunn {
                 let fetched_bytes_ed25519_public_key: [u8; 32] = fetched_vec_ed25519_public_key
                     .try_into()
                     .expect("Invalid byte array length");
-        
-                // println!("Processing RODT ID received (Bytes) {:?}",fetched_bytes_ed25519_public_key); 
 
                 // Parse the signature bytes from peer_handshake_init.rodt_id_signature
                 // and assign it to the signature variable

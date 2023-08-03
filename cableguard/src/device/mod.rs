@@ -19,7 +19,7 @@ use std::thread;
 use std::thread::JoinHandle;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
-use hex::ToHex;
+// use hex::ToHex;
 use hex::encode as encode_hex;
 use allowed_ips::AllowedIps;
 use api::nearorg_rpc_token;
@@ -549,17 +549,7 @@ impl Device {
                     Some(Arc::clone(&rate_limiter)),
                 )
                 .is_err()
-            {
-                // Convert private_key and public_key to strings
-                let own_string_private_key = own_staticsecret_private_key.encode_hex::<String>();
-                let own_string_public_key = own_publickey_public_key.encode_hex::<String>();
-        
-                // Display the converted values in the trace
-                tracing::error!("Debugging: private_key: {}, public_key: {} in fn set_key_pair",
-                    own_string_private_key,
-                    own_string_public_key
-                );
-        
+            {        
                 // In case we encounter an error, we will remove that peer
                 // An error will be a result of a bad public key/secret key combination
                 bad_peers.push(Arc::clone(peer));
@@ -695,12 +685,17 @@ impl Device {
 
         self.queue.new_event(
             udp.as_raw_fd(),
-            Box::new(move |mut device, threaddata| {
+            Box::new(move |mut devicebox, threaddata| {
+
+                let action = match devicebox.try_writeable(
+                    |mut device| device.trigger_yield(),
+                    |mut device| {
+                        device.cancel_yield();
                 // Handler that handles peer_2blisted packets over UDP
                 let mut iter = MAX_ITR;
-                let (own_bytes_private_key, own_bytes_public_key) = device.key_pair.as_ref().expect("Error: Key not set");
+                let (own_bytes_private_key, own_bytes_public_key) = device.key_pair.as_ref().expect("Error: Key not set").clone();
     
-                let rate_limiter = device.rate_limiter.as_ref().unwrap();
+                let rate_limiter = device.rate_limiter.as_ref().unwrap().clone();
     
                 // Loop while we have packets on the peer_2blisted connection
                 // Safety: the `recv_from` implementation promises not to write uninitialised
@@ -725,7 +720,9 @@ impl Device {
                     
                     let peer = match &parsed_packet {
                         Packet::HandshakeInit(p) => {
-                            consume_received_handshake_peer_2blisted(&own_bytes_private_key, &own_bytes_public_key, p)
+                            let own_copy_bytes_private_key = own_bytes_private_key.clone();
+                            let own_copy_bytes_public_key = own_bytes_public_key.clone();
+                            consume_received_handshake_peer_2blisted(&own_copy_bytes_private_key, &own_copy_bytes_public_key, p)
                                 .ok()
                                 .and_then(|half_handshake| {                    
                                 // Fetch index of existing peers
@@ -749,43 +746,42 @@ impl Device {
                                         match evaluation {
                                             Ok((verification_result, rodt)) => {
                                                 // CG: Adding the new peer here
-                                                // Poor's man hack: Do it via command line
                                                 if verification_result {
-                                                    /* let endpoint_listenport = addr.as_socket().unwrap();
+                                               
+                                                    let device_key_pair = device.key_pair.as_ref()
+                                                    .expect("Error: Self private key must be set before adding peers").clone();
                                                     let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);     
-                                                    let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
-                                                    let allowed_ip_str = rodt.metadata.allowedips;
-                                                    let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
-                                                    allowed_ips_listed.push(allowed_ip);
-                                                    peer.expect("to write").lock();
-
-                                                    let next_peer_index = Arc::new(Mutex::new(&self.next_peer_index()));
-                                                    
-                                                    let clone_next_peer_index = next_peer_index.lock();
-
-                                                    let device_key_pair = self.key_pair.as_ref()
-                                                    .expect("Error: Self private key must be set before adding peers");
-                                                    let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
+                                                    let own_keypair_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
                                                     .expect("Error: Invalid private key bytes");
-                                                    let rodt_id_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
+                                                    let rodt_id_signature = own_keypair_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
+                                                
+                                                    let next_peer_index = device.next_peer_index().clone();
+
                                                     let tunn = Tunn::new(
                                                         device_key_pair.0.clone(), // Own X25519 private key
                                                         peer_publickey_public_key,
                                                         None,
-                                                        self.config.rodt.token_id.clone(), // Own RODT ID
+                                                        device.config.rodt.token_id.clone(), // Own RODT ID
                                                         rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
                                                         None,
-                                                        *(*clone_next_peer_index),
+                                                        next_peer_index,
                                                         None,).unwrap();
-                                                    let peer = Peer::new(tunn, *(*clone_next_peer_index),Some(endpoint_listenport), &allowed_ips_listed, None);
-                                                    let peer = Arc::new(Mutex::new(peer));
-                                                    self.peers.insert(peer_publickey_public_key, Arc::clone(&peer));
-                                                    self.listbysession_peer_index.insert(*(*clone_next_peer_index), Arc::clone(&peer));
-                                                    for AllowedIP { addr, cidr } in allowed_ips_listed {
-                                                    self.listbyip_peer_index
-                                                    .insert(addr, cidr as _, Arc::clone(&peer));
-                                                    }
-                                                    allowed_ips_listed.clear(); */
+
+                                                    let endpoint_listenport = addr.as_socket().unwrap();
+                                                    let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
+                                                    let allowed_ip_str = rodt.metadata.allowedips;
+                                                    let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
+                                                    allowed_ips_listed.push(allowed_ip);
+
+                                                    let peer = Peer::new(tunn,next_peer_index,Some(endpoint_listenport), &allowed_ips_listed, None);
+                                                    let peermutex = Arc::new(Mutex::new(peer));
+                                                    device.peers.insert(peer_publickey_public_key, Arc::clone(&peermutex));
+                                                    device.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peermutex));
+                                                    for AllowedIP { addr, cidr } in &allowed_ips_listed {
+                                                        device.listbyip_peer_index
+                                                        .insert(*addr, *cidr as _, Arc::clone(&peermutex));
+                                                        }
+                                                    allowed_ips_listed.clear();
                                                 }
                                             device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public));
                                             }
@@ -854,22 +850,18 @@ impl Device {
                     }
                 }
                 Action::Continue
-            }),
-        )?;
 
-// CG: In order to add the new peer we need Box to return the peer's RODT and the peer_static_public
-//        if let Some(peer) = self.peers.remove(peer_publickey_public_key) {
-//            // Found a peer to remove, now purge all references to it:
-//            {
-    for peer in self.peers.values_mut() {
-        peer.lock().shutdown_endpoint();
-    }
-//                self.listbysession_peer_index.remove(&p.index());
-//            }
-//            self.listbyip_peer_index
-//                .remove(&|p: &Arc<Mutex<Peer>>| Arc::ptr_eq(&peer, p));
-//            tracing::info!("Info: Peer added");
-//        }
+                    },
+                ) {
+                    Some(action) => action,
+                    None => Action::Continue,
+                };
+                action
+            }
+
+            )
+         
+        )?;
 
         Ok(())
     }
@@ -1081,7 +1073,7 @@ impl Device {
         let endpoint_listenport = SocketAddr::new(ip,port);      
         tracing::info!("Info: Setting Server IP and port {}", endpoint_listenport);     
 
-        // Cidrblock is allowed_ip, it FAILS if the cidr format is not followed
+        // Cidrblock is allowed_ip, it fails if the cidr format is not followed
         let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
         tracing::info!("Info: Setting own assigned IP? {}", allowed_ip_str);
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
