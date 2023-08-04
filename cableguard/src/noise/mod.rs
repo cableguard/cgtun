@@ -369,11 +369,9 @@ impl Tunn {
         .trim_end_matches('\0');
         
         // CG: We receive this and we have to use it to validate the peer
-        println!("Processing RODT ID received {}",peer_string_rodtid);        
-        // println!("Processing RODT ID Signature received {:?}",peer_handshake_init.rodt_id_signature);
+        println!("process_received_handshake_initiation: RODT ID {}",peer_string_rodtid);        
         let account_idargs = "{\"token_id\": \"".to_owned() 
         + &peer_string_rodtid+ "\"}";
-        tracing::error!("Info: account idargs: {}", account_idargs);
         match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
             Ok(result) => {
                 // If the function call is successful, execute this block
@@ -938,12 +936,10 @@ let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
 .trim_end_matches('\0');
 
 // CG: We receive this and we have to use it to validate the peer
-println!("RODT ID {}",string_rodtid);        
-println!("RODT ID Signature {}", hex::encode(&rodt_id_signature));
+println!("verify_rodt_id_signature: RODT ID received{}",string_rodtid);        
 
 let account_idargs = "{\"token_id\": \"".to_owned() 
     + &string_rodtid+ "\"}";
-tracing::error!("Info: account idargs: {:?}", account_idargs);
 
     match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
         Ok(result) => {
