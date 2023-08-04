@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.9.0"
+VERSION="0.9.1"
 #export NFTCONTRACTID=$(cat ./walletsh/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
@@ -19,4 +19,4 @@ if [ -n "$interface" ]; then
 else
   echo "Error: Could not determine the WireGuard interface name."
 fi
-sudo wg set "$interface" peer $1 allowed-ips 10.0.0.1/32 endpoint 134.122.78.66:58578
+sudo wg set "$interface" peer $1 allowed-ips 10.0.0.1/32 endpoint $2:58578

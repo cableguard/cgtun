@@ -730,6 +730,7 @@ impl Device {
                         };
                         // CG: In this block we want to add a peers that is not known (Packet::HandshakeInit)
                         // if it passes authentication, but if it doesn't pass authentication we continue 
+                        /*
                         let peer = match peer {
                             None => {
                             match &parsed_packet {
@@ -747,7 +748,7 @@ impl Device {
                                             let own_keypair_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
                                             .expect("Error: Invalid private key bytes");
                                             let rodt_id_signature = own_keypair_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());                    
-                                            /* let next_peer_index = device.next_peer_index().clone();
+                                            let next_peer_index = device.next_peer_index().clone();
                                             let tunn = Tunn::new(
                                                 device_key_pair.0.clone(), // Own X25519 private key
                                                 peer_publickey_public_key,
@@ -771,24 +772,25 @@ impl Device {
                                                 .insert(*addr, *cidr as _, Arc::clone(&peermutex));
                                                 }
                                                 allowed_ips_listed.clear();
-                                            */
+                                            
                                         }
                                         device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public));
                                         }
-                                            Err(_) => {
+                                                Err(_) => {
+                                        }
                                         }
                                     }
                                 }
+                                Packet::HandshakeResponse(_p) => continue,
+                                Packet::PacketCookieReply(_p) => continue,
+                                Packet::PacketData(_p) => continue,
+                                }
+                                // The rest of your code
+                                continue;
                             }
-                            Packet::HandshakeResponse(_p) => continue,
-                            Packet::PacketCookieReply(_p) => continue,
-                            Packet::PacketData(_p) => continue,
-                    }
-                        // The rest of your code
-                        continue;
-                }
-                    Some(peer) => peer,
-            };
+                            Some(peer) => peer,
+                        };
+                        */
                 let mut p = peer.lock();
                 // We found a peer, use it to decapsulate the message
                 let mut flush = false; // Are there packets to send from the queue?
