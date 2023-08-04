@@ -685,10 +685,12 @@ impl Device {
         self.queue.new_event(
         udp.as_raw_fd(),
         Box::new(move |device, threaddata| {
-//            let action = match devicebox.try_writeable(
-//                |device| device.trigger_yield(),
-//                |device| {
-//                    device.cancel_yield();
+
+            let action = match devicebox.try_writeable(
+                |device| device.trigger_yield(),
+                |device| {
+                    device.cancel_yield();
+
                     // Handler that handles peer_2blisted packets over UDP
                     let mut iter = MAX_ITR;
                     let (own_bytes_private_key, own_bytes_public_key) = device.key_pair.as_ref().expect("Error: Key not set").clone();
@@ -742,7 +744,7 @@ impl Device {
                                         Ok((verification_result, rodt)) => {
                                         // CG: Adding the new peer here
                                         if verification_result { 
-                                            /*                       
+                                                                   
                                             let device_key_pair = device.key_pair.as_ref()
                                             .expect("Error: Self private key must be set before adding peers").clone();
                                             let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);     
@@ -773,7 +775,7 @@ impl Device {
                                                 .insert(*addr, *cidr as _, Arc::clone(&peermutex));
                                                 }
                                                 allowed_ips_listed.clear();
-                                            */
+                                            
                                         }
                                         device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public));
                                         }
@@ -840,12 +842,14 @@ impl Device {
                 }
             }
             Action::Continue
-//            },) // try writeable
-//            {
-//                Some(action) => action,
-//                None => Action::Continue,
-//            };
-//                action
+
+            },) // try writeable
+            {
+                Some(action) => action,
+                None => Action::Continue,
+            };
+                action
+
             }
         ) // Box
         )?; //queue
