@@ -684,7 +684,7 @@ impl Device {
     fn register_udp_handler(&self, udp: socket2::Socket) -> Result<(), Error> {
         self.queue.new_event(
         udp.as_raw_fd(),
-        Box::new(move |device, threaddata| {
+        Box::new(move |devicebox, threaddata| {
 
             let action = match devicebox.try_writeable(
                 |device| device.trigger_yield(),
