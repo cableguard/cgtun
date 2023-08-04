@@ -738,7 +738,7 @@ impl Device {
                             Packet::HandshakeResponse(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                             Packet::PacketCookieReply(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                             Packet::PacketData(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
-                        }; */
+                        }; *//**/
                         // CG: In this block we want to add a peers that is not known (Packet::HandshakeInit)
                         // if it passes authentication, but if it doesn't pass authentication we continue 
                         
