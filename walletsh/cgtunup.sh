@@ -19,4 +19,4 @@ if [ -n "$interface" ]; then
 else
   echo "Error: Could not determine the WireGuard interface name."
 fi
-sudo wg set "$interface" peer $1 allowed-ips 10.0.0.1/32 endpoint $2:58578
+sudo wg set "$interface" peer $1 allowed-ips $2/32 endpoint $3:58578
