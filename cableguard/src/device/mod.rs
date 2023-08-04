@@ -730,7 +730,7 @@ impl Device {
                         };
                         // CG: In this block we want to add a peers that is not known (Packet::HandshakeInit)
                         // if it passes authentication, but if it doesn't pass authentication we continue 
-                        /*
+                        
                         let peer = match peer {
                             None => {
                             match &parsed_packet {
@@ -741,7 +741,8 @@ impl Device {
                                     match evaluation {
                                         Ok((verification_result, rodt)) => {
                                         // CG: Adding the new peer here
-                                        if verification_result {                        
+                                        if verification_result { 
+                                            /*                       
                                             let device_key_pair = device.key_pair.as_ref()
                                             .expect("Error: Self private key must be set before adding peers").clone();
                                             let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);     
@@ -772,7 +773,7 @@ impl Device {
                                                 .insert(*addr, *cidr as _, Arc::clone(&peermutex));
                                                 }
                                                 allowed_ips_listed.clear();
-                                            
+                                            */
                                         }
                                         device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public));
                                         }
@@ -790,7 +791,7 @@ impl Device {
                             }
                             Some(peer) => peer,
                         };
-                        */
+                
                 let mut p = peer.lock();
                 // We found a peer, use it to decapsulate the message
                 let mut flush = false; // Are there packets to send from the queue?
