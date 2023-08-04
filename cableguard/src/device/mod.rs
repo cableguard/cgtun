@@ -681,190 +681,173 @@ impl Device {
     }
 
     
-    fn register_udp_handler(&mut self, udp: socket2::Socket) -> Result<(), Error> {
-
+    fn register_udp_handler(&self, udp: socket2::Socket) -> Result<(), Error> {
         self.queue.new_event(
-            udp.as_raw_fd(),
-            Box::new(move |mut devicebox, threaddata| {
-
-                let action = match devicebox.try_writeable(
-                    |mut device| device.trigger_yield(),
-                    |mut device| {
-                        device.cancel_yield();
-                // Handler that handles peer_2blisted packets over UDP
-                let mut iter = MAX_ITR;
-                let (own_bytes_private_key, own_bytes_public_key) = device.key_pair.as_ref().expect("Error: Key not set").clone();
-    
-                let rate_limiter = device.rate_limiter.as_ref().unwrap().clone();
-    
-                // Loop while we have packets on the peer_2blisted connection
-                // Safety: the `recv_from` implementation promises not to write uninitialised
-                // bytes to the buffer, so this casting is safe.
-                let src_buf =
-                    unsafe { &mut *(&mut threaddata.src_buf[..] as *mut [u8] as *mut [MaybeUninit<u8>]) };
-                while let Ok((packet_len, addr)) = udp.recv_from(src_buf) {
-                    let packet = &threaddata.src_buf[..packet_len];
-                    // The rate limiter initially checks mac1 and mac2, and optionally asks to send a cookie
-                    let parsed_packet = match rate_limiter.verify_packet(
-                        Some(addr.as_socket().unwrap().ip()),
-                        packet,
-                        &mut threaddata.dst_buf,
-                    ) {
-                        Ok(packet) => packet,
-                        Err(TunnResult::WriteToNetwork(cookie)) => {
-                            let _: Result<_, _> = udp.send_to(cookie, &addr);
-                            continue;
-                        }
-                        Err(_) => continue,
-                    };
-                    
-                    let peer = match &parsed_packet {
-                        Packet::HandshakeInit(p) => {
-                            let own_copy_bytes_private_key = own_bytes_private_key.clone();
-                            let own_copy_bytes_public_key = own_bytes_public_key.clone();
-                            consume_received_handshake_peer_2blisted(&own_copy_bytes_private_key, &own_copy_bytes_public_key, p)
+        udp.as_raw_fd(),
+        Box::new(move |device, threaddata| {
+//            let action = match devicebox.try_writeable(
+//                |device| device.trigger_yield(),
+//                |device| {
+//                    device.cancel_yield();
+                    // Handler that handles peer_2blisted packets over UDP
+                    let mut iter = MAX_ITR;
+                    let (own_bytes_private_key, own_bytes_public_key) = device.key_pair.as_ref().expect("Error: Key not set").clone();
+                    let rate_limiter = device.rate_limiter.as_ref().unwrap().clone();
+                    // Loop while we have packets on the peer_2blisted connection
+                    // Safety: the `recv_from` implementation promises not to write uninitialised
+                    // bytes to the buffer, so this casting is safe.
+                    let src_buf =
+                        unsafe { &mut *(&mut threaddata.src_buf[..] as *mut [u8] as *mut [MaybeUninit<u8>]) };
+                    while let Ok((packet_len, addr)) = udp.recv_from(src_buf) {
+                        let packet = &threaddata.src_buf[..packet_len];
+                        // The rate limiter initially checks mac1 and mac2, and optionally asks to send a cookie
+                        let parsed_packet = match rate_limiter.verify_packet(
+                            Some(addr.as_socket().unwrap().ip()),
+                            packet,
+                            &mut threaddata.dst_buf,)
+                        {
+                            Ok(packet) => packet,
+                            Err(TunnResult::WriteToNetwork(cookie)) => {
+                                let _: Result<_, _> = udp.send_to(cookie, &addr);
+                                continue;
+                            }
+                            Err(_) => continue,
+                        };
+                        let peer = match &parsed_packet {
+                            Packet::HandshakeInit(p) => {
+                                let own_copy_bytes_private_key = own_bytes_private_key.clone();
+                                let own_copy_bytes_public_key = own_bytes_public_key.clone();
+                                consume_received_handshake_peer_2blisted(&own_copy_bytes_private_key, &own_copy_bytes_public_key, p)
                                 .ok()
                                 .and_then(|half_handshake| {                    
                                 // Fetch index of existing peers
                                 device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public))
                                 })
-                        }
-                        Packet::HandshakeResponse(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
-                        Packet::PacketCookieReply(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
-                        Packet::PacketData(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
-                    };
-                    
-                    // CG: In this block we want to add a peers that is not known (Packet::HandshakeInit)
-                    // if it passes authentication, but if it doesn't pass authentication we continue 
-                    let peer = match peer {
-                        None => {
+                            }
+                            Packet::HandshakeResponse(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
+                            Packet::PacketCookieReply(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
+                            Packet::PacketData(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
+                        };
+                        // CG: In this block we want to add a peers that is not known (Packet::HandshakeInit)
+                        // if it passes authentication, but if it doesn't pass authentication we continue 
+                        let peer = match peer {
+                            None => {
                             match &parsed_packet {
                                 Packet::HandshakeInit(p) => {
-                                    let half_handshake = consume_received_handshake_peer_2blisted(&own_bytes_private_key, &own_bytes_public_key, p).ok();
-                                    if let Some(half_handshake) = half_handshake {
-                                        let evaluation = verify_rodt_id_signature(*p.rodt_id ,*p.rodt_id_signature);
-                                        match evaluation {
-                                            Ok((verification_result, rodt)) => {
-                                                // CG: Adding the new peer here
-                                                if verification_result {
-                                               
-                                                    let device_key_pair = device.key_pair.as_ref()
-                                                    .expect("Error: Self private key must be set before adding peers").clone();
-                                                    let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);     
-                                                    let own_keypair_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
-                                                    .expect("Error: Invalid private key bytes");
-                                                    let rodt_id_signature = own_keypair_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
-                                                
-                                                    let next_peer_index = device.next_peer_index().clone();
-
-                                                    let tunn = Tunn::new(
-                                                        device_key_pair.0.clone(), // Own X25519 private key
-                                                        peer_publickey_public_key,
-                                                        None,
-                                                        device.config.rodt.token_id.clone(), // Own RODT ID
-                                                        rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
-                                                        None,
-                                                        next_peer_index,
-                                                        None,).unwrap();
-
-                                                    let endpoint_listenport = addr.as_socket().unwrap();
-                                                    let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
-                                                    let allowed_ip_str = rodt.metadata.allowedips;
-                                                    let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
-                                                    allowed_ips_listed.push(allowed_ip);
-
-                                                    let peer = Peer::new(tunn,next_peer_index,Some(endpoint_listenport), &allowed_ips_listed, None);
-                                                    let peermutex = Arc::new(Mutex::new(peer));
-                                                    device.peers.insert(peer_publickey_public_key, Arc::clone(&peermutex));
-                                                    device.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peermutex));
-                                                    for AllowedIP { addr, cidr } in &allowed_ips_listed {
-                                                        device.listbyip_peer_index
-                                                        .insert(*addr, *cidr as _, Arc::clone(&peermutex));
-                                                        }
-                                                    allowed_ips_listed.clear();
+                                let half_handshake = consume_received_handshake_peer_2blisted(&own_bytes_private_key, &own_bytes_public_key, p).ok();
+                                if let Some(half_handshake) = half_handshake {
+                                    let evaluation = verify_rodt_id_signature(*p.rodt_id ,*p.rodt_id_signature);
+                                    match evaluation {
+                                        Ok((verification_result, rodt)) => {
+                                        // CG: Adding the new peer here
+                                        if verification_result {                        
+                                            let device_key_pair = device.key_pair.as_ref()
+                                            .expect("Error: Self private key must be set before adding peers").clone();
+                                            let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);     
+                                            let own_keypair_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
+                                            .expect("Error: Invalid private key bytes");
+                                            let rodt_id_signature = own_keypair_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());                    
+                                            /* let next_peer_index = device.next_peer_index().clone();
+                                            let tunn = Tunn::new(
+                                                device_key_pair.0.clone(), // Own X25519 private key
+                                                peer_publickey_public_key,
+                                                None,
+                                                device.config.rodt.token_id.clone(), // Own RODT ID
+                                                rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
+                                                None,
+                                                next_peer_index,
+                                                None,).unwrap();
+                                            let endpoint_listenport = addr.as_socket().unwrap();
+                                            let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
+                                            let allowed_ip_str = rodt.metadata.allowedips;
+                                            let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
+                                            allowed_ips_listed.push(allowed_ip);
+                                            let peer = Peer::new(tunn,next_peer_index,Some(endpoint_listenport), &allowed_ips_listed, None);
+                                            let peermutex = Arc::new(Mutex::new(peer));
+                                            device.peers.insert(peer_publickey_public_key, Arc::clone(&peermutex));
+                                            device.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peermutex));
+                                            for AllowedIP { addr, cidr } in &allowed_ips_listed {
+                                                device.listbyip_peer_index
+                                                .insert(*addr, *cidr as _, Arc::clone(&peermutex));
                                                 }
-                                            device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public));
-                                            }
+                                                allowed_ips_listed.clear();
+                                            */
+                                        }
+                                        device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public));
+                                        }
                                             Err(_) => {
-                                            }
                                         }
                                     }
                                 }
-                                Packet::HandshakeResponse(_p) => continue,
-                                Packet::PacketCookieReply(_p) => continue,
-                                Packet::PacketData(_p) => continue,
                             }
-                            // The rest of your code
-                            continue;
-                        }
-                        Some(peer) => peer,
-                    };
-                    let mut p = peer.lock();
-    
-                    // We found a peer, use it to decapsulate the message
-                    let mut flush = false; // Are there packets to send from the queue?
-                    match p
-                        .tunnel
-                        .consume_verified_packet(parsed_packet, &mut threaddata.dst_buf[..])
-                    {
-                        TunnResult::Done => {}
-                        TunnResult::Err(_) => continue,
-                        TunnResult::WriteToNetwork(packet) => {
-                            flush = true;
-                            let _: Result<_, _> = udp.send_to(packet, &addr);
-                        }
-                        TunnResult::WriteToTunnelV4(packet, addr) => {
-                            if p.is_allowed_ip(addr) {
-                                threaddata.interface.write4(packet);
-                            }
-                        }
-                        TunnResult::WriteToTunnelV6(packet, addr) => {
-                            if p.is_allowed_ip(addr) {
-                                threaddata.interface.write6(packet);
-                            }
-                        } 
-                    };
-    
-                    if flush {
-                        // Flush pending queue
-                        while let TunnResult::WriteToNetwork(packet) =
-                            p.tunnel.decapsulate(None, &[], &mut threaddata.dst_buf[..])
+                            Packet::HandshakeResponse(_p) => continue,
+                            Packet::PacketCookieReply(_p) => continue,
+                            Packet::PacketData(_p) => continue,
+                    }
+                        // The rest of your code
+                        continue;
+                }
+                    Some(peer) => peer,
+            };
+                let mut p = peer.lock();
+                // We found a peer, use it to decapsulate the message
+                let mut flush = false; // Are there packets to send from the queue?
+                match p
+                    .tunnel
+                    .consume_verified_packet(parsed_packet, &mut threaddata.dst_buf[..])
                         {
-                            let _: Result<_, _> = udp.send_to(packet, &addr);
+                    TunnResult::Done => {}
+                    TunnResult::Err(_) => continue,
+                    TunnResult::WriteToNetwork(packet) => {
+                        flush = true;
+                        let _: Result<_, _> = udp.send_to(packet, &addr);
+                    }
+                    TunnResult::WriteToTunnelV4(packet, addr) => {
+                        if p.is_allowed_ip(addr) {
+                            threaddata.interface.write4(packet);
                         }
                     }
-    
-                    // This packet was OK, that means we want to create a connected socket for this peer
-                    let addr = addr.as_socket().unwrap();
-                    let ip_addr = addr.ip();
-                    p.set_endpoint(addr);
-                    if device.config.use_connected_socket {
-                        if let Ok(sock) = p.connect_endpoint(device.listen_port, device.fwmark) {
-                            device.register_conn_handler(Arc::clone(peer), sock, ip_addr)
-                                .unwrap();
+                    TunnResult::WriteToTunnelV6(packet, addr) => {
+                        if p.is_allowed_ip(addr) {
+                            threaddata.interface.write6(packet);
                         }
-                    }
-                    iter -= 1;
-                    if iter == 0 {
-                        break;
+                    } 
+                };
+                if flush {
+                    // Flush pending queue
+                    while let TunnResult::WriteToNetwork(packet) =
+                        p.tunnel.decapsulate(None, &[], &mut threaddata.dst_buf[..])
+                    {
+                        let _: Result<_, _> = udp.send_to(packet, &addr);
                     }
                 }
-                Action::Continue
-
-                    },
-                ) {
-                    Some(action) => action,
-                    None => Action::Continue,
-                };
-                action
+                // This packet was OK, that means we want to create a connected socket for this peer
+                let addr = addr.as_socket().unwrap();
+                let ip_addr = addr.ip();
+                p.set_endpoint(addr);
+                if device.config.use_connected_socket {
+                    if let Ok(sock) = p.connect_endpoint(device.listen_port, device.fwmark) {
+                        device.register_conn_handler(Arc::clone(peer), sock, ip_addr)
+                        .unwrap();
+                    }
+                }
+                iter -= 1;
+                if iter == 0 {
+                    break;
+                }
             }
-
-            )
-         
-        )?;
-
-        Ok(())
-    }
+            Action::Continue
+//            },) // try writeable
+//            {
+//                Some(action) => action,
+//                None => Action::Continue,
+//            };
+//                action
+            }
+        ) // Box
+        )?; //queue
+    Ok(())
+}
 
     fn register_conn_handler(
         &self,
