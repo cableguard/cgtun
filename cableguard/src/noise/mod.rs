@@ -110,14 +110,14 @@ pub struct HandshakeResponse<'a> {
     rodt_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
 }
 
-#[derive(Debug)]
+#[derive(Debug,Copy,Clone)]
 pub struct PacketCookieReply<'a> {
     pub receiver_session_index: u32,
     nonce: &'a [u8],
     encrypted_cookie: &'a [u8],
 }
 
-#[derive(Debug)]
+#[derive(Debug,Copy,Clone)]
 pub struct PacketData<'a> {
     pub receiver_session_index: u32,
     counter: u64,
@@ -125,7 +125,7 @@ pub struct PacketData<'a> {
 }
 
 /// Describes a packet from network
-#[derive(Debug)]
+#[derive(Debug,Copy,Clone)]
 pub enum Packet<'a> {
     HandshakeInit(HandshakeInit<'a>),
     HandshakeResponse(HandshakeResponse<'a>),

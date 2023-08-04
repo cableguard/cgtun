@@ -715,32 +715,6 @@ impl Device {
                             }
                             Err(_) => continue,
                         };
-                        /*
-                        let peer = match &parsed_packet {
-                            Packet::HandshakeInit(p) => {
-                                let own_copy_bytes_private_key = own_bytes_private_key.clone();
-                                let own_copy_bytes_public_key = own_bytes_public_key.clone();
-
-                                let half_handshake = consume_received_handshake_peer_2blisted(&own_copy_bytes_private_key, &own_copy_bytes_public_key, p).ok();
-                                let peer = match half_handshake {
-                                    Some(half_handshake) => device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)),
-                                    None => None,
-                                };
-                                /* Originally formulated as:
-                                consume_received_handshake_peer_2blisted(&own_copy_bytes_private_key, &own_copy_bytes_public_key, p)
-                                .ok()
-                                .and_then(|half_handshake| {             
-                                // Fetch index of existing peers
-                                device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public))
-                                })
-                                */
-                            }
-                            Packet::HandshakeResponse(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
-                            Packet::PacketCookieReply(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
-                            Packet::PacketData(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
-                        }; *//**/
-                        // CG: In this block we want to add a peers that is not known (Packet::HandshakeInit)
-                        // if it passes authentication, but if it doesn't pass authentication we continue 
                         
                         let peer = match parsed_packet {
                             Packet::HandshakeInit(p) => {
@@ -786,7 +760,9 @@ impl Device {
                                             }
                                             allowed_ips_listed.clear();
                                         }
+                                           
                                     }
+                                    device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public));
                                 }
                                 None
                             }
@@ -795,7 +771,12 @@ impl Device {
                             Packet::PacketData(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                             // _ => continue, // You can uncomment this line if needed
                         };
-                                                
+                           
+                        let peer = match peer {
+                            None => continue,
+                            Some(peer) => peer,
+                        };
+
                         let mut p = peer.lock();
                         // We found a peer, use it to decapsulate the message
                         let mut flush = false; // Are there packets to send from the queue?
@@ -851,12 +832,10 @@ impl Device {
                 None => Action::Continue,
             };
                 action
-
-            }
-        ) // Box
-        )?; //queue
+            }) // Box
+        )?; //self.queue.new_event
     Ok(())
-}
+} // function
 
     fn register_conn_handler(
         &self,
