@@ -349,7 +349,7 @@ impl Device {
         .as_ref()
         .expect("Self private key must be set before adding peers");
     
-        // CG: Creating the own signature of the rodt_id
+        // Creating the own signature of the rodt_id
         let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Invalid private key bytes");
 
@@ -369,7 +369,7 @@ impl Device {
         )
         .unwrap();
         
-        // CG: Creation and insertion of a peer
+        // Creation and insertion of a peer
         let peer = Peer::new(tunn, next_peer_index, endpoint, allowed_ips_listed, preshared_key);
         let peer = Arc::new(Mutex::new(peer));
         self.peers.insert(peer_publickey_public_key, Arc::clone(&peer));
@@ -452,7 +452,7 @@ impl Device {
             tracing::error!("Error: Ip addr add command failed to execute {}", stderr);
         }
 
-        // CG: Proactively setting the Static Private Key for the device
+        // Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authorrodtcontractid) {
@@ -1067,9 +1067,9 @@ impl Device {
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
         tracing::info!("Info: Setting allowed IP {:?}", allowed_ip);
 
-        // CG: Add IPv6
-        //   let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
-        //   let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
+        // Add IPv6
+        let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
+        let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
 
         // Create or update peer
         allowed_ips_listed.push(allowed_ip);

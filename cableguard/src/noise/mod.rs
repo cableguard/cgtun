@@ -223,7 +223,7 @@ impl Tunn {
     ) -> Result<Self, &'static str> {
         let static_public = x25519::PublicKey::from(&static_private);
 
-        // CG: Copying the rodt_id to the Tunn safely
+        // Copying the rodt_id to the Tunn safely
         let bytes_rodt_id = string_rodt_id.as_bytes();
         let mut rodt_id: [u8;RODT_ID_SZ] = [0;RODT_ID_SZ];
         let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
@@ -362,13 +362,13 @@ impl Tunn {
         let peer_static_public: [u8; KEY_LEN] = [0; KEY_LEN];
         let (packet, session) = self.handshake.consume_received_handshake_initiation(peer_handshake_init,dst,peer_static_public)?;
 
-        // CG: Beginning of RODT verification
+        // Beginning of RODT verification
         let peer_slice_rodtid: &[u8] = &peer_handshake_init.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Failed to convert byte slice to string")
         .trim_end_matches('\0');
         
-        // CG: We receive this and we have to use it to validate the peer
+        // We receive this and we have to use it to validate the peer
         println!("process_received_handshake_initiation: RODT ID {}",peer_string_rodtid);        
         let account_idargs = "{\"token_id\": \"".to_owned() 
         + &peer_string_rodtid+ "\"}";
@@ -394,7 +394,6 @@ impl Tunn {
                 match Signature::from_bytes(&*peer_handshake_init.rodt_id_signature) {
                     Ok(signature) => {
                         // If the signature parsing is successful, execute this block
-                        // CG: Danger Will Robinson, we are using a PublicKey type that can be either X25519 or Ed25519
                         match PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
                             Ok(fetched_publickey_ed25519_public_key) => {
                                 // If the public key parsing is successful, execute this block
@@ -472,7 +471,7 @@ impl Tunn {
         }
 
         let keepalive_packet = session.produce_packet_data(&[], dst);
-        // CG: Store new session in ring buffer
+        // Store new session in ring buffer
         let local_index = session.local_index();
         let index = local_index % N_SESSIONS;
         self.sessions[index] = Some(session);
@@ -929,13 +928,12 @@ pub fn verify_rodt_id_signature(
     rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
 ) -> Result<(bool,Rodt), WireGuardError> {
 
-    // CG: Too many calls Beginning of RODT verification
 let slice_rodtid: &[u8] = &rodt_id[..];
 let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
 .expect("Failed to convert byte slice to string")
 .trim_end_matches('\0');
 
-// CG: We receive this and we have to use it to validate the peer
+// We receive this and we have to use it to validate the peer
 println!("verify_rodt_id_signature: RODT ID received{}",string_rodtid);        
 
 let account_idargs = "{\"token_id\": \"".to_owned() 

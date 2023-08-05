@@ -241,9 +241,9 @@ struct NoiseParams {
     static_shared: x25519::SharedSecret,
     sending_mac1_key: [u8; KEY_LEN],
     preshared_key: Option<[u8; KEY_LEN]>,
-    // CG: RODT ID of the peer (Same blockchain and smart contract only, for the time being)
+    // RODT ID of the peer (Same blockchain and smart contract only, for the time being)
     rodt_id: [u8; RODT_ID_SZ],
-    // CG: RODT ID of the peer signed with the peer's Public Ed25519 Key
+    // RODT ID of the peer signed with the peer's Public Ed25519 Key
     rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
 }
 
@@ -320,7 +320,7 @@ struct Cookies {
     write_cookie: Option<[u8; 16]>,
 }
 
-// CG: Adding rotd_id and signature to half handshake
+// CG: Adding rotd_id and signature to half handshake?
 #[derive(Debug)]
 pub struct HalfHandshake {
     pub received_session_index: u32,
@@ -836,11 +836,11 @@ impl Handshake {
         // initiator.hash = HASH(initiator.hash || msg.encrypted_timestamp)
         hash = b2s_hash(&hash, encrypted_timestamp);
 
-        // CG: Our rodt_id values to transfer over the wire
+        // Our rodt_id values to transfer over the wire
         rodt_id.copy_from_slice(&self.params.rodt_id);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
 
-        // CG:: Check if the conversion was successful
+        // Check if the conversion was successful
         let string_rodt_id = String::from_utf8(self.params.rodt_id.to_vec());
         match string_rodt_id {
             Ok(string) => {
@@ -894,7 +894,7 @@ impl Handshake {
         let (own_index, rest) = rest.split_at_mut(4);
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_nothing, rest) = rest.split_at_mut(16);
-        // CG: The response also has 2 additional fields so both sides can authenticate each other
+        // The response also has 2 additional fields so both sides can authenticate each other
         let (rodt_id, rest) = rest.split_at_mut(RODT_ID_SZ);
         let (rodt_id_signature, _) = rest.split_at_mut(64);
 

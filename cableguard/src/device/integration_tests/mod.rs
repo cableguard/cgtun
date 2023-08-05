@@ -7,9 +7,9 @@
 mod tests {
     use crate::device::{DeviceConfig, DeviceHandle};
     use crate::x25519::{PublicKey, StaticSecret};
-    // CG: We should use only one rand library...
     use rand_core::OsRng;
-    use ring::rand::{SecureRandom, SystemRandom};
+    use ring::rand::{SystemRandom};
+    // use ring::rand::{SecureRandom, SystemRandom};
     use std::fmt::Write as _;
     use std::io::{BufRead, BufReader, Read, Write};
     use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
