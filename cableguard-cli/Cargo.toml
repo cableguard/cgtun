@@ -1,11 +1,11 @@
 [package]
 name = "cableguard-cli"
 description = "an implementation of the WireGuard® protocol designed for portability and speed"
-version = "0.55.66"
+version = "0.66.11"
 authors = ["Vicente Aceituno Canal <vpn@cableguard.org>","Noah Kennedy <nkennedy@cloudflare.com>", "Andy Grover <agrover@cloudflare.com>", "Jeff Hiner <jhiner@cloudflare.com>"]
 license = "BSD-3-Clause"
 repository = "https://github.com/alanesmizi/cgtun"
-documentation = "https://docs.rs/cgtun/0.55.66/cgtun/"
+documentation = "https://docs.rs/cgtun/0.66.11/cgtun/"
 edition = "2021"
 
 [dependencies]
@@ -29,6 +29,6 @@ sha2 = "0.9.2"
 zeroize= "1.5.0"
 
 [dependencies.cableguard]
-version = "0.55.66"
+version = "0.66.11"
 path = "../cableguard"
 features = ["device"]
