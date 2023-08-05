@@ -722,7 +722,7 @@ impl Device {
                                 let own_copy_bytes_public_key = own_bytes_public_key.clone();
                                 match consume_received_handshake_peer_2blisted(&own_copy_bytes_private_key, &own_copy_bytes_public_key, &p) {
                                     Ok(half_handshake) => {
-                                        let peer_static_public = x25519::PublicKey::from(half_handshake.peer_static_public);
+                                        // let peer_static_public = x25519::PublicKey::from(half_handshake.peer_static_public);
                                         if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
                                             Some(peer)
                                         } else {
@@ -730,7 +730,6 @@ impl Device {
                                             if let Ok((verification_result, rodt)) = evaluation {
                                                 if verification_result {
                                                     // Adding the new peer here
-                                                    /*
                                                     let device_key_pair = device.key_pair.as_ref()
                                                         .expect("Error: Self private key must be set before adding peers")
                                                         .clone();
@@ -763,10 +762,9 @@ impl Device {
                                                         device.listbyip_peer_index.insert(*addr, *cidr as _, Arc::clone(&peermutex));
                                                     }
                                                     allowed_ips_listed.clear();
-                                                    if let Some(peer) = device.peers.get(&peer_publickey_public_key) {
-                                                    */
-                                                    // Returning the peer from device.peers if the verification is successful
-                                                    if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
+                                                    // Returning the peer from device.peers
+                                                    if let Some(peer) = device.peers.get(&peer_publickey_public_key) {                                                    
+                                                    // if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
                                                         Some(peer)
                                                     } else {
                                                         None
