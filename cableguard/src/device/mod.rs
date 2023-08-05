@@ -756,6 +756,7 @@ impl Device {
                                                     allowed_ips_listed.push(allowed_ip);
                                                     let peer = Peer::new(tunn, next_peer_index, Some(endpoint_listenport), &allowed_ips_listed, None);
                                                     let peermutex = Arc::new(Mutex::new(peer));
+                                                    println!("Info: Adding peer {:?}", peer_publickey_public_key);
                                                     device.peers.insert(peer_publickey_public_key, Arc::clone(&peermutex));
                                                     device.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peermutex));
                                                     for AllowedIP { addr, cidr } in &allowed_ips_listed {
