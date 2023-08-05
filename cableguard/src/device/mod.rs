@@ -720,56 +720,74 @@ impl Device {
                             Packet::HandshakeInit(p) => {
                                 let own_copy_bytes_private_key = own_bytes_private_key.clone();
                                 let own_copy_bytes_public_key = own_bytes_public_key.clone();
-                                
-                                if let Some(half_handshake) 
-                                    = consume_received_handshake_peer_2blisted(&own_copy_bytes_private_key, &own_copy_bytes_public_key, &p).ok() {
-                                    let evaluation = verify_rodt_id_signature(*p.rodt_id ,*p.rodt_id_signature);
-                                    if let Ok((verification_result, rodt)) = evaluation {
-                                        if verification_result {
-                                            // Adding the new peer here
-                                            let device_key_pair = device.key_pair.as_ref()
-                                                .expect("Error: Self private key must be set before adding peers")
-                                                .clone();
-                                            let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);
-                                            let own_keypair_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
-                                                .expect("Error: Invalid private key bytes");
-                                            let rodt_id_signature = own_keypair_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
-                                            let next_peer_index = device.next_peer_index().clone();
-                                            let tunn = Tunn::new(
-                                                device_key_pair.0.clone(), // Own X25519 private key
-                                                peer_publickey_public_key,
-                                                None,
-                                                device.config.rodt.token_id.clone(), // Own RODT ID
-                                                rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
-                                                None,
-                                                next_peer_index,
-                                                None,
-                                            )
-                                            .unwrap();
-                                            let endpoint_listenport = addr.as_socket().unwrap();
-                                            let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
-                                            let allowed_ip_str = rodt.metadata.allowedips;
-                                            let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
-                                            allowed_ips_listed.push(allowed_ip);
-                                            let peer = Peer::new(tunn, next_peer_index, Some(endpoint_listenport), &allowed_ips_listed, None);
-                                            let peermutex = Arc::new(Mutex::new(peer));
-                                            device.peers.insert(peer_publickey_public_key, Arc::clone(&peermutex));
-                                            device.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peermutex));
-                                            for AllowedIP { addr, cidr } in &allowed_ips_listed {
-                                                device.listbyip_peer_index.insert(*addr, *cidr as _, Arc::clone(&peermutex));
-                                            }
-                                            allowed_ips_listed.clear();
+                                match consume_received_handshake_peer_2blisted(&own_copy_bytes_private_key, &own_copy_bytes_public_key, &p) {
+                                    Ok(half_handshake) => {
+                                        let peer_static_public = x25519::PublicKey::from(half_handshake.peer_static_public);
+                                        if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
+                                            Some(peer)
+                                        } else {
+                                            let evaluation = verify_rodt_id_signature(*p.rodt_id ,*p.rodt_id_signature);
+                                            if let Ok((verification_result, rodt)) = evaluation {
+                                                if verification_result {
+                                                    // Adding the new peer here
+                                                    /*
+                                                    let device_key_pair = device.key_pair.as_ref()
+                                                        .expect("Error: Self private key must be set before adding peers")
+                                                        .clone();
+                                                    let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);
+                                                    let own_keypair_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
+                                                        .expect("Error: Invalid private key bytes");
+                                                    let rodt_id_signature = own_keypair_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
+                                                    let next_peer_index = device.next_peer_index().clone();
+                                                    let tunn = Tunn::new(
+                                                        device_key_pair.0.clone(), // Own X25519 private key
+                                                        peer_publickey_public_key,
+                                                        None,
+                                                        device.config.rodt.token_id.clone(), // Own RODT ID
+                                                        rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
+                                                        None,
+                                                        next_peer_index,
+                                                        None,
+                                                    )
+                                                    .unwrap();
+                                                    let endpoint_listenport = addr.as_socket().unwrap();
+                                                    let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
+                                                    let allowed_ip_str = rodt.metadata.allowedips;
+                                                    let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
+                                                    allowed_ips_listed.push(allowed_ip);
+                                                    let peer = Peer::new(tunn, next_peer_index, Some(endpoint_listenport), &allowed_ips_listed, None);
+                                                    let peermutex = Arc::new(Mutex::new(peer));
+                                                    device.peers.insert(peer_publickey_public_key, Arc::clone(&peermutex));
+                                                    device.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peermutex));
+                                                    for AllowedIP { addr, cidr } in &allowed_ips_listed {
+                                                        device.listbyip_peer_index.insert(*addr, *cidr as _, Arc::clone(&peermutex));
+                                                    }
+                                                    allowed_ips_listed.clear();
+                                                    if let Some(peer) = device.peers.get(&peer_publickey_public_key) {
+                                                    */
+                                                    // Returning the peer from device.peers if the verification is successful
+                                                    if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
+                                                        Some(peer)
+                                                    } else {
+                                                        None
+                                                    }
+                                                } else {
+                                                    None  // Returning None if verification_result is false
+                                                }
+                                                
+                                            } else {
+                                                None  // Returning None if evaluation is not Ok
+                                                
+                                            } 
                                         }
-                                           
+                                        
                                     }
-                                    device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public));
-                                }
-                                None
+                                    Err(_) => None
+                                } 
                             }
                             Packet::HandshakeResponse(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                             Packet::PacketCookieReply(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                             Packet::PacketData(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
-                            // _ => continue, // You can uncomment this line if needed
                         };
                            
                         let peer = match peer {
