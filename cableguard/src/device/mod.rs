@@ -456,10 +456,10 @@ impl Device {
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.authorrodtcontractid) {
-            println!("This tunnel uses a server RODT");
+            println!("This tunnel uses a Server RODT");
         }
         else{
-            println!("This tunnel uses a client RODT");    
+            println!("This tunnel uses a Client RODT");    
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.rodt.metadata.authorrodtcontractid + "\"}";
             match nearorg_rpc_token(Self::XNET,
@@ -468,6 +468,13 @@ impl Device {
                 Ok(result) => {
                     let server_rodt = result;
                     tracing::error!("Info: Server RODT Owner: {:?}", server_rodt.owner_id);
+                    // CG: Priming the peer list with the Server data
+                    // CG: Need to obtain the server's Public Key
+                    // CG: But each server will have a different one
+                    // CG: We are just adding an initial one from the RODiT
+                    // CG: Other will be added when calling the SERVER URL via wg
+                    // self.api_set_peer_internal(x25519::PublicKey::from(peer_keybytes_key.0));
+
                 }
                 Err(err) => {
                     tracing::error!("Error: There is no server RODT associated with the account: {}", err);
@@ -990,7 +997,7 @@ impl Device {
         Ok(())
     }
 
-    // This instance of api_set operates internally, not talking to wg
+    // CG: This instance of api_set can operate internally, not talking to wg. But it seems IT IS NOT USED
     pub fn api_set_internal(&mut self, option: &str, value: &str) {
         match option {
             // We can self-serve the private key from the input json wallet file
@@ -1044,6 +1051,7 @@ impl Device {
             }
         }
 
+    // CG: This instance of api_set_peer_internal can operate internally, not talking to wg. But it seems IT IS NOT USED
     fn api_set_peer_internal(&mut self, peer_publickey_public_key: x25519::PublicKey) {
     // cidrblock is allowed-ips
     // allowedips  is part of postup / postdown commands)
@@ -1135,20 +1143,23 @@ impl Default for IndexLfsr {
     }
 }
 
-// This function takes a Ed25519 public key in Hex of 32 bytes and creates a matching X25519 key
+// This function takes a Ed25519 public key in Hex of 32 bytes and creates a matching X25519 public key
 pub fn ed2x_public_key_hex(key: &str) -> [u8; 32] {
     // Parse the input key string as a hex-encoded Ed25519 public key
     let ed25519_pub_bytes = hex::decode(key).expect("Invalid hexadecimal string");
+
     // Convert the Ed25519 public key bytes to Montgomery form
     let ed25519_pub_array: [u8; 32] = ed25519_pub_bytes.as_slice().try_into().expect("Invalid length");
     let x25519_pub_key = curve25519_dalek::edwards::CompressedEdwardsY(ed25519_pub_array)
     .decompress()
     .expect("An Ed25519 public key is a valid point by construction.")
     .to_montgomery()
-    .0;     
-    x25519_pub_key
+    .0;
+
+   x25519_pub_key
 }
 
+// This function takes a Ed25519 private key of 64 bytes and creates a matching X25519 private key
 pub fn ed2x_private_key_bytes(some_bytes_ed25519_private_key: [u8; 64]) -> x25519::StaticSecret {
     let mut some_bytes_x25519_private_key: [u8; 32] = [0; 32];
     let mut some_hasher = Sha512::new();
