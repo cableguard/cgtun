@@ -17,10 +17,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
-
+use base64::{decode, DecodeError};
 use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
-
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
 // use hex::ToHex;
@@ -495,16 +494,42 @@ impl Device {
                     //  this can return IPv4 and/or IPv6 addresses
                     let ipaddress = ipresponse.iter().next().expect("Error: No VPN Server IP Addresses found!");
 
-                    let pkresponse = dnssecresolver.txt_lookup("pk.es.europe-madrid.cableguard.net.");
-
-                    let server_pk = pkresponse.iter().next().expect("Error: No VPN Server Public Key found!");
-                    // Print the TXT records
-                    for record in pkresponse.iter() {
-                        println!("Public Key Base64 encoded: {:?}", server_pk);
-                    }
-
                     println!("IP address {}", ipaddress);
+
+                    let pkresponse = dnssecresolver.txt_lookup("pk.es.europe-madrid.cableguard.net.");
+                    // let server_pk = pkresponse.iter().next().expect("Error: No VPN Server Public Key found!");
+
+                    // Print the TXT records
+                    let mut server_pk_str = String::new();
+                    pkresponse.iter().next().expect("Error: No VPN Server Public Key found!");
+                    for server_pks in pkresponse.iter() {
+                        let txt_strings: Vec<String> = server_pks
+                            .iter()
+                            .map(|txt_data| txt_data.to_string())
+                            .collect();
+                
+                        server_pk_str = txt_strings.join(" "); // Join multiple strings with a space
+                        println!("Public Key Base64 encoded: {}", server_pk_str);
+                    }
                     
+                    // CG: Check that record starts with pk= and is valid Base64
+                    if server_pk_str.starts_with("pk=") {
+                        let server_pk_str_base64_part = &server_pk_str[3..]; // Skip the "pk=" prefix
+                        match decode(server_pk_str_base64_part) {
+                            Ok(server_pk_decoded_bytes) => {
+                                println!("Info: VPN Server Public Key Base64 decoded: {:?}", server_pk_decoded_bytes);
+                            }
+                            Err(err) => {
+                                if let DecodeError::InvalidByte(..) = err {
+                                    println!("Error: The VPN Server Public Key DNSSEC entry is not valid Base64 encoding.");
+                                } else {
+                                    println!("Error: The VPN Server Public Key DNSSEC entry Base64 decoding error: {:?}", err);
+                                }
+                            }
+                        } 
+                    } else {
+                        println!("Error: The VPN Server Public Key DNSSEC entry  must start with 'pk='.");
+                    }
                 }
                 Err(err) => {
                     tracing::error!("Error: There is no server RODT associated with the account: {}", err);
