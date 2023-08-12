@@ -17,6 +17,11 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
+
+use std::net::*;
+use trust_dns_resolver::Resolver;
+use trust_dns_resolver::config::*;
+
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
 // use hex::ToHex;
@@ -83,7 +88,7 @@ pub enum Error {
     Connect(String),
     #[error("{0}")]
     SetSockOpt(String),
-    #[error("Invalid tunnel name")]
+    #[error("Error: Invalid tunnel name")]
     InvalidTunnelName,
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     #[error("{0}")]
@@ -351,7 +356,7 @@ impl Device {
     
         // Creating the own signature of the rodt_id
         let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
-        .expect("Invalid private key bytes");
+        .expect("Error: Invalid private key bytes");
 
         let rodt_id_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
 
@@ -473,8 +478,31 @@ impl Device {
                     // CG: But each server will have a different one
                     // CG: We are just adding an initial one from the RODiT
                     // CG: Other will be added when calling the SERVER URL via wg
+                    // CG: CIDR is in the RODT
+                    // CG: IP we obtain via DNSSEC
+                    // CG: Public Key we obtain via DNSSEC
                     // self.api_set_peer_internal(x25519::PublicKey::from(peer_keybytes_key.0));
 
+                    // Construct a new Resolver with default configuration options
+                    let mut dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+
+                    // On Unix/Posix systems, this will read the /etc/resolv.conf
+                    // let mut resolver = Resolver::from_system_conf().unwrap();
+
+                    // Lookup the IP addresses associated with a name.
+                    let mut response = dnssecresolver.lookup_ip("es.europe-madrid.cableguard.net.").unwrap();
+
+                    // There can be many addresses associated with the name,
+                    //  this can return IPv4 and/or IPv6 addresses
+                    let address = response.iter().next().expect("no addresses returned!");
+                    if address.is_ipv4() {
+                        assert_eq!(address, IpAddr::V4(Ipv4Addr::new(134, 122, 78, 66)));
+                    } else {
+                        assert_eq!(address, IpAddr::V6(Ipv6Addr::new(0x2606, 0x2800, 0x220, 0x1, 0x248, 0x1893, 0x25c8, 0x1946)));
+                    }
+                    
+                    println!("IP address {}", address);
+                    
                 }
                 Err(err) => {
                     tracing::error!("Error: There is no server RODT associated with the account: {}", err);
@@ -1064,20 +1092,20 @@ impl Device {
         let preshared_key = None;
         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
 
-        let ip: IpAddr = self.config.rodt.metadata.issuer_name.parse().expect("Invalid IP address");
-        let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Invalid port");
+        let ip: IpAddr = self.config.rodt.metadata.issuer_name.parse().expect("Error: Invalid IP address");
+        let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Error: Invalid port");
         let endpoint_listenport = SocketAddr::new(ip,port);      
         tracing::info!("Info: Setting Server IP and port {}", endpoint_listenport);     
 
         // Cidrblock is allowed_ip, it fails if the cidr format is not followed
         let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
         tracing::info!("Info: Setting own assigned IP? {}", allowed_ip_str);
-        let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Invalid AllowedIP");
+        let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid AllowedIP");
         tracing::info!("Info: Setting allowed IP {:?}", allowed_ip);
 
         // Add IPv6
         let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
-        let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Invalid IPv6 AllowedIP");
+        let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Error: Invalid IPv6 AllowedIP");
 
         // Create or update peer
         allowed_ips_listed.push(allowed_ip);
@@ -1144,12 +1172,12 @@ impl Default for IndexLfsr {
 }
 
 // This function takes a Ed25519 public key in Hex of 32 bytes and creates a matching X25519 public key
-pub fn ed2x_public_key_hex(key: &str) -> [u8; 32] {
+pub fn ed2x_public_key_bytes(ed25519_pub_bytes: [u8; 32]) -> [u8; 32] {
     // Parse the input key string as a hex-encoded Ed25519 public key
-    let ed25519_pub_bytes = hex::decode(key).expect("Invalid hexadecimal string");
+    // let ed25519_pub_bytes = hex::decode(key).expect("Error: Invalid hexadecimal string");
 
     // Convert the Ed25519 public key bytes to Montgomery form
-    let ed25519_pub_array: [u8; 32] = ed25519_pub_bytes.as_slice().try_into().expect("Invalid length");
+    let ed25519_pub_array: [u8; 32] = ed25519_pub_bytes.as_slice().try_into().expect("Error: Invalid length");
     let x25519_pub_key = curve25519_dalek::edwards::CompressedEdwardsY(ed25519_pub_array)
     .decompress()
     .expect("An Ed25519 public key is a valid point by construction.")
@@ -1158,6 +1186,16 @@ pub fn ed2x_public_key_hex(key: &str) -> [u8; 32] {
 
    x25519_pub_key
 }
+
+/*   fn from_ed25519(pk: &ed25519::PublicKey) -> Self {
+        PublicKey(X25519(
+            CompressedEdwardsY(pk.encode())
+ 
+    /// Encode the public key into a byte array in compressed form, i.e.
+    /// where one coordinate is represented by a single bit.
+    pub fn encode(&self) -> [u8; 32] {
+        self.0.to_bytes()
+    }*/
 
 // This function takes a Ed25519 private key of 64 bytes and creates a matching X25519 private key
 pub fn ed2x_private_key_bytes(some_bytes_ed25519_private_key: [u8; 64]) -> x25519::StaticSecret {

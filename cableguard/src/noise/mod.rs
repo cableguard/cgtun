@@ -240,7 +240,7 @@ impl Tunn {
                 rodt_id,
                 rodt_id_signature,
             )
-            .map_err(|_| "Invalid parameters")?,
+            .map_err(|_| "Error: Invalid parameters")?,
             sessions: Default::default(),
             current: Default::default(),
             tx_bytes: Default::default(),
@@ -387,7 +387,7 @@ impl Tunn {
                 // Convert the bytes to a [u8; 32] array
                 let fetched_bytes_ed25519_public_key: [u8; 32] = fetched_vec_ed25519_public_key
                     .try_into()
-                    .expect("Invalid byte array length");
+                    .expect("Error: Invalid byte array length");
 
                 // Parse the signature bytes from peer_handshake_init.rodt_id_signature
                 // and assign it to the signature variable
@@ -952,7 +952,7 @@ let account_idargs = "{\"token_id\": \"".to_owned()
             // Convert the bytes to a [u8; 32] array
             let fetched_bytes_ed25519_public_key: [u8; 32] = fetched_vec_ed25519_public_key
                 .try_into()
-                .expect("Invalid byte array length");
+                .expect("Error: Invalid byte array length");
 
             // Parse the signature bytes from packet.rodt_id_signature
             // and assign it to the signature variable

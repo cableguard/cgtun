@@ -177,7 +177,7 @@ impl Write for FFIFunctionPointerWriter {
         } else {
             Err(Error::new(
                 ErrorKind::Other,
-                "Failed to create CString from buffer.",
+                "Error: Failed to create CString from buffer.",
             ))
         }
     }

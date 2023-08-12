@@ -4,7 +4,7 @@
 use clap::{Arg, Command};
 use tracing::Level;
 use serde_json::Value;
-use cableguard::device::{DeviceConfig, DeviceHandle,ed2x_private_key_bytes,skx2pkx};
+use cableguard::device::{DeviceConfig, DeviceHandle,ed2x_private_key_bytes,ed2x_public_key_bytes,skx2pkx};
 use cableguard::device::api::{nearorg_rpc_tokens_for_owner,nearorg_rpc_state,Rodt};
 use cableguard::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use cableguard::device::drop_privileges::drop_privileges;
@@ -113,10 +113,10 @@ fn main() {
     };
 
     // Extract the value of the "account_id" field, include it in a json string
-    let account_id = json["account_id"].as_str().expect("Invalid account_id value");
+    let account_id = json["account_id"].as_str().expect("Error: Invalid account_id value");
 
     // Extract the value of the "private_key" field, include it in a json string and encode it as Base58
-    let own_static_base58_private_ed25519_key = json["private_key"].as_str().expect("Invalid private_key value");   
+    let own_static_base58_private_ed25519_key = json["private_key"].as_str().expect("Error: Invalid private_key value");   
     let own_static_base58_private_ed25519_key = own_static_base58_private_ed25519_key.trim_start_matches("ed25519:");
 
     // Initialize a RODT object
@@ -173,6 +173,12 @@ fn main() {
     let own_static_b64_public_x25519_key = hex_to_base64(&own_static_bytes_public_x25519_key);
     println!("X25519 Public Key Base64: {}", own_static_b64_public_x25519_key);
     
+    // Create a X25519 public key from a Public Key Ed25519 of 32 bytes
+    // let own_staticsecret_public_x25519_key = ed2x_public_key_bytes(own_static_bytes_public_ed25519_key.clone().try_into().unwrap());
+    // let own_static_bytes_public_x25519_key = own_staticsecret_public_x25519_key; 
+    // let own_static_b64_public_x25519_key = hex_to_base64(&own_static_bytes_public_x25519_key);
+    println!("X25519 Public Key Base64: {}", own_static_b64_public_x25519_key);
+
     // Create a socketpair to communicate between forked processes
     let (sock1, sock2) = UnixDatagram::pair().unwrap();
     let _ = sock1.set_nonblocking(true);
@@ -295,6 +301,6 @@ fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
         .collect::<Vec<String>>()
         .join("");
     
-    let bytes = Vec::from_hex(&hex_string).expect("Invalid Hex string");
+    let bytes = Vec::from_hex(&hex_string).expect("Error: Invalid Hex string");
     encode_base64(&bytes)
 }
