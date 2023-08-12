@@ -18,7 +18,6 @@ use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
 
-use std::net::*;
 use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 
@@ -484,24 +483,27 @@ impl Device {
                     // self.api_set_peer_internal(x25519::PublicKey::from(peer_keybytes_key.0));
 
                     // Construct a new Resolver with default configuration options
-                    let mut dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+                    let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
 
                     // On Unix/Posix systems, this will read the /etc/resolv.conf
                     // let mut resolver = Resolver::from_system_conf().unwrap();
 
                     // Lookup the IP addresses associated with a name.
-                    let mut response = dnssecresolver.lookup_ip("es.europe-madrid.cableguard.net.").unwrap();
+                    let ipresponse = dnssecresolver.lookup_ip("es.europe-madrid.cableguard.net.").unwrap();
 
                     // There can be many addresses associated with the name,
                     //  this can return IPv4 and/or IPv6 addresses
-                    let address = response.iter().next().expect("no addresses returned!");
-                    if address.is_ipv4() {
-                        assert_eq!(address, IpAddr::V4(Ipv4Addr::new(134, 122, 78, 66)));
-                    } else {
-                        assert_eq!(address, IpAddr::V6(Ipv6Addr::new(0x2606, 0x2800, 0x220, 0x1, 0x248, 0x1893, 0x25c8, 0x1946)));
+                    let ipaddress = ipresponse.iter().next().expect("Error: No VPN Server IP Addresses found!");
+
+                    let pkresponse = dnssecresolver.txt_lookup("pk.es.europe-madrid.cableguard.net.");
+
+                    let server_pk = pkresponse.iter().next().expect("Error: No VPN Server Public Key found!");
+                    // Print the TXT records
+                    for record in pkresponse.iter() {
+                        println!("Public Key Base64 encoded: {:?}", server_pk);
                     }
-                    
-                    println!("IP address {}", address);
+
+                    println!("IP address {}", ipaddress);
                     
                 }
                 Err(err) => {
