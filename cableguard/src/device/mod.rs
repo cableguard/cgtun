@@ -507,18 +507,18 @@ impl Device {
                             .iter()
                             .map(|txt_data| txt_data.to_string())
                             .collect();
-                
+                        // CG: Change this so only 1 Public Key per server is accepted
                         server_pk_str = txt_strings.join(" "); // Join multiple strings with a space
                         println!("Public Key Base64 encoded: {}", server_pk_str);
                     }
                     
                     // CG: Check that record starts with pk= and is valid Base64
+                    let mut server_pk_str_base64_part = String::new();
                     if server_pk_str.starts_with("pk=") {
-                        let server_pk_str_base64_part = &server_pk_str[3..]; // Skip the "pk=" prefix
+                        server_pk_str_base64_part = (&server_pk_str[3..]).to_string(); // Skip the "pk=" prefix
                         match decode(server_pk_str_base64_part) {
-                            Ok(server_pk_decoded_bytes) => {
-                                println!("Info: VPN Server Public Key Base64 decoded: {:?}", server_pk_decoded_bytes);
-                            }
+                            Ok(server_pk_str_base64_part) => {
+                                }
                             Err(err) => {
                                 if let DecodeError::InvalidByte(..) = err {
                                     println!("Error: The VPN Server Public Key DNSSEC entry is not valid Base64 encoding.");
