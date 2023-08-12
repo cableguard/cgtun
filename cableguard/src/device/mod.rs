@@ -470,7 +470,7 @@ impl Device {
                 "nft_token",&account_idargs) {
                 Ok(result) => {
                     let server_rodt = result;
-                    tracing::error!("Info: Server RODT Owner: {:?}", server_rodt.owner_id);
+                    tracing::error!("Info: Matching Server RODT Owner: {:?}", server_rodt.owner_id);
                     // CG: Priming the peer list with the Server data
                     // CG: Need to obtain the server's Public Key
                     // CG: But each server will have a different one
@@ -509,15 +509,15 @@ impl Device {
                             .collect();
                         // CG: Change this so only 1 Public Key per server is accepted
                         server_pk_str = txt_strings.join(" "); // Join multiple strings with a space
-                        println!("Public Key Base64 encoded: {}", server_pk_str);
                     }
                     
                     // CG: Check that record starts with pk= and is valid Base64
-                    let mut server_pk_str_base64_part = String::new();
+                    let mut server_pk_str_base64 = String::new();
                     if server_pk_str.starts_with("pk=") {
-                        server_pk_str_base64_part = (&server_pk_str[3..]).to_string(); // Skip the "pk=" prefix
-                        match decode(server_pk_str_base64_part) {
-                            Ok(server_pk_str_base64_part) => {
+                        server_pk_str_base64 = (&server_pk_str[3..]).to_string(); // Skip the "pk=" prefix
+                        println!("Public Key Base64 encoded: {}", server_pk_str_base64);
+                        match decode(server_pk_str_base64) {
+                            Ok(server_pk_str_base64) => {
                                 }
                             Err(err) => {
                                 if let DecodeError::InvalidByte(..) = err {
