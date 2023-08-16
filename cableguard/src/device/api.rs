@@ -475,22 +475,30 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                     match option {
                         "subdomain_peer" => match value.parse::<String>() {
                             Ok(subdomain_peer) => {
-                                let mut peer_port:u16=0;
-                                let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
-
-                                // On Unix/Posix systems, this will read the /etc/resolv.conf
-                                // let mut resolver = Resolver::from_system_conf().unwrap();
-
-                                // Lookup the IP addresses associated with a name.
+                                let mut peer_port: u16 = 0;
+                                let dnssecresolver = match Resolver::new(ResolverConfig::default(), ResolverOpts::default()) {
+                                    Ok(resolver) => resolver,
+                                    Err(_) => {
+                                        eprintln!("Error: Could not create DNS resolver");
+                                        return EINVAL
+                                    }
+                                };
                                 println!("Info: Subdomain read from command line wg {}", subdomain_peer);
-                                // let ipresponse = dnssecresolver.lookup_ip("es.europe-madrid.cableguard.net.").unwrap();
-                                let ipresponse = dnssecresolver.lookup_ip(&subdomain_peer).unwrap();
-
-                                // There can be many addresses associated with the name,
-                                // this can return IPv4 and/or IPv6 addresses
-                                let ipaddress = ipresponse.iter().next().expect("Error: No VPN Server IP Addresses found!");
-                                println!("Info: IP address read from subdomain{}", ipaddress);
-
+                                let ipresponse = match dnssecresolver.lookup_ip(&subdomain_peer) {
+                                    Ok(response) => response,
+                                    Err(_) => {
+                                        eprintln!("Error: IP lookup for subdomain failed");
+                                        return EINVAL
+                                    }
+                                };
+                                let ipaddress = match ipresponse.iter().next() {
+                                    Some(ip) => ip,
+                                    None => {
+                                        eprintln!("Error: No IP address found for subdomain");
+                                        return EINVAL
+                                    }
+                                };
+                                println!("Info: IP address read from subdomain {}", ipaddress);               
                                 // CG: Obtain the public key from the subdomain_peer
                                 // let cfgresponse = dnssecresolver.txt_lookup("es.europe-madrid.cableguard.net.");
                                 let cfgresponse = dnssecresolver.txt_lookup(subdomain_peer);
@@ -516,23 +524,18 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                     println!("Public Key: {}", peer_base64_pk);
                                     println!("Port: {:?}", peer_port);
                                 }
-
                                 // CG: Take the subdomain_endpoint as endpoint of a new peer
-                                let mut endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-
+                                let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
                                 let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
-
                                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
                                     .as_slice()
                                     .try_into()
                                     .expect("Invalid public key length");
-
-                                // endpoint_listenport = subdomain_peer;
                                 return device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
                                     x25519::PublicKey::from(peer_u832_pk));
-                            }
+                                }
                             Err(_) => return EINVAL,
-                        },
+                        },            
                         "private_key" => match value.parse::<KeyBytes>() {
                             Ok(own_static_bytes_key_pair) => {
                                 device.set_key_pair(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
@@ -565,14 +568,14 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                         },
                         "set_peer_public_key" => match value.parse::<KeyBytes>() {
                             Ok(peer_keybytes_key) => {
-                                    return api_set_peer(
-                                        readerbufferdevice,
-                                        device,
-                                        x25519::PublicKey::from(peer_keybytes_key.0),
-                                    )
-                                }
-                                Err(_) => return EINVAL,
-                            },
+                                return api_set_peer(
+                                    readerbufferdevice,
+                                    device,
+                                    x25519::PublicKey::from(peer_keybytes_key.0),
+                                )
+                            }
+                            Err(_) => return EINVAL,
+                        },
                         "public_key" => match value.parse::<KeyBytes>() {
                             Ok(own_static_bytes_key_pair) => {
                                 return api_set_peer(
