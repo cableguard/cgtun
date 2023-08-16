@@ -471,41 +471,29 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                     }
 
                     let (option, value) = (parsed_cmd[0], parsed_cmd[1]);
-                    println!("Subdomain peer value {:?}",value);
+
                     match option {
                         "subdomain_peer" => match value.parse::<String>() {
                             Ok(subdomain_peer) => {
-                                // CG: We are accepting temporarily the port from wg
-                                println!("Subdomain peer {:?}",subdomain_peer);
-                                let vpnsubdomain;
-                                let mut peer_port:u16;
-                                let subdomain_peer_parts: Vec<&str> = subdomain_peer.split(':').collect();
-                                if subdomain_peer_parts.len() == 2 {
-                                    vpnsubdomain = subdomain_peer_parts[0];
-                                    peer_port = subdomain_peer_parts[1].parse().unwrap_or(0);
-                                    println!("Info: I CAN HEAR YOU");
-                                } else {
-                                    // peer_port = 0;
-                                    // vpnsubdomain = ".";
-                                    println!("Error: Invalid subdomain peer format");
-                                    return EINVAL;
-                                }
+                                let mut peer_port:u16=0;
                                 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
 
                                 // On Unix/Posix systems, this will read the /etc/resolv.conf
                                 // let mut resolver = Resolver::from_system_conf().unwrap();
 
                                 // Lookup the IP addresses associated with a name.
-                                println!("Info: Subdomain read from command line wg {}", vpnsubdomain);
-                                let ipresponse = dnssecresolver.lookup_ip(vpnsubdomain).unwrap();
+                                println!("Info: Subdomain read from command line wg {}", subdomain_peer);
+                                // let ipresponse = dnssecresolver.lookup_ip("es.europe-madrid.cableguard.net.").unwrap();
+                                let ipresponse = dnssecresolver.lookup_ip(&subdomain_peer).unwrap();
 
                                 // There can be many addresses associated with the name,
                                 // this can return IPv4 and/or IPv6 addresses
                                 let ipaddress = ipresponse.iter().next().expect("Error: No VPN Server IP Addresses found!");
                                 println!("Info: IP address read from subdomain{}", ipaddress);
 
-                                // CG: Obtain the public key from the vpnsubdomain
-                                let cfgresponse = dnssecresolver.txt_lookup(vpnsubdomain);
+                                // CG: Obtain the public key from the subdomain_peer
+                                // let cfgresponse = dnssecresolver.txt_lookup("es.europe-madrid.cableguard.net.");
+                                let cfgresponse = dnssecresolver.txt_lookup(subdomain_peer);
                                 cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
                                 let mut peer_base64_pk:String="=".to_string();
                                 for configs in cfgresponse.iter() {
@@ -530,7 +518,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 }
 
                                 // CG: Take the subdomain_endpoint as endpoint of a new peer
-                                let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
+                                let mut endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
 
                                 let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
 
@@ -539,6 +527,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                     .try_into()
                                     .expect("Invalid public key length");
 
+                                // endpoint_listenport = subdomain_peer;
                                 return device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
                                     x25519::PublicKey::from(peer_u832_pk));
                             }
