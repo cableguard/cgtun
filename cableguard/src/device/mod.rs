@@ -479,7 +479,7 @@ impl Device {
                     // CG: CIDR is in the RODT
                     // CG: IP we obtain via DNSSEC
                     // CG: Public Key we obtain via DNSSEC
-                    // self.api_set_peer_internal(x25519::PublicKey::from(peer_keybytes_key.0));
+                    // self.api_set_subdomain_peer_internal(x25519::PublicKey::from(peer_keybytes_key.0));
 
                     // Construct a new Resolver with default configuration options
                     let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
@@ -496,40 +496,8 @@ impl Device {
 
                     println!("IP address {}", ipaddress);
 
-                    let pkresponse = dnssecresolver.txt_lookup("pk.es.europe-madrid.cableguard.net.");
-                    // let server_pk = pkresponse.iter().next().expect("Error: No VPN Server Public Key found!");
+                    let _pkresponse = dnssecresolver.txt_lookup("es.europe-madrid.cableguard.net.");
 
-                    // Print the TXT records
-                    let mut server_pk_str = String::new();
-                    pkresponse.iter().next().expect("Error: No VPN Server Public Key found!");
-                    for server_pks in pkresponse.iter() {
-                        let txt_strings: Vec<String> = server_pks
-                            .iter()
-                            .map(|txt_data| txt_data.to_string())
-                            .collect();
-                        // CG: Change this so only 1 Public Key per server is accepted
-                        server_pk_str = txt_strings.join(" "); // Join multiple strings with a space
-                    }
-                    
-                    // CG: Check that record starts with pk= and is valid Base64
-                    let mut server_pk_str_base64 = String::new();
-                    if server_pk_str.starts_with("pk=") {
-                        server_pk_str_base64 = (&server_pk_str[3..]).to_string(); // Skip the "pk=" prefix
-                        println!("Public Key Base64 encoded: {}", server_pk_str_base64);
-                        match decode(server_pk_str_base64) {
-                            Ok(server_pk_str_base64) => {
-                                }
-                            Err(err) => {
-                                if let DecodeError::InvalidByte(..) = err {
-                                    println!("Error: The VPN Server Public Key DNSSEC entry is not valid Base64 encoding.");
-                                } else {
-                                    println!("Error: The VPN Server Public Key DNSSEC entry Base64 decoding error: {:?}", err);
-                                }
-                            }
-                        } 
-                    } else {
-                        println!("Error: The VPN Server Public Key DNSSEC entry  must start with 'pk='.");
-                    }
                 }
                 Err(err) => {
                     tracing::error!("Error: There is no server RODT associated with the account: {}", err);
@@ -1096,9 +1064,8 @@ impl Device {
                 Ok(peer_keybytes_key) => {
                     let peer_hex_public_key = encode_hex(peer_keybytes_key.0);
                     tracing::error!("Debugging: Peer Public Key FN api_set_internal {:?}", peer_hex_public_key);
-                        return self.api_set_peer_internal(
-                            x25519::PublicKey::from(peer_keybytes_key.0),
-                        )
+                        self.api_set_subdomain_peer_internal(Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080)),x25519::PublicKey::from(peer_keybytes_key.0));
+                        return
                     }
                     Err(_) => return,
                 },
@@ -1106,8 +1073,9 @@ impl Device {
             }
         }
 
-    // CG: This instance of api_set_peer_internal can operate internally, not talking to wg. But it seems IT IS NOT USED
-    fn api_set_peer_internal(&mut self, peer_publickey_public_key: x25519::PublicKey) {
+    // CG: This instance of api_set_subdomain_peer_internal can operate internally, not talking to wg.
+    fn api_set_subdomain_peer_internal(&mut self, endpoint_listenport:Option<SocketAddr>,
+        peer_publickey_public_key: x25519::PublicKey) -> i32 {
     // cidrblock is allowed-ips
     // allowedips  is part of postup / postdown commands)
 
@@ -1119,16 +1087,16 @@ impl Device {
         let preshared_key = None;
         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
 
-        let ip: IpAddr = self.config.rodt.metadata.issuer_name.parse().expect("Error: Invalid IP address");
-        let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Error: Invalid port");
-        let endpoint_listenport = SocketAddr::new(ip,port);      
-        tracing::info!("Info: Setting Server IP and port {}", endpoint_listenport);     
+        // CG: Following 2 lines probably unnecessary since Server adds peers automatically
+        // let ip: IpAddr = self.config.rodt.metadata.issuer_name.parse().expect("Error: Invalid IP address");
+        // let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Error: Invalid port");
+        tracing::info!("Info: Setting Server IP and port {:?}", Some(endpoint_listenport));     
 
         // Cidrblock is allowed_ip, it fails if the cidr format is not followed
         let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
         tracing::info!("Info: Setting own assigned IP? {}", allowed_ip_str);
-        let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid AllowedIP");
-        tracing::info!("Info: Setting allowed IP {:?}", allowed_ip);
+        let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid own AllowedIP");
+        tracing::info!("Info: Setting own allowed IP {:?}", allowed_ip);
 
         // Add IPv6
         let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
@@ -1140,12 +1108,13 @@ impl Device {
             clone_peer_publickey_public_key,
             remove,
             replace_ips,
-            Some(endpoint_listenport),
+            endpoint_listenport,
             &allowed_ips_listed,
             keepalive,
             preshared_key,
             );                    
         allowed_ips_listed.clear();
+        return 0;
     }
 }
 

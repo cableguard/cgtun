@@ -14,7 +14,10 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::sync::atomic::Ordering;
-use base64::{URL_SAFE_NO_PAD};
+use std::convert::TryInto;
+use base64::{decode,URL_SAFE_NO_PAD};
+use trust_dns_resolver::Resolver;
+use trust_dns_resolver::config::*;
 use reqwest::blocking::Client;
 use serde_json::{Value};
 use serde::{Deserialize, Serialize};
@@ -468,8 +471,79 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                     }
 
                     let (option, value) = (parsed_cmd[0], parsed_cmd[1]);
-
+                    println!("Subdomain peer value {:?}",value);
                     match option {
+                        "subdomain_peer" => match value.parse::<String>() {
+                            Ok(subdomain_peer) => {
+                                // CG: We are accepting temporarily the port from wg
+                                println!("Subdomain peer {:?}",subdomain_peer);
+                                let vpnsubdomain;
+                                let mut peer_port:u16;
+                                let subdomain_peer_parts: Vec<&str> = subdomain_peer.split(':').collect();
+                                if subdomain_peer_parts.len() == 2 {
+                                    vpnsubdomain = subdomain_peer_parts[0];
+                                    peer_port = subdomain_peer_parts[1].parse().unwrap_or(0);
+                                    println!("Info: I CAN HEAR YOU");
+                                } else {
+                                    // peer_port = 0;
+                                    // vpnsubdomain = ".";
+                                    println!("Error: Invalid subdomain peer format");
+                                    return EINVAL;
+                                }
+                                let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+
+                                // On Unix/Posix systems, this will read the /etc/resolv.conf
+                                // let mut resolver = Resolver::from_system_conf().unwrap();
+
+                                // Lookup the IP addresses associated with a name.
+                                println!("Info: Subdomain read from command line wg {}", vpnsubdomain);
+                                let ipresponse = dnssecresolver.lookup_ip(vpnsubdomain).unwrap();
+
+                                // There can be many addresses associated with the name,
+                                // this can return IPv4 and/or IPv6 addresses
+                                let ipaddress = ipresponse.iter().next().expect("Error: No VPN Server IP Addresses found!");
+                                println!("Info: IP address read from subdomain{}", ipaddress);
+
+                                // CG: Obtain the public key from the vpnsubdomain
+                                let cfgresponse = dnssecresolver.txt_lookup(vpnsubdomain);
+                                cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
+                                let mut peer_base64_pk:String="=".to_string();
+                                for configs in cfgresponse.iter() {
+                                    let txt_strings: Vec<String> = configs
+                                        .iter()
+                                        .map(|txt_data| txt_data.to_string())
+                                        .collect();
+                                    // CG: Change this so only 1 Public Key per server is accepted
+                                    let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
+                                    // Extract the public key
+                                    let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="
+                                    let pk_end = peer_configs.find(";").unwrap_or(peer_configs.len());
+                                    peer_base64_pk = peer_configs[pk_start..pk_end].to_string();
+                                    // Extract the port
+                                    let port_start = peer_configs.find("port=").unwrap_or(0) + 5; // Add 5 to skip "port="
+                                    let port_end = peer_configs.len();
+                                    let peer_str_port:String;
+                                    peer_str_port = peer_configs[port_start..port_end].to_string();
+                                    peer_port = peer_str_port.parse().unwrap_or(0);
+                                    println!("Public Key: {}", peer_base64_pk);
+                                    println!("Port: {:?}", peer_port);
+                                }
+
+                                // CG: Take the subdomain_endpoint as endpoint of a new peer
+                                let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
+
+                                let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
+
+                                let peer_u832_pk: [u8; 32] = peer_bytes_pk
+                                    .as_slice()
+                                    .try_into()
+                                    .expect("Invalid public key length");
+
+                                return device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
+                                    x25519::PublicKey::from(peer_u832_pk));
+                            }
+                            Err(_) => return EINVAL,
+                        },
                         "private_key" => match value.parse::<KeyBytes>() {
                             Ok(own_static_bytes_key_pair) => {
                                 device.set_key_pair(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
