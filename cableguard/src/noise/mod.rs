@@ -934,7 +934,7 @@ let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
 .trim_end_matches('\0');
 
 // We receive this and we have to use it to validate the peer
-println!("verify_rodt_id_signature: RODT ID received{}",string_rodtid);        
+println!("verify_rodt_id_signature: RODT ID received:  {}",string_rodtid);        
 
 let account_idargs = "{\"token_id\": \"".to_owned() 
     + &string_rodtid+ "\"}";

@@ -350,7 +350,7 @@ impl Device {
         let device_key_pair = self
         .key_pair
         .as_ref()
-        .expect("Self private key must be set before adding peers");
+        .expect("Error: Self private key must be set before adding peers");
     
         // Creating the own signature of the rodt_id
         let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
@@ -796,7 +796,7 @@ impl Device {
                                                     allowed_ips_listed.push(allowed_ip);
                                                     let peer = Peer::new(tunn, next_peer_index, Some(endpoint_listenport), &allowed_ips_listed, None);
                                                     let peermutex = Arc::new(Mutex::new(peer));
-                                                    println!("Info: Adding peer {:?}", peer_publickey_public_key);
+                                                    println!("Info: Adding peer:  {:?}", peer_publickey_public_key);
                                                     device.peers.insert(peer_publickey_public_key, Arc::clone(&peermutex));
                                                     device.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peermutex));
                                                     for AllowedIP { addr, cidr } in &allowed_ips_listed {
@@ -1100,13 +1100,12 @@ impl Device {
         // CG: Following 2 lines probably unnecessary since Server adds peers automatically
         // let ip: IpAddr = self.config.rodt.metadata.issuer_name.parse().expect("Error: Invalid IP address");
         // let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Error: Invalid port");
-        tracing::info!("Info: Setting Server IP and port {:?}", Some(endpoint_listenport));     
+        tracing::info!("Info: Setting Server IP and port {:?}", endpoint_listenport);     
 
         // Cidrblock is allowed_ip, it fails if the cidr format is not followed
         let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
-        tracing::info!("Info: Setting own assigned IP? {}", allowed_ip_str);
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid own AllowedIP");
-        tracing::info!("Info: Setting own allowed IP {:?}", allowed_ip);
+        tracing::info!("Info: Setting own assigned IP {:?}", allowed_ip);
 
         // CG: Add IPv6 support
         // let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
