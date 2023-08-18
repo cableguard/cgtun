@@ -479,7 +479,8 @@ impl Device {
                     let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
                     println!("Info: IP address read from subdomain {}", ipaddress);                      
                     let cfgresponse = dnssecresolver.txt_lookup("es.europe-madrid.cableguard.net.");
-                    // let cfgresponse = dnssecresolver.txt_lookup(server_rodt.metadata.subjectuniqueidentifierURL);
+                    // let cfgresponse = dnssecresolver.txt_lookup(&server_rodt.metadata.subjectuniqueidentifierURL);
+                    println!("Info: Default Server VPN: {}", server_rodt.metadata.subjectuniqueidentifierURL);
                     cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
                     let mut peer_base64_pk:String="=".to_string();
                     for configs in cfgresponse.iter() {

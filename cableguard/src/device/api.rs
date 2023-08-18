@@ -493,7 +493,6 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
                                 println!("Info: IP address read from subdomain {}", ipaddress);               
                                 // CG: Obtain the public key from the subdomain_peer
-                                // let cfgresponse = dnssecresolver.txt_lookup("es.europe-madrid.cableguard.net.");
                                 let cfgresponse = dnssecresolver.txt_lookup(subdomain_peer);
                                 cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
                                 let mut peer_base64_pk:String="=".to_string();
