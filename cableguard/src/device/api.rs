@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 use super::dev_lock::LockReadGuard;
-// use parking_lot::RwLockReadGuard;
 use super::drop_privileges::get_saved_ids;
 use super::{AllowedIP, Device, Error, SocketAddr};
 use crate::device::Action;
@@ -491,13 +490,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                         return EINVAL
                                     }
                                 };
-                                let ipaddress = match ipresponse.iter().next() {
-                                    Some(ip) => ip,
-                                    None => {
-                                        eprintln!("Error: No IP address found for subdomain");
-                                        return EINVAL
-                                    }
-                                };
+                                let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
                                 println!("Info: IP address read from subdomain {}", ipaddress);               
                                 // CG: Obtain the public key from the subdomain_peer
                                 // let cfgresponse = dnssecresolver.txt_lookup("es.europe-madrid.cableguard.net.");

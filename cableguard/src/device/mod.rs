@@ -17,7 +17,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
-use base64::{decode, DecodeError};
+use base64::{decode};
 use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use zeroize::Zeroize;
@@ -471,82 +471,50 @@ impl Device {
                 Ok(result) => {
                     let server_rodt = result;
                     tracing::error!("Info: Matching Server RODT Owner: {:?}", server_rodt.owner_id);
-                    // CG: Priming the peer list with the Server data
-                    // CG: Need to obtain the server's Public Key
-                    // CG: But each server will have a different one
-                    // CG: We are just adding an initial one from the RODiT
-                    // CG: Other will be added when calling the SERVER URL via wg
-                    // CG: CIDR is in the RODT
-                    // CG: IP we obtain via DNSSEC
-                    // CG: Public Key we obtain via DNSSEC
-                    // self.api_set_subdomain_peer_internal(x25519::PublicKey::from(peer_keybytes_key.0));
-
-                            let mut peer_port: u16 = 0;
-                            let dnssecresolver = match Resolver::new(ResolverConfig::default(), ResolverOpts::default()) {
-                                Ok(resolver) => resolver,
-                                Err(_) => {
-                                    eprintln!("Error: Could not create DNS resolver");
-                                    return EINVAL
-                                }
-                            };
-                            println!("Info: Subdomain read from command line wg {}", subdomain_peer);
-                            let ipresponse = match dnssecresolver.lookup_ip(&subdomain_peer) {
-                                Ok(response) => response,
-                                Err(_) => {
-                                    eprintln!("Error: IP lookup for subdomain failed");
-                                    return EINVAL
-                                }
-                            };
-                            let ipaddress = match ipresponse.iter().next() {
-                                Some(ip) => ip,
-                                None => {
-                                    eprintln!("Error: No IP address found for subdomain");
-                                    return EINVAL
-                                }
-                            };
-                            println!("Info: IP address read from subdomain {}", ipaddress);               
-                            // CG: Obtain the public key from the subdomain_peer
-                            // let cfgresponse = dnssecresolver.txt_lookup("es.europe-madrid.cableguard.net.");
-                            let cfgresponse = dnssecresolver.txt_lookup(subdomain_peer);
-                            cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
-                            let mut peer_base64_pk:String="=".to_string();
-                            for configs in cfgresponse.iter() {
-                                let txt_strings: Vec<String> = configs
-                                    .iter()
-                                    .map(|txt_data| txt_data.to_string())
-                                    .collect();
-                                // CG: Change this so only 1 Public Key per server is accepted
-                                let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
-                                // Extract the public key
-                                let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="
-                                let pk_end = peer_configs.find(";").unwrap_or(peer_configs.len());
-                                peer_base64_pk = peer_configs[pk_start..pk_end].to_string();
-                                // Extract the port
-                                let port_start = peer_configs.find("port=").unwrap_or(0) + 5; // Add 5 to skip "port="
-                                let port_end = peer_configs.len();
-                                let peer_str_port:String;
-                                peer_str_port = peer_configs[port_start..port_end].to_string();
-                                peer_port = peer_str_port.parse().unwrap_or(0);
-                                println!("Public Key: {}", peer_base64_pk);
-                                println!("Port: {:?}", peer_port);
-                            }
-                            // CG: Take the subdomain_endpoint as endpoint of a new peer
-                            let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                            let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
-                            let peer_u832_pk: [u8; 32] = peer_bytes_pk
-                                .as_slice()
-                                .try_into()
-                                .expect("Invalid public key length");
-                            return device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
-                                x25519::PublicKey::from(peer_u832_pk));
-                            }  
+                    let mut peer_port: u16 = 0;
+                    // println!("Info: Subdomain read from RODiT {}", server_rodt.metadata.subjectuniqueidentifierURL);
+                    let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+                    let ipresponse = dnssecresolver.lookup_ip("es.europe-madrid.cableguard.net.").unwrap();
+                    // let ipresponse = dnssecresolver.lookup_ip(&server_rodt.metadata.subjectuniqueidentifierURL).unwrap();
+                    let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
+                    println!("Info: IP address read from subdomain {}", ipaddress);                      
+                    let cfgresponse = dnssecresolver.txt_lookup("es.europe-madrid.cableguard.net.");
+                    // let cfgresponse = dnssecresolver.txt_lookup(server_rodt.metadata.subjectuniqueidentifierURL);
+                    cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
+                    let mut peer_base64_pk:String="=".to_string();
+                    for configs in cfgresponse.iter() {
+                        let txt_strings: Vec<String> = configs
+                            .iter()
+                            .map(|txt_data| txt_data.to_string())
+                            .collect();
+                        // CG: Change this so only 1 Public Key per server is accepted
+                        let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
+                        // Extract the public key
+                        let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="
+                        let pk_end = peer_configs.find(";").unwrap_or(peer_configs.len());
+                        peer_base64_pk = peer_configs[pk_start..pk_end].to_string();
+                        // Extract the port
+                        let port_start = peer_configs.find("port=").unwrap_or(0) + 5; // Add 5 to skip "port="
+                        let port_end = peer_configs.len();
+                        let peer_str_port:String;
+                        peer_str_port = peer_configs[port_start..port_end].to_string();
+                        peer_port = peer_str_port.parse().unwrap_or(0);
+                        println!("Public Key: {}", peer_base64_pk);
+                        println!("Port: {:?}", peer_port);
+                    }
+                    // CG: Take the subdomain_endpoint as endpoint of a new peer
+                    let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
+                    let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
+                    let peer_u832_pk: [u8; 32] = peer_bytes_pk
+                        .as_slice()
+                        .try_into()
+                        .expect("Invalid public key length");
+                    device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
+                        x25519::PublicKey::from(peer_u832_pk));
                 }
-                Err(err) => {
-                    tracing::error!("Error: There is no server RODT associated with the account: {}", err);
-                    std::process::exit(1);        }
+                Err(_) => {tracing::error!("Error: There is no RODT associated with the account");  }
             }
         }
-
         Ok(device)
     }
 
@@ -1140,9 +1108,9 @@ impl Device {
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid own AllowedIP");
         tracing::info!("Info: Setting own allowed IP {:?}", allowed_ip);
 
-        // Add IPv6
-        let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
-        let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Error: Invalid IPv6 AllowedIP");
+        // CG: Add IPv6 support
+        // let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
+        // let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Error: Invalid IPv6 AllowedIP");
 
         // Create or update peer
         allowed_ips_listed.push(allowed_ip);

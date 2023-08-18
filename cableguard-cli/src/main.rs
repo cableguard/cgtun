@@ -4,7 +4,7 @@
 use clap::{Arg, Command};
 use tracing::Level;
 use serde_json::Value;
-use cableguard::device::{DeviceConfig, DeviceHandle,ed2x_private_key_bytes,ed2x_public_key_bytes,skx2pkx};
+use cableguard::device::{DeviceConfig, DeviceHandle,ed2x_private_key_bytes,skx2pkx};
 use cableguard::device::api::{nearorg_rpc_tokens_for_owner,nearorg_rpc_state,Rodt};
 use cableguard::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use cableguard::device::drop_privileges::drop_privileges;
@@ -126,7 +126,7 @@ fn main() {
     println!("Cableguard version: {}", version);
     println!("RODT Blockchain Directory: {}", "NEAR.ORG");
     println!("Blockchain Directory Network (. for mainnet): {}", BLOCKCHAIN_NETWORK);
-    println!("Smart Contract Account in Base58: {}", SMART_CONTRACT);
+    println!("Smart Contract Account: {}", SMART_CONTRACT);
     println!("RODT owner Account ID in Hex: {}", account_id);
 
     // Perform a RPC call with it and obtain the token_id
@@ -171,7 +171,7 @@ fn main() {
     // Generate the X25519 public key from the X25519 private key of 32 bytes
     let own_static_bytes_public_x25519_key = skx2pkx(own_staticsecret_private_x25519_key.clone());
     let own_static_b64_public_x25519_key = hex_to_base64(&own_static_bytes_public_x25519_key);
-    println!("X25519 Public Key Base64: {}", own_static_b64_public_x25519_key);
+    println!("X25519 Public Key in Base64: {}", own_static_b64_public_x25519_key);
     
     // Create a socketpair to communicate between forked processes
     let (sock1, sock2) = UnixDatagram::pair().unwrap();
