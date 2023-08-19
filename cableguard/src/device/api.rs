@@ -64,7 +64,7 @@ pub struct RodtMetadata {
     pub allowedips: String,
     pub subjectuniqueidentifierURL: String,
     pub authorrodtcontractid: String,
-    pub authorsignature: String,
+    pub serviceprovidersignature: String,
     pub kbpersecond: String,
 }
 
@@ -83,7 +83,7 @@ impl Default for RodtMetadata {
             allowedips: String::default(),
             subjectuniqueidentifierURL: String::default(),
             authorrodtcontractid: String::default(),
-            authorsignature: String::default(),
+            serviceprovidersignature: String::default(),
             kbpersecond: String::default(),
         }
     }
@@ -170,7 +170,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::error!("allowedips: {}", rodt.metadata.allowedips);
             tracing::error!("subjectuniqueidentifierURL: {}", rodt.metadata.subjectuniqueidentifierURL);
             tracing::error!("authorrodtcontractid: {}", rodt.metadata.authorrodtcontractid);
-            tracing::error!("authorsignature: {}", rodt.metadata.authorsignature);
+            tracing::error!("serviceprovidersignature: {}", rodt.metadata.serviceprovidersignature);
             tracing::error!("kbpersecond: {}", rodt.metadata.kbpersecond);
         }
      // Return the first Rodt instance as the result
