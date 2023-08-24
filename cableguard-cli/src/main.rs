@@ -148,13 +148,14 @@ fn main() {
         }
         Err(err) => {
             // Handle the error
-            tracing::error!("Error: There is no RODT associated with the account: {}", err);
+            println!("Error: There is no RODT associated with the account: {}", err);
             std::process::exit(1);
         }
     }
 
     // Create an Interface Name derived from the token_id ULID,
     // with a max length of 15 characters, by default utun+last 11 of ULID for operating systems compatibility, 
+    println!("rodt {:?}",rodt);
     let tun_name = format!("utun{}", &rodt.token_id[rodt.token_id.len() - 11..]).to_lowercase();
     println!("TUN Name: {}", tun_name);
 

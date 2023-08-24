@@ -52,7 +52,7 @@ impl Default for Rodt {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RodtMetadata {
-    pub issuer_name: String,
+    pub issuername: String,
     pub description: String,
     pub notafter: String,
     pub notbefore: String,
@@ -71,7 +71,7 @@ pub struct RodtMetadata {
 impl Default for RodtMetadata {
     fn default() -> Self {
         RodtMetadata {
-            issuer_name: String::default(),
+            issuername: String::default(),
             description: String::default(),
             notafter: String::default(),
             notbefore: String::default(),
@@ -136,6 +136,8 @@ pub fn nearorg_rpc_tokens_for_owner(
         
     let result_string = core::str::from_utf8(&result_slice).unwrap();
     
+    println!("result_string, {:?}", result_string);
+
     let result_struct: Vec<Rodt> = match serde_json::from_str(result_string) {
         Ok(value) => value,
         Err(err) => {
@@ -158,7 +160,7 @@ pub fn nearorg_rpc_tokens_for_owner(
         for rodt in result_struct {
             tracing::error!("token_id: {}", rodt.token_id);
             tracing::error!("owner_id: {}", rodt.owner_id);
-            tracing::error!("issuer_name: {}", rodt.metadata.issuer_name);
+            tracing::error!("issuername: {}", rodt.metadata.issuername);
             tracing::error!("description: {}", rodt.metadata.description);
             tracing::error!("notafter: {}", rodt.metadata.notafter);
             tracing::error!("notbefore: {}", rodt.metadata.notbefore);
