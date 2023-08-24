@@ -235,8 +235,6 @@ impl Tai64N {
 struct NoiseParams {
     static_public: x25519::PublicKey,
     static_private: x25519::StaticSecret,
-    // CG: As we don't know the Static public key of the other party
-    // before initiating handshake it needs to be set to a constant
     peer_static_public: x25519::PublicKey,
     static_shared: x25519::SharedSecret,
     sending_mac1_key: [u8; KEY_LEN],
@@ -320,7 +318,6 @@ struct Cookies {
     write_cookie: Option<[u8; 16]>,
 }
 
-// CG: Adding rotd_id and signature to half handshake?
 #[derive(Debug)]
 pub struct HalfHandshake {
     pub received_session_index: u32,
@@ -383,8 +380,6 @@ impl NoiseParams {
         rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
     ) -> Result<NoiseParams, WireGuardError> {
 
-        // CG: As peer_static_public is not known ahead of time 
-        // we need to set it as a constant to keep the same handshaking mechanism
         let static_shared = static_private.diffie_hellman(&peer_static_public);
 
         let initial_sending_mac_key = b2s_hash(LABEL_MAC1, peer_static_public.as_bytes());
@@ -509,8 +504,6 @@ impl Handshake {
 
     // CG: Additional checks include: not accepting notafter and notbefore dates for RODT
     // Self configuring the DNS
-    // Running postup and postdown commands
-    // Usin   allowedips: 0.0.0.0/0 and endpoint: 127.0.0.1
     // Not taking connections out of the bandwith, network or location limits
 
     pub(super) fn consume_received_handshake_initiation<'a>(
@@ -558,9 +551,6 @@ impl Handshake {
             &hash,
         )?;
 
-        // CG: This is where we compare if we have seen this peer public key,
-        // peer public key is set to a constant as we don't have a list of peers ahead of time
-        // This will be spot where to check digital signatures and decide on trust
         ring::constant_time::verify_slices_are_equal(
             self.params.peer_static_public.as_bytes(),
             &peer_static_public_decrypted,
@@ -774,7 +764,7 @@ impl Handshake {
         // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         let mut hash = INITIAL_CHAIN_HASH;
 
-        // CG: As we don't know self.params.peer_static_public yet, we need to set it to a fix value
+        // As we don't know self.params.peer_static_public yet, we need to set it to a fix value
         hash = b2s_hash(&hash, self.params.peer_static_public.as_bytes());
         
         // initiator.ephemeral_private = DH_GENERATE()

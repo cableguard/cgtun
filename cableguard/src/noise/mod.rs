@@ -436,7 +436,7 @@ impl Tunn {
         // IsTrusted(rodt.metadata.serviceprovider_id);
         // ,checking if the Issuer smart contract has published a TXT 
         // entry with the token_id of the server
-        // CG: End of RODT verification
+        // End of RODT verification
 
         let index = session.local_index();
         self.sessions[index % N_SESSIONS] = Some(session);
@@ -1001,5 +1001,5 @@ let account_idargs = "{\"token_id\": \"".to_owned()
     // IsTrusted(rodt.metadata.serviceprovider_id);
     // ,checking if the Issuer smart contract has published a TXT 
     // entry with the token_id of the server
-    // CG: End of RODT verification
+    // End of RODT verification
 }

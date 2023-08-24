@@ -517,7 +517,7 @@ impl Device {
                         println!("Public Key: {}", peer_base64_pk);
                         println!("Port: {:?}", peer_port);
                     }
-                    // CG: Take the subdomain_endpoint as endpoint of a new peer
+                    // Take the subdomain_endpoint as endpoint of a new peer
                     let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
                     let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
                     let peer_u832_pk: [u8; 32] = peer_bytes_pk
@@ -1045,7 +1045,7 @@ impl Device {
         Ok(())
     }
 
-    // CG: This instance of api_set can operate internally, not talking to wg. But it seems IT IS NOT USED
+    // This instance of api_set can operate internally, not talking to wg. But it seems IT IS NOT USED
     pub fn api_set_internal(&mut self, option: &str, value: &str) {
         match option {
             // We can self-serve the private key from the input json wallet file
@@ -1098,7 +1098,7 @@ impl Device {
             }
         }
 
-    // CG: This instance of api_set_subdomain_peer_internal can operate internally, not talking to wg.
+    // This instance of api_set_subdomain_peer_internal can operate internally, not talking to wg.
     fn api_set_subdomain_peer_internal(&mut self, endpoint_listenport:Option<SocketAddr>,
         peer_publickey_public_key: x25519::PublicKey) -> i32 {
     // cidrblock is allowed-ips
@@ -1112,9 +1112,6 @@ impl Device {
         let preshared_key = None;
         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
 
-        // CG: Following 2 lines probably unnecessary since Server adds peers automatically
-        // let ip: IpAddr = self.config.rodt.metadata.issuer_name.parse().expect("Error: Invalid IP address");
-        // let port: u16 = self.config.rodt.metadata.listenport.parse().expect("Error: Invalid port");
         tracing::info!("Info: Setting Server IP and port {:?}", endpoint_listenport);     
 
         // Cidrblock is allowed_ip, it fails if the cidr format is not followed

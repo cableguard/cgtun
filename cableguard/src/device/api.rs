@@ -492,7 +492,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 };
                                 let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
                                 println!("Info: IP address read from subdomain {}", ipaddress);               
-                                // CG: Obtain the public key from the subdomain_peer
+                                // Obtain the public key from the subdomain_peer
                                 let cfgresponse = dnssecresolver.txt_lookup(subdomain_peer);
                                 cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
                                 let mut peer_base64_pk:String="=".to_string();
@@ -516,7 +516,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                     println!("Public Key: {}", peer_base64_pk);
                                     println!("Port: {:?}", peer_port);
                                 }
-                                // CG: Take the subdomain_endpoint as endpoint of a new peer
+                                // Take the subdomain_endpoint as endpoint of a new peer
                                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
                                 let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
                                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
