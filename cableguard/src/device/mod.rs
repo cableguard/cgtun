@@ -486,15 +486,15 @@ impl Device {
                     let server_rodt = result;
                     tracing::error!("Info: Matching Server RODT Owner: {:?}", server_rodt.owner_id);
                     let mut peer_port: u16 = 0;
-                    // println!("Info: Subdomain read from RODiT {}", server_rodt.metadata.subjectuniqueidentifier_url);
+                    // println!("Info: Subdomain read from RODiT {}", server_rodt.metadata.subjectuniqueidentifierurl);
                     let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
                     let ipresponse = dnssecresolver.lookup_ip("es.europe-madrid.cableguard.net.").unwrap();
-                    // let ipresponse = dnssecresolver.lookup_ip(&server_rodt.metadata.subjectuniqueidentifier_url).unwrap();
+                    // let ipresponse = dnssecresolver.lookup_ip(&server_rodt.metadata.subjectuniqueidentifierurl).unwrap();
                     let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
                     println!("Info: IP address read from subdomain {}", ipaddress);                      
                     let cfgresponse = dnssecresolver.txt_lookup("es.europe-madrid.cableguard.net.");
-                    // let cfgresponse = dnssecresolver.txt_lookup(&server_rodt.metadata.subjectuniqueidentifier_url);
-                    println!("Info: Default Server VPN: {}", server_rodt.metadata.subjectuniqueidentifier_url);
+                    // let cfgresponse = dnssecresolver.txt_lookup(&server_rodt.metadata.subjectuniqueidentifierurl);
+                    println!("Info: Default Server VPN: {}", server_rodt.metadata.subjectuniqueidentifierurl);
                     cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
                     let mut peer_base64_pk:String="=".to_string();
                     for configs in cfgresponse.iter() {

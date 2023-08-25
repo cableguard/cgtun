@@ -25,7 +25,7 @@ const SOCK_DIR: &str = "/var/run/wireguard/";
 
 pub mod constants {
     // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
-    pub const SMART_CONTRACT: &str = "20230822-cableguard-net.near";
+    pub const SMART_CONTRACT: &str = "20230825-cableguard-net.near";
     pub const BLOCKCHAIN_NETWORK: &str = "."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
 }
 
@@ -62,7 +62,7 @@ pub struct RodtMetadata {
     pub postup: String,
     pub postdown: String,
     pub allowedips: String,
-    pub subjectuniqueidentifier_url: String,
+    pub subjectuniqueidentifierurl: String,
     pub serviceprovider_id: String,
     pub serviceprovidersignature: String,
     pub kbpersecond: String,
@@ -81,7 +81,7 @@ impl Default for RodtMetadata {
             postup: String::default(),
             postdown: String::default(),
             allowedips: String::default(),
-            subjectuniqueidentifier_url: String::default(),
+            subjectuniqueidentifierurl: String::default(),
             serviceprovider_id: String::default(),
             serviceprovidersignature: String::default(),
             kbpersecond: String::default(),
@@ -170,7 +170,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::error!("postup: {}", rodt.metadata.postup);
             tracing::error!("postdown: {}", rodt.metadata.postdown);
             tracing::error!("allowedips: {}", rodt.metadata.allowedips);
-            tracing::error!("subjectuniqueidentifier_url: {}", rodt.metadata.subjectuniqueidentifier_url);
+            tracing::error!("subjectuniqueidentifierurl: {}", rodt.metadata.subjectuniqueidentifierurl);
             tracing::error!("serviceprovider_id: {}", rodt.metadata.serviceprovider_id);
             tracing::error!("serviceprovidersignature: {}", rodt.metadata.serviceprovidersignature);
             tracing::error!("kbpersecond: {}", rodt.metadata.kbpersecond);
