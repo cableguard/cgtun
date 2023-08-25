@@ -98,7 +98,7 @@ pub fn nearorg_rpc_tokens_for_owner(
 ) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
-    tracing::error!("Debugging: Blockchain Directory Network (. for mainnet): {}",xnet);
+    tracing::debug!("Info: Blockchain Directory Network (. for mainnet): {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -135,13 +135,11 @@ pub fn nearorg_rpc_tokens_for_owner(
     let result_slice: &[u8] = &result_bytes;
         
     let result_string = core::str::from_utf8(&result_slice).unwrap();
-    
-    println!("result_string, {:?}", result_string);
 
     let result_struct: Vec<Rodt> = match serde_json::from_str(result_string) {
         Ok(value) => value,
         Err(err) => {
-            tracing::error!("Error: can't handle RODT struct {:?}",result_string);
+            tracing::debug!("Error: can't handle RODT struct {:?}",result_string);
             // Handle the error, such as logging or returning an error result
             return Err(Box::new(err));
         }
@@ -150,7 +148,7 @@ pub fn nearorg_rpc_tokens_for_owner(
     let mut result_iter = match serde_json::from_str::<Vec<Rodt>>(result_string) {
         Ok(value) => value.into_iter(),
         Err(err) => {
-            tracing::error!("Error: can't handle RODT iter  {}",result_string);
+            tracing::debug!("Error: can't handle RODT iter  {}",result_string);
             // Handle the error, such as logging or returning an error result
             return Err(Box::new(err));
         }
@@ -158,22 +156,22 @@ pub fn nearorg_rpc_tokens_for_owner(
     
     if let Some(rodt) = result_iter.next() {
         for rodt in result_struct {
-            tracing::error!("token_id: {}", rodt.token_id);
-            tracing::error!("owner_id: {}", rodt.owner_id);
-            tracing::error!("issuername: {}", rodt.metadata.issuername);
-            tracing::error!("description: {}", rodt.metadata.description);
-            tracing::error!("notafter: {}", rodt.metadata.notafter);
-            tracing::error!("notbefore: {}", rodt.metadata.notbefore);
-            tracing::error!("notbefore: {}", rodt.metadata.listenport);
-            tracing::error!("cidrblock: {}", rodt.metadata.cidrblock);
-            tracing::error!("dns: {}", rodt.metadata.dns);
-            tracing::error!("postup: {}", rodt.metadata.postup);
-            tracing::error!("postdown: {}", rodt.metadata.postdown);
-            tracing::error!("allowedips: {}", rodt.metadata.allowedips);
-            tracing::error!("subjectuniqueidentifierurl: {}", rodt.metadata.subjectuniqueidentifierurl);
-            tracing::error!("serviceproviderid: {}", rodt.metadata.serviceproviderid);
-            tracing::error!("serviceprovidersignature: {}", rodt.metadata.serviceprovidersignature);
-            tracing::error!("kbpersecond: {}", rodt.metadata.kbpersecond);
+            tracing::debug!("Info:  token_id: {}", rodt.token_id);
+            tracing::debug!("Info: owner_id: {}", rodt.owner_id);
+            tracing::debug!("Info: issuername: {}", rodt.metadata.issuername);
+            tracing::debug!("Info: description: {}", rodt.metadata.description);
+            tracing::debug!("Info: notafter: {}", rodt.metadata.notafter);
+            tracing::debug!("Info: notbefore: {}", rodt.metadata.notbefore);
+            tracing::debug!("Info: notbefore: {}", rodt.metadata.listenport);
+            tracing::debug!("Info: cidrblock: {}", rodt.metadata.cidrblock);
+            tracing::debug!("Info: dns: {}", rodt.metadata.dns);
+            tracing::debug!("Info: postup: {}", rodt.metadata.postup);
+            tracing::debug!("Info: postdown: {}", rodt.metadata.postdown);
+            tracing::debug!("Info: allowedips: {}", rodt.metadata.allowedips);
+            tracing::debug!("Info: subjectuniqueidentifierurl: {}", rodt.metadata.subjectuniqueidentifierurl);
+            tracing::debug!("Info: serviceproviderid: {}", rodt.metadata.serviceproviderid);
+            tracing::debug!("Info: serviceprovidersignature: {}", rodt.metadata.serviceprovidersignature);
+            tracing::debug!("Info: kbpersecond: {}", rodt.metadata.kbpersecond);
         }
      // Return the first Rodt instance as the result
         return Ok(rodt.clone());
@@ -191,7 +189,7 @@ pub fn nearorg_rpc_token(
 ) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
-    tracing::error!("Debugging: Blockchain Directory Network (. for mainnet): {}",xnet);
+    tracing::debug!("Info: Blockchain Directory Network (. for mainnet): {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -240,7 +238,7 @@ pub fn nearorg_rpc_state(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
-    tracing::error!("Debugging: Blockchain Directory Network (. for mainnet): {}",xnet);
+    tracing::debug!("Info: Blockchain Directory Network (. for mainnet): {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -264,7 +262,7 @@ pub fn nearorg_rpc_state(
     let response_text: String = response.text()?;
     let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
     if parsed_json.to_string().contains("does not exist while viewing") {
-        println!("{}","The account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR");
+        tracing::debug!("Error: {}","The account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR");
         return Err("The account does not exist in the blockchain".into());
     }
     Ok(())
@@ -480,20 +478,20 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 let dnssecresolver = match Resolver::new(ResolverConfig::default(), ResolverOpts::default()) {
                                     Ok(resolver) => resolver,
                                     Err(_) => {
-                                        eprintln!("Error: Could not create DNS resolver");
+                                        etracing::debug!("Error: Could not create DNS resolver");
                                         return EINVAL
                                     }
                                 };
-                                println!("Info: Subdomain read from command line wg {}", subdomain_peer);
+                                tracing::debug!("Info: Subdomain read from command line wg {}", subdomain_peer);
                                 let ipresponse = match dnssecresolver.lookup_ip(&subdomain_peer) {
                                     Ok(response) => response,
                                     Err(_) => {
-                                        eprintln!("Error: IP lookup for subdomain failed");
+                                        etracing::debug!("Error: IP lookup for subdomain failed");
                                         return EINVAL
                                     }
                                 };
                                 let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
-                                println!("Info: IP address read from subdomain {}", ipaddress);               
+                                tracing::debug!("Info: IP address read from subdomain {}", ipaddress);               
                                 // Obtain the public key from the subdomain_peer
                                 let cfgresponse = dnssecresolver.txt_lookup(subdomain_peer);
                                 cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
@@ -515,8 +513,8 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                     let peer_str_port:String;
                                     peer_str_port = peer_configs[port_start..port_end].to_string();
                                     peer_port = peer_str_port.parse().unwrap_or(0);
-                                    println!("Public Key: {}", peer_base64_pk);
-                                    println!("Port: {:?}", peer_port);
+                                    tracing::debug!("Info: Public Key: {}", peer_base64_pk);
+                                    tracing::debug!("Port: {:?}", peer_port);
                                 }
                                 // Take the subdomain_endpoint as endpoint of a new peer
                                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);

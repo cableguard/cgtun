@@ -285,7 +285,7 @@ impl DeviceHandle {
                         }
                         handler.cancel();
                     }
-                    WaitResult::Error(e) => tracing::error!(message = "Error: Poll error", error = ?e),
+                    WaitResult::Error(e) => tracing::debug!(message = "Error: Poll error", error = ?e),
                 }
             }
         }
@@ -319,7 +319,7 @@ impl Device {
             self.listbyip_peer_index
                 .remove(&|p: &Arc<Mutex<Peer>>| Arc::ptr_eq(&peer, p));
 
-            tracing::info!("Info: Peer removed");
+            tracing::debug!("Info: Peer removed");
         }
     }
 
@@ -342,7 +342,7 @@ impl Device {
 
         // Update an existing peer
         if self.peers.get(&peer_publickey_public_key).is_some() {
-            tracing::error!("Debugging: Peers are dinamically added and removed so it makes no sense to update them. No actions have been performed");
+            tracing::debug!("Info: Peers are dinamically added and removed so it makes no sense to update them. No actions have been performed");
             return
         }
 
@@ -358,7 +358,7 @@ impl Device {
 
         let rodt_id_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
 
-        tracing::error!("Debugging: Own RODT ID signature {}",rodt_id_signature);
+        tracing::debug!("Info: Own RODT ID signature {}",rodt_id_signature);
 
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Own X25519 private key
@@ -382,7 +382,7 @@ impl Device {
             self.listbyip_peer_index
                 .insert(*addr, *cidr as _, Arc::clone(&peer));
         }
-        tracing::error!("Debugging: Peer added");
+        tracing::debug!("Info: Peer added");
     }
 
     pub fn new(tunname: &str, config: DeviceConfig) -> Result<Device, Error> {
@@ -449,19 +449,20 @@ impl Device {
             .expect("Error: Failed to execute command");
         if output.status.success() {
             let _stdout = String::from_utf8_lossy(&output.stdout);
-            tracing::error!("Debugging: Ip addr add command executed successfully: {}",device.config.rodt.metadata.cidrblock);
+            tracing::debug!("Info: Ip addr add command executed successfully: {}",device.config.rodt.metadata.cidrblock);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            tracing::error!("Error: Ip addr add command failed to execute {}", stderr);
+            tracing::debug!("Error: Ip addr add command failed to execute {}", stderr);
         }
 
         // Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.serviceproviderid) {
-            println!("This tunnel uses a Server RODT");
+            tracing::debug!("Info: This tunnel uses a Server RODT");
 //             let command = "iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ tunname;
             let command = &device.config.rodt.metadata.postup;
+            tracing::debug!("Info: Post up command {}", &device.config.rodt.metadata.postup);
             let output = Command::new("bash")
                 .arg("-c")
                 .arg(command)
@@ -469,14 +470,14 @@ impl Device {
                 .expect("Error: Failed to execute postup command");
             if output.status.success() {
                 let _stdout = String::from_utf8_lossy(&output.stdout);
-                tracing::error!("Debugging: postup command executed successfully: {}",device.config.rodt.metadata.cidrblock);
+                tracing::debug!("Info: postup command executed successfully: {}",device.config.rodt.metadata.cidrblock);
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr);
-                tracing::error!("Error: postup command failed to execute {}", stderr);
+                tracing::debug!("Error: postup command failed to execute {}", stderr);
             }
         }
         else{
-            println!("This tunnel uses a Client RODT");    
+            tracing::debug!("Info: This tunnel uses a Client RODT");    
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.rodt.metadata.serviceproviderid + "\"}";
             match nearorg_rpc_token(Self::XNET,
@@ -484,17 +485,17 @@ impl Device {
                 "nft_token",&account_idargs) {
                 Ok(result) => {
                     let server_rodt = result;
-                    tracing::error!("Info: Matching Server RODT Owner: {:?}", server_rodt.owner_id);
+                    tracing::debug!("Info: Matching Server RODT Owner: {:?}", server_rodt.owner_id);
                     let mut peer_port: u16 = 0;
-                    // println!("Info: Subdomain read from RODiT {}", server_rodt.metadata.subjectuniqueidentifierurl);
+                    // tracing::debug!("Info: Subdomain read from RODiT {}", server_rodt.metadata.subjectuniqueidentifierurl);
                     let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
                     let ipresponse = dnssecresolver.lookup_ip("es.europe-madrid.cableguard.net.").unwrap();
                     // let ipresponse = dnssecresolver.lookup_ip(&server_rodt.metadata.subjectuniqueidentifierurl).unwrap();
                     let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
-                    println!("Info: IP address read from subdomain {}", ipaddress);                      
+                    tracing::debug!("Info: IP address read from subdomain {}", ipaddress);                      
                     let cfgresponse = dnssecresolver.txt_lookup("es.europe-madrid.cableguard.net.");
                     // let cfgresponse = dnssecresolver.txt_lookup(&server_rodt.metadata.subjectuniqueidentifierurl);
-                    println!("Info: Default Server VPN: {}", server_rodt.metadata.subjectuniqueidentifierurl);
+                    tracing::debug!("Info: Default Server VPN: {}", server_rodt.metadata.subjectuniqueidentifierurl);
                     cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
                     let mut peer_base64_pk:String="=".to_string();
                     for configs in cfgresponse.iter() {
@@ -514,8 +515,8 @@ impl Device {
                         let peer_str_port:String;
                         peer_str_port = peer_configs[port_start..port_end].to_string();
                         peer_port = peer_str_port.parse().unwrap_or(0);
-                        println!("Public Key: {}", peer_base64_pk);
-                        println!("Port: {:?}", peer_port);
+                        tracing::debug!("Info: Public Key: {}", peer_base64_pk);
+                        tracing::debug!("Info: Port: {:?}", peer_port);
                     }
                     // Take the subdomain_endpoint as endpoint of a new peer
                     let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
@@ -527,7 +528,7 @@ impl Device {
                     device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
                         x25519::PublicKey::from(peer_u832_pk));
                 }
-                Err(_) => {tracing::error!("Error: There is no RODT associated with the account");  }
+                Err(_) => {tracing::debug!("Error: There is no RODT associated with the account");  }
             }
         }
         Ok(device)
@@ -699,7 +700,7 @@ impl Device {
                         TunnResult::Err(WireGuardError::ConnectionExpired) => {
                             p.shutdown_endpoint(); // close open udp socket
                         }
-                        TunnResult::Err(e) => tracing::error!(message = "Error: Timer error", error = ?e),
+                        TunnResult::Err(e) => tracing::debug!(message = "Error: Timer error", error = ?e),
                         TunnResult::WriteToNetwork(packet) => {
                             match endpoint_addr {
                                 SocketAddr::V4(_) => {
@@ -811,7 +812,7 @@ impl Device {
                                                     allowed_ips_listed.push(allowed_ip);
                                                     let peer = Peer::new(tunn, next_peer_index, Some(endpoint_listenport), &allowed_ips_listed, None);
                                                     let peermutex = Arc::new(Mutex::new(peer));
-                                                    println!("Info: Adding peer:  {:?}", peer_publickey_public_key);
+                                                    tracing::debug!("Info: Adding peer:  {:?}", peer_publickey_public_key);
                                                     device.peers.insert(peer_publickey_public_key, Arc::clone(&peermutex));
                                                     device.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peermutex));
                                                     for AllowedIP { addr, cidr } in &allowed_ips_listed {
@@ -938,7 +939,7 @@ impl Device {
                         &mut t.dst_buf[..],
                     ) {
                         TunnResult::Done => {}
-                        TunnResult::Err(e) => eprintln!("Decapsulate error {:?}", e),
+                        TunnResult::Err(e) => etracing::debug!("Decapsulate error {:?}", e),
                         TunnResult::WriteToNetwork(packet) => {
                             flush = true;
                             let _: Result<_, _> = udp.send(packet);
@@ -999,11 +1000,11 @@ impl Device {
                             if ek == io::ErrorKind::Interrupted || ek == io::ErrorKind::WouldBlock {
                                 break;
                             }
-                            eprintln!("Fatal read error on tun interface: {:?}", e);
+                            etracing::debug!("Error: Fatal read error on tun interface: {:?}", e);
                             return Action::Exit;
                         }
                         Err(e) => {
-                            eprintln!("Unexpected error on tun interface: {:?}", e);
+                            etracing::debug!("Error: Unexpected error on tun interface: {:?}", e);
                             return Action::Exit;
                         }
                     };
@@ -1021,7 +1022,7 @@ impl Device {
                     match peer.tunnel.encapsulate(src, &mut t.dst_buf[..]) {
                         TunnResult::Done => {}
                         TunnResult::Err(e) => {
-                            tracing::error!(message = "Error: Encapsulate error", error = ?e)
+                            tracing::debug!(message = "Error: Encapsulate error", error = ?e)
                         }
                         TunnResult::WriteToNetwork(packet) => {
                             let mut endpoint = peer.endpoint_mut();
@@ -1033,7 +1034,7 @@ impl Device {
                             } else if let Some(addr @ SocketAddr::V6(_)) = endpoint.addr {
                                 let _: Result<_, _> = udp6.send_to(packet, &addr.into());
                             } else {
-                                tracing::error!("Error: No endpoint");
+                                tracing::debug!("Error: No endpoint");
                             }
                         }
                         _ => panic!("Unexpected result from encapsulate"),
@@ -1053,7 +1054,7 @@ impl Device {
                 Ok(own_keybytes_private_key) => {
                     let own_string_private_key = serialization::keybytes_to_hex_string(&own_keybytes_private_key);
                     let own_hex_private_key = format!("{:02X?}", own_string_private_key);
-                    tracing::error!(message = "Debugging: Private_key FN api_set_internal: {}", own_hex_private_key);
+                    tracing::debug!(message = "Info: Private_key FN api_set_internal: {}", own_hex_private_key);
                     self.set_key_pair(x25519::StaticSecret::from(own_keybytes_private_key.0))
                     }
                 Err(_) => return,
@@ -1061,8 +1062,8 @@ impl Device {
             "listen_port" => match self.config.rodt.metadata.listenport.parse::<u16>() {
                 Ok(port) => match self.open_listen_socket(port) {
                     Ok(()) => {
-                        tracing::error!("Debugging: Port FN api_set_internal: {}", port);
-                        tracing::error!("Debugging: Rodt Port  FN api_set_internal: {}", self.config.rodt.metadata.listenport);
+                        tracing::debug!("Info: Port FN api_set_internal: {}", port);
+                        tracing::debug!("Info: Rodt Port  FN api_set_internal: {}", self.config.rodt.metadata.listenport);
                     }
                     Err(_) => return,
                 },
@@ -1088,7 +1089,7 @@ impl Device {
             "set_peer_public_key" => match value.parse::<KeyBytes>() {
                 Ok(peer_keybytes_key) => {
                     let peer_hex_public_key = encode_hex(peer_keybytes_key.0);
-                    tracing::error!("Debugging: Peer Public Key FN api_set_internal {:?}", peer_hex_public_key);
+                    tracing::debug!("Info: Peer Public Key FN api_set_internal {:?}", peer_hex_public_key);
                         self.api_set_subdomain_peer_internal(Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080)),x25519::PublicKey::from(peer_keybytes_key.0));
                         return
                     }
@@ -1112,12 +1113,12 @@ impl Device {
         let preshared_key = None;
         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
 
-        tracing::info!("Info: Setting Server IP and port {:?}", endpoint_listenport);     
+        tracing::debug!("Info: Setting Server IP and port {:?}", endpoint_listenport);     
 
         // Cidrblock is allowed_ip, it fails if the cidr format is not followed
         let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid own AllowedIP");
-        tracing::info!("Info: Setting own assigned IP {:?}", allowed_ip);
+        tracing::debug!("Info: Setting own assigned IP {:?}", allowed_ip);
 
         // CG: Add IPv6 support
         // let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string

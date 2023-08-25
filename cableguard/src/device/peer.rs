@@ -84,7 +84,7 @@ impl Peer {
 
     pub fn shutdown_endpoint(&self) {
         if let Some(conn) = self.endpoint.write().conn.take() {
-            tracing::info!("Info: Disconnecting from endpoint");
+            tracing::debug!("Info: Disconnecting from endpoint");
             conn.shutdown(Shutdown::Both).unwrap();
         }
     }
@@ -133,7 +133,7 @@ impl Peer {
             udp_conn.set_mark(fwmark)?;
         }
 
-        tracing::info!(
+        tracing::debug!(
             message="Info: Connected endpoint",
             port=port,
             endpoint=?endpoint.addr.unwrap()

@@ -413,7 +413,7 @@ impl NoiseParams {
 
         // Display the converted values in the trace
         error!(
-            "Debugging: static_private: {}, static_public: {} fn set_static_private",
+            "Info: static_private: {}, static_public: {} fn set_static_private",
             own_static_string_private_key,
             own_static_string_public_key
         );
@@ -835,11 +835,11 @@ impl Handshake {
         match string_rodt_id {
             Ok(string) => {
                 // Conversion success, use the resulting string
-                tracing::error!("Debugging: Initiation RODT_ID sent {}",string);
+                tracing::debug!("Info: Initiation RODT_ID sent {}",string);
             }
             Err(error) => {
                 // Conversion failed, handle the error
-                println!("[u8:128] to String conversion error: {:?}", error);
+                tracing::debug!("Error: [u8:128] to String conversion error: {:?}", error);
             }
         }
 
@@ -952,8 +952,8 @@ impl Handshake {
         rodt_id.copy_from_slice(&self.params.rodt_id);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
 
-        // tracing::error!("Debugging: Response RODT_ID {:?}", self.params.rodt_id);
-        // tracing::error!("Debugging: Response Signature of the RODT_ID {:?}",rodt_id_signature);
+        // tracing::debug!("Info: Response RODT_ID {:?}", self.params.rodt_id);
+        // tracing::debug!("Info: Response Signature of the RODT_ID {:?}",rodt_id_signature);
 
         let dst = self.append_mac1_and_mac2(local_index, &mut dst[..super::HANDSHAKE_RESP_SZ])?;
 
@@ -1013,7 +1013,7 @@ mod tests {
 
         aead_chacha20_seal(&mut encrypted_nothing, &key, counter, &[], &aad);
 
-        eprintln!("Error, encrypted_nothing: {:?}", encrypted_nothing);
+        etracing::debug!("Error, encrypted_nothing: {:?}", encrypted_nothing);
 
         aead_chacha20_open(&mut [], &key, counter, &encrypted_nothing, &aad)
             .expect("Should open what we just sealed");

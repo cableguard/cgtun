@@ -92,21 +92,21 @@ fn main() {
     let mut accountfile = match File::open(&accountfile_path) {
         Ok(accountfile) => accountfile,
         Err(err) => {
-            eprintln!("Failed to open the file with the accountId: {}", err);
+            etracing::debug!("Error: Failed to open the file with the accountId: {}", err);
             return; // Terminate the program or handle the error accordingly
         }
     };
 
     let mut accountfile_contents = String::new();
     if let Err(err) = accountfile.read_to_string(&mut accountfile_contents) {
-        eprintln!("Failed to read the file with the accountId: {}", err);
+        etracing::debug!("Error: Failed to read the file with the accountId: {}", err);
         return; // Terminate the program or handle the error accordingly
     }
 
     let json: Value = match serde_json::from_str(&accountfile_contents) {
         Ok(contents) => contents,
         Err(err) => {
-            eprintln!("Failed to parse JSON of the file with the accountId: {}", err);
+            etracing::debug!("Error: Failed to parse JSON of the file with the accountId: {}", err);
             // Add any additional error handling logic if needed
             return; // Terminate the program
         }
@@ -123,11 +123,11 @@ fn main() {
     let rodt: Rodt;
 
     let version = env!("CARGO_PKG_VERSION");
-    println!("Cableguard version: {}", version);
-    println!("RODT Blockchain Directory: {}", "NEAR.ORG");
-    println!("Blockchain Directory Network (. for mainnet): {}", BLOCKCHAIN_NETWORK);
-    println!("Smart Contract Account: {}", SMART_CONTRACT);
-    println!("RODT owner Account ID in Hex: {}", account_id);
+    println!("Info: Cableguard version: {}", version);
+    println!("Info: RODT Blockchain Directory: {}", "NEAR.ORG");
+    println!("Info: Blockchain Directory Network (. for mainnet): {}", BLOCKCHAIN_NETWORK);
+    println!("Info: Smart Contract Account: {}", SMART_CONTRACT);
+    println!("Info: RODT owner Account ID in Hex: {}", account_id);
 
     // Perform a RPC call with it and obtain the token_id
     match nearorg_rpc_state(BLOCKCHAIN_NETWORK, SMART_CONTRACT, account_id) {
@@ -135,7 +135,7 @@ fn main() {
         }
         Err(err) => {
             // Show a warning if the account is not primed or the account has not RODT
-            tracing::error!("Error: Account has no NEAR balance): {}", err);
+            tracing::debug!("Error: Account has no NEAR balance): {}", err);
             std::process::exit(1);
         }
     }
@@ -148,16 +148,15 @@ fn main() {
         }
         Err(err) => {
             // Handle the error
-            println!("Error: There is no RODT associated with the account: {}", err);
+            tracing::debug!("Error: There is no RODT associated with the account: {}", err);
             std::process::exit(1);
         }
     }
 
     // Create an Interface Name derived from the token_id ULID,
     // with a max length of 15 characters, by default utun+last 11 of ULID for operating systems compatibility, 
-    println!("rodt {:?}",rodt);
     let tun_name = format!("utun{}", &rodt.token_id[rodt.token_id.len() - 11..]).to_lowercase();
-    println!("TUN Name: {}", tun_name);
+    tracing::debug!("Info: TUN Name: {}", tun_name);
 
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
     let own_static_bytes_private_ed25519_key = bs58::decode(own_static_base58_private_ed25519_key)
@@ -172,7 +171,7 @@ fn main() {
     // Generate the X25519 public key from the X25519 private key of 32 bytes
     let own_static_bytes_public_x25519_key = skx2pkx(own_staticsecret_private_x25519_key.clone());
     let own_static_b64_public_x25519_key = hex_to_base64(&own_static_bytes_public_x25519_key);
-    println!("X25519 Public Key in Base64: {}", own_static_b64_public_x25519_key);
+    tracing::debug!("Info: X25519 Public Key in Base64: {}", own_static_b64_public_x25519_key);
     
     // Create a socketpair to communicate between forked processes
     let (sock1, sock2) = UnixDatagram::pair().unwrap();
@@ -180,7 +179,7 @@ fn main() {
     
     let _guard;
     
-    println!("Info: To create or display available RODT Blockchain Directory accounts use: \"./wallet/rodtwallet.sh\"");
+    tracing::debug!("Info: To create or display available RODT Blockchain Directory accounts use: \"./wallet/rodtwallet.sh\"");
 
     if background {
         // Running in background mode
@@ -220,18 +219,18 @@ fn main() {
                 // Perform an action when the daemon process exits
                 let mut b = [0u8; 1];
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
-                    println!("Info: CableGuard started successfully");
+                    tracing::debug!("Info: CableGuard started successfully");
                 } else {
-                    eprintln!("Info: CableGuard failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                    etracing::debug!("Error: CableGuard failed to start. Check if the capabilities are set and you are running with enough privileges.");
                     exit(1);
                 };
             });
     
         // Start the daemon process
         match daemonize.start() {
-            Ok(_) => tracing::info!("Info: CableGuard started successfully"),
+            Ok(_) => tracing::debug!("Info: CableGuard started successfully"),
             Err(e) => {
-                tracing::error!(error = ?e);
+                tracing::debug!(error = ?e);
                 exit(1);
             }
         }
@@ -265,7 +264,7 @@ fn main() {
         Ok(d) => d,
         Err(e) => {
             // Notify parent that tunnel initiation failed
-            tracing::error!(message = "Error: Failed to initialize tunnel. Check if you are running with sudo", error=?e);
+            tracing::debug!(message = "Error: Failed to initialize tunnel. Check if you are running with sudo", error=?e);
             sock1.send(&[0]).unwrap();
             exit(1);
         }
@@ -274,7 +273,7 @@ fn main() {
     if !matches.is_present("disable-drop-privileges") {
         // Drop privileges if not disabled
         if let Err(e) = drop_privileges() {
-            tracing::error!(message = "Error: Failed to drop privileges", error = ?e);
+            tracing::debug!(message = "Error: Failed to drop privileges", error = ?e);
             sock1.send(&[0]).unwrap();
             exit(1);
         }
@@ -284,7 +283,7 @@ fn main() {
     sock1.send(&[1]).unwrap();
     drop(sock1);
     
-    tracing::info!("Info: CableGuard will hand over to TUN handle");
+    tracing::debug!("Info: CableGuard will hand over to TUN handle");
     
     // Wait for the device handle to finish processing
     device_handle.wait();    
