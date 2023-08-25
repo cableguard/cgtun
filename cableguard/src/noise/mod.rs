@@ -433,7 +433,7 @@ impl Tunn {
             }
         }
         // CG: Find the peer and check if
-        // IsTrusted(rodt.metadata.serviceprovider_id);
+        // IsTrusted(rodt.metadata.serviceproviderid);
         // ,checking if the Issuer smart contract has published a TXT 
         // entry with the token_id of the server
         // End of RODT verification
@@ -998,7 +998,7 @@ let account_idargs = "{\"token_id\": \"".to_owned()
         }
     }
     // CG: Find the peer and check if
-    // IsTrusted(rodt.metadata.serviceprovider_id);
+    // IsTrusted(rodt.metadata.serviceproviderid);
     // ,checking if the Issuer smart contract has published a TXT 
     // entry with the token_id of the server
     // End of RODT verification
