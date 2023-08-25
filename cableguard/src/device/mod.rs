@@ -939,7 +939,7 @@ impl Device {
                         &mut t.dst_buf[..],
                     ) {
                         TunnResult::Done => {}
-                        TunnResult::Err(e) => etracing::debug!("Decapsulate error {:?}", e),
+                        TunnResult::Err(e) => tracing::debug!("Decapsulate error {:?}", e),
                         TunnResult::WriteToNetwork(packet) => {
                             flush = true;
                             let _: Result<_, _> = udp.send(packet);
@@ -1000,11 +1000,11 @@ impl Device {
                             if ek == io::ErrorKind::Interrupted || ek == io::ErrorKind::WouldBlock {
                                 break;
                             }
-                            etracing::debug!("Error: Fatal read error on tun interface: {:?}", e);
+                            tracing::debug!("Error: Fatal read error on tun interface: {:?}", e);
                             return Action::Exit;
                         }
                         Err(e) => {
-                            etracing::debug!("Error: Unexpected error on tun interface: {:?}", e);
+                            tracing::debug!("Error: Unexpected error on tun interface: {:?}", e);
                             return Action::Exit;
                         }
                     };

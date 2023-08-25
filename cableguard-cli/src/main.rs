@@ -92,21 +92,21 @@ fn main() {
     let mut accountfile = match File::open(&accountfile_path) {
         Ok(accountfile) => accountfile,
         Err(err) => {
-            etracing::debug!("Error: Failed to open the file with the accountId: {}", err);
+            tracing::debug!("Error: Failed to open the file with the accountId: {}", err);
             return; // Terminate the program or handle the error accordingly
         }
     };
 
     let mut accountfile_contents = String::new();
     if let Err(err) = accountfile.read_to_string(&mut accountfile_contents) {
-        etracing::debug!("Error: Failed to read the file with the accountId: {}", err);
+        tracing::debug!("Error: Failed to read the file with the accountId: {}", err);
         return; // Terminate the program or handle the error accordingly
     }
 
     let json: Value = match serde_json::from_str(&accountfile_contents) {
         Ok(contents) => contents,
         Err(err) => {
-            etracing::debug!("Error: Failed to parse JSON of the file with the accountId: {}", err);
+            tracing::debug!("Error: Failed to parse JSON of the file with the accountId: {}", err);
             // Add any additional error handling logic if needed
             return; // Terminate the program
         }
@@ -221,7 +221,7 @@ fn main() {
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
                     tracing::debug!("Info: CableGuard started successfully");
                 } else {
-                    etracing::debug!("Error: CableGuard failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                    tracing::debug!("Error: CableGuard failed to start. Check if the capabilities are set and you are running with enough privileges.");
                     exit(1);
                 };
             });

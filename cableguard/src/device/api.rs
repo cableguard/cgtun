@@ -478,7 +478,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 let dnssecresolver = match Resolver::new(ResolverConfig::default(), ResolverOpts::default()) {
                                     Ok(resolver) => resolver,
                                     Err(_) => {
-                                        etracing::debug!("Error: Could not create DNS resolver");
+                                        tracing::debug!("Error: Could not create DNS resolver");
                                         return EINVAL
                                     }
                                 };
@@ -486,7 +486,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 let ipresponse = match dnssecresolver.lookup_ip(&subdomain_peer) {
                                     Ok(response) => response,
                                     Err(_) => {
-                                        etracing::debug!("Error: IP lookup for subdomain failed");
+                                        tracing::debug!("Error: IP lookup for subdomain failed");
                                         return EINVAL
                                     }
                                 };
