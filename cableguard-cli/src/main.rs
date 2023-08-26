@@ -125,9 +125,7 @@ fn main() {
     let version = env!("CARGO_PKG_VERSION");
     println!("Info: Cableguard version: {}", version);
     println!("Info: RODT Blockchain Directory: {}", "NEAR.ORG");
-    println!("Info: Blockchain Directory Network (. for mainnet): {}", BLOCKCHAIN_NETWORK);
     println!("Info: Smart Contract Account: {}", SMART_CONTRACT);
-    println!("Info: RODT owner Account ID in Hex: {}", account_id);
 
     // Perform a RPC call with it and obtain the token_id
     match nearorg_rpc_state(BLOCKCHAIN_NETWORK, SMART_CONTRACT, account_id) {
