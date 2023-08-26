@@ -458,10 +458,12 @@ impl Device {
         // Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
+        let mut role="Client";
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.serviceproviderid) {
-            println!("Info: This tunnel uses a Server RODiT"); 
+            role = "Server";
+            println!("Info: This tunnel uses a {} RODiT", role); 
 //             let command = "iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ tunname;
-            let mut command = &device.config.rodt.metadata.postup;
+            let command = &device.config.rodt.metadata.postup;
             tracing::debug!("Info: Post up command {}", &device.config.rodt.metadata.postup);
             let output = Command::new("bash")
                 .arg("-c")
@@ -477,7 +479,8 @@ impl Device {
             }
         }
         else{
-            println!("Info: This tunnel uses a Client RODiT");    
+            role = "Client";
+            println!("Info: This tunnel uses a {} RODiT", role);    
             let account_idargs = "{\"token_id\": \"".to_owned() 
                 + &device.config.rodt.metadata.serviceproviderid + "\"}";
             match nearorg_rpc_token(Self::XNET,

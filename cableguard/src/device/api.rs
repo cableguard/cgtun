@@ -5,6 +5,7 @@ use super::dev_lock::LockReadGuard;
 use super::drop_privileges::get_saved_ids;
 use super::{AllowedIP, Device, Error, SocketAddr};
 use crate::device::Action;
+use crate::device::BLOCKCHAIN_NETWORK;
 use crate::serialization::{KeyBytes};
 use crate::x25519;
 use libc::*;
@@ -406,7 +407,7 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
     // get command requires an empty line, but there is no reason to be religious about it
     if let Some(ref own_static_key_pair) = thisnetworkdevice.key_pair {
         writeln!(writerbufferdevice, "own_public_key={}", encode_hex(own_static_key_pair.1.as_bytes()));
-        writeln!(writerbufferdevice, "own_private_key={}", encode_hex(own_static_key_pair.0.as_bytes()));
+        // writeln!(writerbufferdevice, "own_private_key={}", encode_hex(own_static_key_pair.0.as_bytes()));
     }
 
     if thisnetworkdevice.listen_port != 0 {
@@ -416,6 +417,14 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
     if let Some(fwmark) = thisnetworkdevice.fwmark {
         writeln!(writerbufferdevice, "fwmark={}", fwmark);
     }
+
+    if BLOCKCHAIN_NETWORK == "." {
+        writeln!(writerbufferdevice, "bcnetwork={}", "mainnet");
+    } else if BLOCKCHAIN_NETWORK == "testnet" {
+        writeln!(writerbufferdevice, "bcnetwork=={}", "testnet");
+    }
+    writeln!(writerbufferdevice, "rodtaccountid={}", thisnetworkdevice.config.rodt.owner_id);
+    // writeln!(writerbufferdevice, "This tunnel's RODiT is a={}", role);
 
     for (own_static_key_pair, peer) in thisnetworkdevice.peers.iter() {
         let peer = peer.lock();
