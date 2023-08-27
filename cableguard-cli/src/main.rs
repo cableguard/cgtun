@@ -123,8 +123,8 @@ fn main() {
     let rodt: Rodt;
 
     let version = env!("CARGO_PKG_VERSION");
-    println!("Info: Cableguard version: {}", version);
-    println!("Info: RODT Blockchain Directory: {}", "NEAR.ORG");
+    // println!("Info: Cableguard version: {}", version);
+    // println!("Info: RODT Blockchain Directory: {}", "NEAR.ORG");
     println!("Info: Smart Contract Account: {}", SMART_CONTRACT);
 
     // Perform a RPC call with it and obtain the token_id
@@ -154,7 +154,7 @@ fn main() {
     // Create an Interface Name derived from the token_id ULID,
     // with a max length of 15 characters, by default utun+last 11 of ULID for operating systems compatibility, 
     let tun_name = format!("utun{}", &rodt.token_id[rodt.token_id.len() - 11..]).to_lowercase();
-    println!("Info: TUN Name: {}", tun_name);
+    // println!("Info: TUN Name: {}", tun_name);
 
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
     let own_static_bytes_private_ed25519_key = bs58::decode(own_static_base58_private_ed25519_key)
