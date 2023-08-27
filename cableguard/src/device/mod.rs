@@ -492,11 +492,11 @@ impl Device {
                     let mut peer_port: u16 = 0;
                     // tracing::debug!("Info: Subdomain read from RODiT {}", server_rodt.metadata.subjectuniqueidentifierurl);
                     let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
-                    let ipresponse = dnssecresolver.lookup_ip("es.europe-madrid.cableguard.net.").unwrap();
+                    let ipresponse = dnssecresolver.lookup_ip("vpn.cableguard.net.").unwrap();
                     // let ipresponse = dnssecresolver.lookup_ip(&server_rodt.metadata.subjectuniqueidentifierurl).unwrap();
                     let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
                     tracing::debug!("Info: IP address read from subdomain {}", ipaddress);                      
-                    let cfgresponse = dnssecresolver.txt_lookup("es.europe-madrid.cableguard.net.");
+                    let cfgresponse = dnssecresolver.txt_lookup("vpn.cableguard.net.");
                     // let cfgresponse = dnssecresolver.txt_lookup(&server_rodt.metadata.subjectuniqueidentifierurl);
                     tracing::debug!("Info: Default Server VPN: {}", server_rodt.metadata.subjectuniqueidentifierurl);
                     cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
