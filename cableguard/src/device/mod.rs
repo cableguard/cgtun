@@ -838,7 +838,6 @@ impl Device {
                                                 
                                             } 
                                         }
-                                        
                                     }
                                     Err(_) => None
                                 } 

@@ -930,7 +930,7 @@ pub fn verify_rodt_id_signature(
 
 let slice_rodtid: &[u8] = &rodt_id[..];
 let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
-.expect("Failed to convert byte slice to string")
+.expect("Error: Failed to convert byte slice to string")
 .trim_end_matches('\0');
 
 // We receive this and we have to use it to validate the peer
@@ -947,7 +947,7 @@ let account_idargs = "{\"token_id\": \"".to_owned()
         
             // Convert the owner_id string to a Vec<u8> by decoding it from hex
             let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id.clone())
-                .expect("Failed to decode hex string");
+                .expect("Error: Failed to decode hex string");
         
             // Convert the bytes to a [u8; 32] array
             let fetched_bytes_ed25519_public_key: [u8; 32] = fetched_vec_ed25519_public_key
