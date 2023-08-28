@@ -502,10 +502,6 @@ impl Handshake {
     self.params.set_static_private(private_key, public_key)
     }
 
-    // CG: Additional checks include: not accepting notafter and notbefore dates for RODT
-    // Self configuring the DNS
-    // Not taking connections out of the bandwith, network or location limits
-
     pub(super) fn consume_received_handshake_initiation<'a>(
         &mut self,
         packet: HandshakeInit,

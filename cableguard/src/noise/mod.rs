@@ -379,7 +379,7 @@ impl Tunn {
                 tracing::debug!("Info: RODT Owner Init Received (Original): {}", fetched_rodt.owner_id);
                 
                 // Convert the owner_id string to a Vec<u8> by decoding it from hex
-                let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id)
+                /*  let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id)
                     .expect("Failed to decode hex string");
                 
                     // tracing::debug!("Info: Processing RODT ID received (Vec) {:?}",fetched_vec_ed25519_public_key); 
@@ -423,7 +423,17 @@ impl Tunn {
                         tracing::debug!("Error: PeerEd25519SignatureParsingFailure");
                         return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
                     }
-                };
+                }; */
+                // CG: Changing inlined code for call to a function
+                match verify_rodt_id_signature(*peer_handshake_init.rodt_id,*peer_handshake_init.rodt_id_signature){
+                    Ok(_) => {
+                        tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
+                    }
+                    Err(_) => {
+                            tracing::debug!("Error: PeerEd25519SignatureVerificationFailure");
+                            return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
+                        }
+                }
                 // Rest of the code if signature parsing is successful
             }
             Err(err) => {
@@ -437,6 +447,9 @@ impl Tunn {
         // ,checking if the Issuer smart contract has published a TXT 
         // entry with the token_id of the server
         // End of RODT verification
+        // Additional checks include: not accepting notafter and notbefore dates for RODT
+        // Self configuring the DNS
+        // Not taking connections out of the bandwith, network or location limits
 
         let index = session.local_index();
         self.sessions[index % N_SESSIONS] = Some(session);
@@ -941,7 +954,6 @@ let account_idargs = "{\"token_id\": \"".to_owned()
 
     match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
         Ok(result) => {
-            // If the function call is successful, execute this block
             let fetched_rodt = result;
             tracing::debug!("Info: RODT Owner Init Received: {:?}", fetched_rodt.owner_id);
         
@@ -996,4 +1008,7 @@ let account_idargs = "{\"token_id\": \"".to_owned()
     // ,checking if the Issuer smart contract has published a TXT 
     // entry with the token_id of the server
     // End of RODT verification
+    // Additional checks include: not accepting notafter and notbefore dates for RODT
+    // Self configuring the DNS
+    // Not taking connections out of the bandwith, network or location limits
 }
