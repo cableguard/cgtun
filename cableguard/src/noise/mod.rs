@@ -995,6 +995,7 @@ let account_idargs = "{\"token_id\": \"".to_owned()
                 }
             };
             // CG: Find the peer and check if is trusted
+            // If the signature is good it means it is authentic, it does not mean it is valid for connection
             // if rodt.token_id.contains(&rodt.metadata.serviceproviderid) is server, if not is client
             // not accepting notafter and notbefore dates
             Ok::<(bool,Rodt), WireGuardError>((true,fetched_rodt))
