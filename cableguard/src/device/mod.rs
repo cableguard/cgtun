@@ -458,6 +458,7 @@ impl Device {
         // Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
+        // To used so role can be read from wg tools
         let mut role="Client";
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.serviceproviderid) {
             role = "Server";

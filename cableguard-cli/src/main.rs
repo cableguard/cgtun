@@ -122,7 +122,7 @@ fn main() {
     // Initialize a RODT object
     let rodt: Rodt;
 
-    let version = env!("CARGO_PKG_VERSION");
+    // let version = env!("CARGO_PKG_VERSION");
     // println!("Info: Cableguard version: {}", version);
     // println!("Info: RODT Blockchain Directory: {}", "NEAR.ORG");
     println!("Info: Smart Contract Account: {}", SMART_CONTRACT);

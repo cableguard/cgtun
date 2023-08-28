@@ -956,30 +956,24 @@ let account_idargs = "{\"token_id\": \"".to_owned()
 
             // Parse the signature bytes from packet.rodt_id_signature
             // and assign it to the signature variable
-            match Signature::from_bytes(&rodt_id_signature) {
+            let _ = match Signature::from_bytes(&rodt_id_signature) {
                 Ok(signature) => {
                     // If the signature parsing is successful, execute this block
-                    match PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
-                        Ok(fetched_publickey_ed25519_public_key) => {
-                            // If the public key parsing is successful, execute this block
-                            match fetched_publickey_ed25519_public_key.verify(string_rodtid.as_bytes(), &signature) {
-                                Ok(_is_verified) => {
-                                    tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
-                                    Ok::<bool, WireGuardError>(true)
-                                    }
-                                Err(_) => {
-                                    tracing::debug!("Error: PeerEd25519SignatureVerificationFailure");
-                                    return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
-                                }
-                            };
-                            // Rest of the code if verification is successful
+                    if let Ok(fetched_publickey_ed25519_public_key) = PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
+                        // If the public key parsing is successful, execute this block
+                        if fetched_publickey_ed25519_public_key.verify(string_rodtid.as_bytes(), &signature).is_ok() {
+                            tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
+                            Ok::<bool, WireGuardError>(true)
+                        } else {
+                            tracing::debug!("Error: PeerEd25519SignatureVerificationFailure");
+                            Err(WireGuardError::PeerEd25519SignatureVerificationFailure)
                         }
-                        Err(_) => {
-                            // If the public key parsing fails, handle the error and propagate it
-                            tracing::debug!("Error: PeerEd25519PublicKeyParsingFailuree");
-                            return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure);
-                        }
-                    };
+                        // Rest of the code if verification is successful
+                    } else {
+                        // If the public key parsing fails, handle the error and propagate it
+                        tracing::debug!("Error: PeerEd25519PublicKeyParsingFailure");
+                        Err(WireGuardError::PeerEd25519PublicKeyParsingFailure)
+                    }                    
                 // Rest of the code if public key parsing is successful
                 }
                 Err(_) => {
