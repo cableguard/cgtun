@@ -978,13 +978,13 @@ let account_idargs = "{\"token_id\": \"".to_owned()
                             Ok::<bool, WireGuardError>(true)
                         } else {
                             tracing::debug!("Error: PeerEd25519SignatureVerificationFailure");
-                            Err(WireGuardError::PeerEd25519SignatureVerificationFailure)
+                            return Err(WireGuardError::PeerEd25519SignatureVerificationFailure)
                         }
                         // Rest of the code if verification is successful
                     } else {
                         // If the public key parsing fails, handle the error and propagate it
                         tracing::debug!("Error: PeerEd25519PublicKeyParsingFailure");
-                        Err(WireGuardError::PeerEd25519PublicKeyParsingFailure)
+                        return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure)
                     }                    
                 // Rest of the code if public key parsing is successful
                 }
@@ -994,7 +994,9 @@ let account_idargs = "{\"token_id\": \"".to_owned()
                     return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
                 }
             };
-            // Rest of the code if signature parsing is successful
+            // CG: Find the peer and check if is trusted
+            // if rodt.token_id.contains(&rodt.metadata.serviceproviderid) is server, if not is client
+            // not accepting notafter and notbefore dates
             Ok::<(bool,Rodt), WireGuardError>((true,fetched_rodt))
         }
         Err(err) => {
@@ -1003,12 +1005,4 @@ let account_idargs = "{\"token_id\": \"".to_owned()
             std::process::exit(1);
         }
     }
-    // CG: Find the peer and check if
-    // IsTrusted(rodt.metadata.serviceproviderid);
-    // ,checking if the Issuer smart contract has published a TXT 
-    // entry with the token_id of the server
-    // End of RODT verification
-    // Additional checks include: not accepting notafter and notbefore dates for RODT
-    // Self configuring the DNS
-    // Not taking connections out of the bandwith, network or location limits
 }
