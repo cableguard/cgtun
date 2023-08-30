@@ -992,15 +992,15 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                                 
                                 println!("serviceprovider_bytes_signature  {:?}", serviceprovider_bytes_signature );
 
-                                let serviceprovider_u832_signature: [u8; 32] = serviceprovider_bytes_signature
+                                let serviceprovider_u864_signature: [u8; RODT_ID_SIGNATURE_SZ] = serviceprovider_bytes_signature
                                     .as_slice()
                                     .try_into()
                                     .expect("Error: Invalid public key length");
                                 
-                                println!("serviceprovider_u832_signature {:?}", serviceprovider_u832_signature);
+                                println!("serviceprovider_u832_signature {:?}", serviceprovider_u864_signature);
                                 
                                 if let Ok(serviceprovider_publickey_ed25519_public_key) = PublicKey::from_bytes(&serviceprovider_bytes_ed25519_public_key) {
-                                    match Signature::from_bytes(&serviceprovider_u832_signature) {
+                                    match Signature::from_bytes(&serviceprovider_u864_signature) {
                                         Ok(signature) => {
                                             if serviceprovider_publickey_ed25519_public_key.verify(
                                                 fetched_rodt.token_id.as_bytes(),
