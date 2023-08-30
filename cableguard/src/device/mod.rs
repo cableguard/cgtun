@@ -39,7 +39,7 @@ use crate::serialization::{KeyBytes, self};
 use crate::device::api::Rodt;
 use crate::noise::errors::WireGuardError;
 use crate::noise::handshake::consume_received_handshake_peer_2blisted;
-use crate::noise::verify_rodt_id_signature;
+use crate::noise::verify_rodt_id;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
@@ -352,7 +352,7 @@ impl Device {
         .as_ref()
         .expect("Error: Self private key must be set before adding peers");
     
-        // Creating the own signature of the rodt_id
+        // Creating the own signature of the rodt_id, this is used to validate posession of the RODT
         let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Error: Invalid private key bytes");
 
@@ -365,7 +365,7 @@ impl Device {
             peer_publickey_public_key,
             preshared_key,
             self.config.rodt.token_id.clone(), // Own RODT ID
-            rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
+            rodt_id_signature.to_bytes(), // Own declared RODT ID Signature with own Ed25519 private key
             keepalive,
             next_peer_index,
             None,
@@ -786,7 +786,7 @@ impl Device {
                                         if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
                                             Some(peer)
                                         } else {
-                                            let evaluation = verify_rodt_id_signature(*p.rodt_id ,*p.rodt_id_signature);
+                                            let evaluation = verify_rodt_id(*p.rodt_id ,*p.rodt_id_signature);
                                             if let Ok((verification_result, rodt)) = evaluation {
                                                 if verification_result {
                                                     // Adding the new peer here

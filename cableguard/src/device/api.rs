@@ -178,7 +178,7 @@ pub fn nearorg_rpc_tokens_for_owner(
         return Ok(rodt.clone());
      } else {
      // If no Rodt instance is available, return an error
-        return Err("No Rodt instance found".into());
+        return Err("Error: No Rodt instance found".into());
     }
 }
 
@@ -216,7 +216,7 @@ pub fn nearorg_rpc_token(
 
     let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
     
-    let result_array = parsed_json["result"]["result"].as_array().ok_or("Result is not an array")?;
+    let result_array = parsed_json["result"]["result"].as_array().ok_or("Error: Result is not an array")?;
 
     let result_bytes: Vec<u8> = result_array
         .iter()
@@ -264,7 +264,7 @@ pub fn nearorg_rpc_state(
     let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
     if parsed_json.to_string().contains("does not exist while viewing") {
         tracing::debug!("Error: {}","The account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR");
-        return Err("The account does not exist in the blockchain".into());
+        return Err("Error: The account does not exist in the blockchain".into());
     }
     Ok(())
 }

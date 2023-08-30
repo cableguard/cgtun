@@ -23,4 +23,8 @@ pub enum WireGuardError {
     PeerEd25519PublicKeyParsingFailure,
     PeerEd25519SignatureVerificationFailure,
     PeerEd25519SignatureParsingFailure,
+    ServiceProviderEd25519SignatureVerificationSuccess,
+    ServiceProviderEd25519SignatureVerificationFailure,
+    ServiceProviderEd25519SignatureParsingFailure,
+    ServiceProviderEd25519PublicKeyParsingFailure,
 }
