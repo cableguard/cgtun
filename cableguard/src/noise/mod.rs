@@ -84,6 +84,7 @@ const COOKIE_REPLY: MessageType = 3;
 const DATA: MessageType = 4;
 pub const RODT_ID_SZ:usize = 128;
 pub const RODT_ID_SIGNATURE_SZ:usize = 64;
+pub const RODT_ID_PK_SZ:usize = 32;
 
 // These sizes are increased by RODT_ID_SZ + 64 bytes to accommodate for the rodt_id and signature of the same
 const HANDSHAKE_INIT_SZ: usize = 148+RODT_ID_SZ+RODT_ID_SIGNATURE_SZ;
@@ -962,7 +963,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id.clone())
             .expect("Error: Failed to decode hex string");
         // Convert the bytes to a [u8; 32] array
-        let fetched_bytes_ed25519_public_key: [u8; 32] = fetched_vec_ed25519_public_key
+        let fetched_bytes_ed25519_public_key: [u8; RODT_ID_PK_SZ] = fetched_vec_ed25519_public_key
             .try_into()
             .expect("Error: Invalid byte array length");
         // Parse the signature bytes from packet.rodt_id_signature
@@ -978,30 +979,29 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         let account_idargs = "{\"token_id\": \"".to_owned() + &fetched_rodt.metadata.serviceproviderid+ "\"}";
                         match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
                             Ok(serviceprovider_rodt) => {
+                                println!("serviceproviderif of service provider {:?}", serviceprovider_rodt.metadata.serviceproviderid);
                                 // Convert the owner_id string to a Vec<u8> by decoding it from hex                
                                 let serviceprovider_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(serviceprovider_rodt.owner_id.clone())
                                 .expect("Error: Failed to decode hex string");
                                 // Convert the bytes to a [u8; 32] array
-                                let serviceprovider_bytes_ed25519_public_key: [u8; 32] = serviceprovider_vec_ed25519_public_key
+                                let serviceprovider_bytes_ed25519_public_key: [u8; RODT_ID_PK_SZ] = serviceprovider_vec_ed25519_public_key
                                     .try_into()
                                     .expect("Error: Invalid byte array length");
                                 
-                                println!("serviceprovider_bytes_ed25519_public_key {:?}",serviceprovider_bytes_ed25519_public_key);
-                                
                                 let serviceprovider_bytes_signature = decode(&fetched_rodt.metadata.serviceprovidersignature).expect("Error: Base64 decoding error");
-                                
-                                println!("serviceprovider_bytes_signature  {:?}", serviceprovider_bytes_signature );
 
-                                let serviceprovider_u864_signature: [u8; RODT_ID_SIGNATURE_SZ] = serviceprovider_bytes_signature
+                                let serviceprovider_u864_signature: [u8; RODT_ID_PK_SZ] = serviceprovider_bytes_signature
                                     .as_slice()
                                     .try_into()
                                     .expect("Error: Invalid public key length");
                                 
-                                println!("serviceprovider_u832_signature {:?}", serviceprovider_u864_signature);
-                                
                                 if let Ok(serviceprovider_publickey_ed25519_public_key) = PublicKey::from_bytes(&serviceprovider_bytes_ed25519_public_key) {
                                     match Signature::from_bytes(&serviceprovider_u864_signature) {
                                         Ok(signature) => {
+                                            println!("serviceprovider_publickey_ed25519_public_key {:?}", serviceprovider_publickey_ed25519_public_key);
+                                            println!("fetched_rodt.token_id {}", fetched_rodt.token_id);
+                                            println!("signature {:?}", signature);
+
                                             if serviceprovider_publickey_ed25519_public_key.verify(
                                                 fetched_rodt.token_id.as_bytes(),
                                                 &signature,
@@ -1024,9 +1024,8 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                                 }
                                     
                             } Err(_) => {
-                                // If the signature parsing fails, handle the error and propagate it
-                                tracing::debug!("Error: ServiceProviderEd25519SignatureVerificationFailure");
-                                return Err(WireGuardError::ServiceProviderEd25519SignatureVerificationFailure);
+                                tracing::debug!("Error: ServiceProviderEd25519SignatureFetchingFailure");
+                                return Err(WireGuardError::ServiceProviderEd25519SignatureFetchingFailure);
                             }
                         }
                     } else {
