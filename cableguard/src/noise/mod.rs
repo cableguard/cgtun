@@ -979,7 +979,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         let account_idargs = "{\"token_id\": \"".to_owned() + &fetched_rodt.metadata.serviceproviderid+ "\"}";
                         match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
                             Ok(serviceprovider_rodt) => {
-                                println!("serviceproviderif of service provider {:?}", serviceprovider_rodt.metadata.serviceproviderid);
+                                println!("serviceproviderid of service provider {:?}", serviceprovider_rodt.metadata.serviceproviderid);
                                 // Convert the owner_id string to a Vec<u8> by decoding it from hex                
                                 let serviceprovider_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(serviceprovider_rodt.owner_id.clone())
                                 .expect("Error: Failed to decode hex string");
@@ -990,7 +990,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                                 
                                 let serviceprovider_bytes_signature = decode(&fetched_rodt.metadata.serviceprovidersignature).expect("Error: Base64 decoding error");
 
-                                let serviceprovider_u864_signature: [u8; RODT_ID_PK_SZ] = serviceprovider_bytes_signature
+                                let serviceprovider_u864_signature: [u8; RODT_ID_SIGNATURE_SZ] = serviceprovider_bytes_signature
                                     .as_slice()
                                     .try_into()
                                     .expect("Error: Invalid public key length");
