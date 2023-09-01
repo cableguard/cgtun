@@ -13,6 +13,8 @@ use std::fs::{create_dir, remove_file};
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::os::unix::io::{AsRawFd, FromRawFd};
 use std::os::unix::net::{UnixListener, UnixStream};
+use crate::device::IpAddr;
+use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::convert::TryInto;
 use base64::{decode,URL_SAFE_NO_PAD};
@@ -525,6 +527,24 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                     tracing::debug!("Info: Public Key: {}", peer_base64_pk);
                                     tracing::debug!("Port: {:?}", peer_port);
                                 }
+                                // Don't add itself as a peer
+                                match IpAddr::from_str(&device.config.rodt.metadata.cidrblock) {
+                                    Ok(cidrip) => {
+                                        // Successfully parsed, you can now compare it
+                                        if cidrip == ipaddress {
+                                            // IP address matches, return EINVAL or perform your action
+                                            println!("Info: IP address matches");
+                                        } else {
+                                            // IP address doesn't match
+                                            println!("Error: IP address does not match");
+                                        }
+                                    }
+                                    Err(e) => {
+                                        // Handle the parsing error if it occurs
+                                        println!("Error: Error parsing IP address: {:?}", e);
+                                    }
+                                }
+
                                 // Take the subdomain_endpoint as endpoint of a new peer
                                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
                                 let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");

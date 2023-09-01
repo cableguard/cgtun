@@ -380,53 +380,6 @@ impl Tunn {
                 let fetched_rodt = result;
                 tracing::debug!("Info: RODT Owner Init Received (Original): {}", fetched_rodt.owner_id);
                 
-                // Convert the owner_id string to a Vec<u8> by decoding it from hex
-                /*  let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id)
-                    .expect("Failed to decode hex string");
-                
-                    // tracing::debug!("Info: Processing RODT ID received (Vec) {:?}",fetched_vec_ed25519_public_key); 
-                
-                // Convert the bytes to a [u8; 32] array
-                let fetched_bytes_ed25519_public_key: [u8; 32] = fetched_vec_ed25519_public_key
-                    .try_into()
-                    .expect("Error: Invalid byte array length");
-
-                // Parse the signature bytes from peer_handshake_init.rodt_id_signature
-                // and assign it to the signature variable
-                match Signature::from_bytes(&*peer_handshake_init.rodt_id_signature) {
-                    Ok(signature) => {
-                        // If the signature parsing is successful, execute this block
-                        match PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
-                            Ok(fetched_publickey_ed25519_public_key) => {
-                                // If the public key parsing is successful, execute this block
-                                match fetched_publickey_ed25519_public_key.verify(peer_string_rodtid.as_bytes(), &signature) {
-                                    Ok(_is_verified) => {
-                                            tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
-                                        }
-                                    Err(_) => {
-                                    // Err(PeerEd25519SignatureVerificationFailure) => {
-                                        // If the verification fails, handle the error and propagate it
-                                        tracing::debug!("Error: PeerEd25519SignatureVerificationFailure");
-                                        return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
-                                    }
-                                };
-                                // Rest of the code if verification is successful
-                            }
-                            Err(_) => {
-                                // If the public key parsing fails, handle the error and propagate it
-                                tracing::debug!("Error: PeerEd25519PublicKeyParsingFailure");
-                                return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure);
-                            }
-                        };
-                        // Rest of the code if public key parsing is successful
-                    }
-                    Err(_) => {
-                        // If the signature parsing fails, handle the error and propagate it
-                        tracing::debug!("Error: PeerEd25519SignatureParsingFailure");
-                        return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
-                    }
-                }; */
-                // CG: Changing inlined code for call to a function
                 match verify_rodt_id(*peer_handshake_init.rodt_id,*peer_handshake_init.rodt_id_signature){
                     Ok(_) => {
                         tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
@@ -979,7 +932,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         let account_idargs = "{\"token_id\": \"".to_owned() + &fetched_rodt.metadata.serviceproviderid+ "\"}";
                         match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
                             Ok(serviceprovider_rodt) => {
-                                println!("serviceproviderid of service provider {:?}", serviceprovider_rodt.metadata.serviceproviderid);
+                                println!("serviceproviderid of service provider {:?}", serviceprovider_rodt.token_id);
                                 // Convert the owner_id string to a Vec<u8> by decoding it from hex                
                                 let serviceprovider_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(serviceprovider_rodt.owner_id.clone())
                                 .expect("Error: Failed to decode hex string");

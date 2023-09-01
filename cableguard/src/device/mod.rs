@@ -1105,8 +1105,6 @@ impl Device {
     // This instance of api_set_subdomain_peer_internal can operate internally, not talking to wg.
     fn api_set_subdomain_peer_internal(&mut self, endpoint_listenport:Option<SocketAddr>,
         peer_publickey_public_key: x25519::PublicKey) -> i32 {
-    // cidrblock is allowed-ips
-    // allowedips  is part of postup / postdown commands)
 
         let remove = false;
         let replace_ips = false;
@@ -1115,7 +1113,6 @@ impl Device {
         let clone_peer_publickey_public_key = peer_publickey_public_key;
         let preshared_key = None;
         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
-
         tracing::debug!("Info: Setting Server IP and port {:?}", endpoint_listenport);     
 
         // Cidrblock is allowed_ip, it fails if the cidr format is not followed
@@ -1128,6 +1125,7 @@ impl Device {
         // let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Error: Invalid IPv6 AllowedIP");
 
         // Create or update peer
+
         allowed_ips_listed.push(allowed_ip);
         self.update_peer(
             clone_peer_publickey_public_key,
@@ -1139,6 +1137,7 @@ impl Device {
             preshared_key,
             );                    
         allowed_ips_listed.clear();
+        
         return 0;
     }
 }
