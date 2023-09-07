@@ -909,8 +909,7 @@ let account_idargs = "{\"token_id\": \"".to_owned()
     + &string_rodtid+ "\"}";
 
 match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
-    Ok(result) => {
-        let fetched_rodt = result;
+    Ok(fetched_rodt) => {
         tracing::debug!("Info: RODT Owner Init Received: {:?}", fetched_rodt.owner_id);
         // Convert the owner_id string to a Vec<u8> by decoding it from hex
         let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id.clone())
@@ -919,9 +918,10 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         let fetched_bytes_ed25519_public_key: [u8; RODT_ID_PK_SZ] = fetched_vec_ed25519_public_key
             .try_into()
             .expect("Error: Invalid byte array length");
+            
         // Parse the signature bytes from packet.rodt_id_signature
         // and assign it to the signature variable
-        let _ = match Signature::from_bytes(&rodt_id_signature) {
+        match Signature::from_bytes(&rodt_id_signature) {
             Ok(signature) => {
                 // If the signature parsing is successful, execute this block
                 if let Ok(fetched_publickey_ed25519_public_key) = PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
@@ -929,13 +929,16 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                     if fetched_publickey_ed25519_public_key.verify(string_rodtid.as_bytes(), &signature).is_ok() {
                         tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
                         // CG: Checks the public key of the sp id, and verifies that the sp signature is valid. Both ends perform this check
-                        let account_idargs = "{\"token_id\": \"".to_owned() + &fetched_rodt.metadata.serviceproviderid+ "\"}";
+                        let account_idargs = "{\"token_id\": \"".to_owned()
+                            + &fetched_rodt.metadata.serviceproviderid+ "\"}";
                         match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
                             Ok(serviceprovider_rodt) => {
                                 println!("serviceproviderid of service provider {:?}", serviceprovider_rodt.token_id);
                                 // Convert the owner_id string to a Vec<u8> by decoding it from hex                
                                 let serviceprovider_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(serviceprovider_rodt.owner_id.clone())
                                 .expect("Error: Failed to decode hex string");
+
+                                println!("owner_id of service provider {:?}", serviceprovider_rodt.owner_id);
                                 // Convert the bytes to a [u8; 32] array
                                 let serviceprovider_bytes_ed25519_public_key: [u8; RODT_ID_PK_SZ] = serviceprovider_vec_ed25519_public_key
                                     .try_into()
@@ -955,8 +958,11 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                                             println!("fetched_rodt.token_id {}", fetched_rodt.token_id);
                                             println!("signature {:?}", signature);
 
+                                            // let slice_rodtid: &[u8] = &rodt_id[..];
+                                            // let slice_fetched_rodtid: &[u8] = &fetched_rodt.token_id[..]; // But fetched_rodt.token_id 
+                                            // let string_fetched_rodtid: &str = std::str::from_utf8(slice_fetched_rodtid)
                                             if serviceprovider_publickey_ed25519_public_key.verify(
-                                                fetched_rodt.token_id.as_bytes(),
+                                                string_rodtid.as_bytes(),
                                                 &signature,
                                             ).is_ok() {
                                                 tracing::debug!("Info: ServiceProviderEd25519SignatureVerificationSuccess");
