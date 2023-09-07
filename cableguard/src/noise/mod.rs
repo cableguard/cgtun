@@ -967,13 +967,13 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                                             if serviceprovider_publickey_ed25519_public_key.verify(
                                                 string_rodtid.as_bytes(),
                                                 &signature
-                                            ).is_ok() {
-                                                tracing::debug!("Info: ServiceProviderEd25519SignatureVerificationSuccess");
-                                                Ok(true)
-                                            } else {
-                                                tracing::debug!("Error: ServiceProviderEd25519SignatureVerificationFailure");
-                                                Err(WireGuardError::ServiceProviderEd25519SignatureVerificationFailure)
-                                            }
+                                                ).is_ok() {
+                                                    tracing::debug!("Info: ServiceProviderEd25519SignatureVerificationSuccess");
+                                                    Ok(true)
+                                                } else {
+                                                    tracing::debug!("Error: ServiceProviderEd25519SignatureVerificationFailure");
+                                                    Err(WireGuardError::ServiceProviderEd25519SignatureVerificationFailure)
+                                                }
                                         }
                                         Err(_) => {
                                             tracing::debug!("Error: ServiceProviderEd25519SignatureParsingFailure");
