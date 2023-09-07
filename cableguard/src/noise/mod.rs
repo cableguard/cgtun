@@ -926,7 +926,10 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                 // If the signature parsing is successful, execute this block
                 if let Ok(fetched_publickey_ed25519_public_key) = PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
                     // If the public key parsing is successful, execute this block
-                    if fetched_publickey_ed25519_public_key.verify(string_rodtid.as_bytes(), &signature).is_ok() {
+                    if fetched_publickey_ed25519_public_key.verify(
+                        string_rodtid.as_bytes(),
+                        &signature
+                        ).is_ok() {
                         tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
                         // CG: Checks the public key of the sp id, and verifies that the sp signature is valid. Both ends perform this check
                         let account_idargs = "{\"token_id\": \"".to_owned()
@@ -963,7 +966,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                                             // let string_fetched_rodtid: &str = std::str::from_utf8(slice_fetched_rodtid)
                                             if serviceprovider_publickey_ed25519_public_key.verify(
                                                 string_rodtid.as_bytes(),
-                                                &signature,
+                                                &signature
                                             ).is_ok() {
                                                 tracing::debug!("Info: ServiceProviderEd25519SignatureVerificationSuccess");
                                                 Ok(true)
