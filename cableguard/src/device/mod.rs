@@ -45,6 +45,7 @@ use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use ed25519_dalek::{Keypair,Signer};
+use ip_network::IpNetwork;
 // use base64::encode as base64encode;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
@@ -497,10 +498,13 @@ impl Device {
                     // let ipresponse = dnssecresolver.lookup_ip(&server_rodt.metadata.subjectuniqueidentifierurl).unwrap();
                     let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
                     tracing::debug!("Info: IP address read from subdomain {}", ipaddress);    
+                    
+                    tracing::debug!("Info: IP address read from subdomain {}", device.config.rodt.metadata.cidrblock); 
                     // CG: Not adding the server peer if WE are the server peer           
-                    match IpAddr::from_str(&device.config.rodt.metadata.cidrblock) {
-                        Ok(parsed_ip) => {
+                    match  IpNetwork::from_str(&device.config.rodt.metadata.cidrblock) {
+                        Ok(parsed_cidr) => {
                             // Successfully parsed IP address
+                                let parsed_ip = parsed_cidr.network_address();
                                 if parsed_ip != ipaddress {
                                  let cfgresponse = dnssecresolver.txt_lookup("vpn.cableguard.net.");
                                 // let cfgresponse = dnssecresolver.txt_lookup(&server_rodt.metadata.subjectuniqueidentifierurl);
