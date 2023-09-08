@@ -1,4 +1,4 @@
-// Copyright (c) 2023 cableguard, Inc. All rights reserved.
+// Copyright (c) 2023 Cableguard, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
 pub mod errors;
@@ -1021,3 +1021,4 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
     }
     }
 }
+

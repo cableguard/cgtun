@@ -1055,8 +1055,8 @@ impl Device {
             // We can self-serve the private key from the input json wallet file
             "private_key" => match value.parse::<KeyBytes>() {
                 Ok(own_keybytes_private_key) => {
-                    let own_string_private_key = serialization::keybytes_to_hex_string(&own_keybytes_private_key);
-                    let own_hex_private_key = format!("{:02X?}", own_string_private_key);
+                    let own_hexstring_private_key = serialization::keybytes_to_hex_string(&own_keybytes_private_key);
+                    let own_hex_private_key = format!("{:02X?}", own_hexstring_private_key);
                     tracing::debug!(message = "Info: Private_key FN api_set_internal: {}", own_hex_private_key);
                     self.set_key_pair(x25519::StaticSecret::from(own_keybytes_private_key.0))
                     }

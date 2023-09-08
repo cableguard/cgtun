@@ -1,4 +1,4 @@
-// Copyright (c) 2023 cableguard, Inc. All rights reserved.
+// Copyright (c) 2023 Cableguard, Inc. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 
 //! Simple implementation of the client-side of the WireGuard protocol.
@@ -21,8 +21,8 @@ pub(crate) mod sleepyinstant;
 
 pub(crate) mod serialization;
 
-// CG2: I don't see how creating a sinonym improves the code readability
-/// Re-export of the x25519 types
+// CG: I don't see how creating a sinonym improves the code readability
+// Re-export of the x25519 types
 mod x25519 {
     pub use x25519_dalek::{
         EphemeralSecret, PublicKey, ReusableSecret, SharedSecret, StaticSecret

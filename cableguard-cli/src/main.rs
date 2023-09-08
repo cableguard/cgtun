@@ -2,20 +2,20 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
 use clap::{Arg, Command};
-use tracing::Level;
-use serde_json::Value;
 use cableguard::device::{DeviceConfig, DeviceHandle,ed2x_private_key_bytes,skx2pkx};
 use cableguard::device::api::{nearorg_rpc_tokens_for_owner,nearorg_rpc_state,Rodt};
 use cableguard::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use cableguard::device::drop_privileges::drop_privileges;
 use daemonize::Daemonize;
+use base64::encode as encode_base64;
+use hex::{FromHex};
+use serde_json::Value;
 use std::os::unix::net::UnixDatagram;
 use std::process::exit;
 use std::fs::{File, OpenOptions};
 use std::io::{self, ErrorKind,Read};
-use hex::{FromHex};
-use base64::encode as encode_base64;
 use std::env;
+use tracing::Level;
 
 fn main() {
     let matches = Command::new("cableguard")
@@ -159,7 +159,7 @@ fn main() {
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
     let own_static_bytes_private_ed25519_key = bs58::decode(own_static_base58_private_ed25519_key)
         .into_vec()
-        .expect("Failed to decode the private key from Base58");
+        .expect("Error: Failed to decode the private key from Base58");
     assert_eq!(own_static_bytes_private_ed25519_key.len(), 64);
 
     // Create a X25519 private key from a Private Key Ed25519 of 64 bytes
@@ -197,7 +197,7 @@ fn main() {
         } else {
             File::create(&log)
         }
-        .unwrap_or_else(|err| panic!("Could not open log file {}: {}", log, err));
+        .unwrap_or_else(|err| panic!("Error: Could not open log file {}: {}", log, err));
     
         // Create a non-blocking log writer and get a guard to prevent dropping it
         let (non_blocking, guard) = tracing_appender::non_blocking(log_file);
