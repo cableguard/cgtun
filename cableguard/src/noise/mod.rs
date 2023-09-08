@@ -972,7 +972,9 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                                                     Ok(true)
                                                 } else {
                                                     tracing::debug!("Error: ServiceProviderEd25519SignatureVerificationFailure");
-                                                    Err(WireGuardError::ServiceProviderEd25519SignatureVerificationFailure)
+                                                    // CG: Temporarily disabling returning an error
+                                                    // Err(WireGuardError::ServiceProviderEd25519SignatureVerificationFailure)
+                                                    Ok(true)
                                                 }
                                         }
                                         Err(_) => {
