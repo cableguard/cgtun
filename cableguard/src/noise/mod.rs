@@ -968,6 +968,7 @@ let account_idargs = "{\"token_id\": \"".to_owned()
     // Not taking connections out of the bandwith, network or location limits
 }
 
+/*
 pub fn verify_rodt_id_isauthentic(
     rodt_id: [u8;RODT_ID_SZ],
     rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
@@ -1097,5 +1098,4 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         std::process::exit(1);
     }
     }
-}
-
+} */

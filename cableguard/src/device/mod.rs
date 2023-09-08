@@ -463,7 +463,8 @@ impl Device {
         if device.config.rodt.token_id.contains(&device.config.rodt.metadata.serviceproviderid) {
             role = "Server";
             println!("Info: This tunnel uses a {} RODiT", role); 
-//             let command = "iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ tunname;
+            // CG: Temporarily remove postup command
+            /*
             let command = &device.config.rodt.metadata.postup;
             tracing::debug!("Info: Post up command {}", &device.config.rodt.metadata.postup);
             let output = Command::new("bash")
@@ -478,6 +479,7 @@ impl Device {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 tracing::debug!("Error: postup command failed to execute {}", stderr);
             }
+            */
         }
         else{
             role = "Client";
