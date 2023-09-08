@@ -902,6 +902,83 @@ let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
 .trim_end_matches('\0');
 
 // We receive this and we have to use it to validate the peer
+tracing::debug!("Info: verify_rodt_id_signature: RODT ID received:  {}",string_rodtid);        
+
+let account_idargs = "{\"token_id\": \"".to_owned() 
+    + &string_rodtid+ "\"}";
+
+    match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
+        Ok(result) => {
+            let fetched_rodt = result;
+            tracing::debug!("Info: RODT Owner Init Received: {:?}", fetched_rodt.owner_id);
+        
+            // Convert the owner_id string to a Vec<u8> by decoding it from hex
+            let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id.clone())
+                .expect("Error: Failed to decode hex string");
+        
+            // Convert the bytes to a [u8; 32] array
+            let fetched_bytes_ed25519_public_key: [u8; 32] = fetched_vec_ed25519_public_key
+                .try_into()
+                .expect("Error: Invalid byte array length");
+
+            // Parse the signature bytes from packet.rodt_id_signature
+            // and assign it to the signature variable
+            let _ = match Signature::from_bytes(&rodt_id_signature) {
+                Ok(signature) => {
+                    // If the signature parsing is successful, execute this block
+                    if let Ok(fetched_publickey_ed25519_public_key) = PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
+                        // If the public key parsing is successful, execute this block
+                        if fetched_publickey_ed25519_public_key.verify(string_rodtid.as_bytes(), &signature).is_ok() {
+                            tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
+                            Ok::<bool, WireGuardError>(true)
+                        } else {
+                            tracing::debug!("Error: PeerEd25519SignatureVerificationFailure");
+                            Err(WireGuardError::PeerEd25519SignatureVerificationFailure)
+                        }
+                        // Rest of the code if verification is successful
+                    } else {
+                        // If the public key parsing fails, handle the error and propagate it
+                        tracing::debug!("Error: PeerEd25519PublicKeyParsingFailure");
+                        Err(WireGuardError::PeerEd25519PublicKeyParsingFailure)
+                    }                    
+                // Rest of the code if public key parsing is successful
+                }
+                Err(_) => {
+                    // If the signature parsing fails, handle the error and propagate it
+                    tracing::debug!("Error: PeerEd25519SignatureParsingFailure");
+                    return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
+                }
+            };
+            // Rest of the code if signature parsing is successful
+            Ok::<(bool,Rodt), WireGuardError>((true,fetched_rodt))
+        }
+        Err(err) => {
+        // If the nearorg_rpc_token function call returns an error, execute this block
+            tracing::debug!("Error: There is no server RODT associated with the account: {}", err);
+            std::process::exit(1);
+        }
+    }
+    // CG: Find the peer and check if
+    // IsTrusted(rodt.metadata.serviceproviderid);
+    // ,checking if the Issuer smart contract has published a TXT 
+    // entry with the token_id of the server
+    // End of RODT verification
+    // Additional checks include: not accepting notafter and notbefore dates for RODT
+    // Self configuring the DNS
+    // Not taking connections out of the bandwith, network or location limits
+}
+
+pub fn verify_rodt_id_isauthentic(
+    rodt_id: [u8;RODT_ID_SZ],
+    rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
+) -> Result<(bool,Rodt), WireGuardError> {
+
+let slice_rodtid: &[u8] = &rodt_id[..];
+let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
+.expect("Error: Failed to convert byte slice to string")
+.trim_end_matches('\0');
+
+// We receive this and we have to use it to validate the peer
 tracing::debug!("Info: verify_rodt_id: RODT ID received:  {}",string_rodtid);        
 
 // Obtain a RODT from its ID
