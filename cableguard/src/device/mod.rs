@@ -462,10 +462,10 @@ impl Device {
         match nearorg_rpc_token(Self::XNET,
             Self::SMART_CONTRACT,
             "nft_token",&account_idargs) {
-            Ok(result) => {
-                let server_rodt = result;
+            Ok(serviceprovider_rodt) => {
                 let mut peer_port: u16 = 0;
                 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+                tracing::debug!("Info: Default Server {}", serviceprovider_rodt.metadata.subjectuniqueidentifierurl);
                 let ipresponse = dnssecresolver.lookup_ip("vpn.cableguard.net.").unwrap();
                 let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");   
                 let cfgresponse = dnssecresolver.txt_lookup("vpn.cableguard.net.");
@@ -505,7 +505,7 @@ impl Device {
                     // Postdown command to be added to bash scripts
                     // iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
                     // CG: We are harcoding here that exit is via eth0
-                    let postupcommand = "iptables -A FORWARD -i " + tunname + " -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE";
+                    let postupcommand = "iptables -A FORWARD -i ".to_owned() + tunname + " -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE";
                     let output = Command::new("bash")
                         .arg("-c")
                         .arg(postupcommand)
@@ -513,7 +513,7 @@ impl Device {
                         .expect("Error: Failed to execute postup command");
                     if output.status.success() {
                         let stdout = String::from_utf8_lossy(&output.stdout);
-                        tracing::debug!("Info: postup command executed successfully {}". stdout);
+                        tracing::debug!("Info: postup command executed successfully {}", stdout);
                     } else {
                         let stderr = String::from_utf8_lossy(&output.stderr);
                         tracing::debug!("Error: postup command failed to execute {}", stderr);
