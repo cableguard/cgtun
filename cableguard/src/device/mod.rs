@@ -457,84 +457,69 @@ impl Device {
         // Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
-        // To used so role can be read from wg tools
-        let mut role="Client";
-        if device.config.rodt.token_id.contains(&device.config.rodt.metadata.serviceproviderid) {
-            role = "Server";
-            println!("Info: This tunnel uses a {} RODiT", role); 
-            let command = &device.config.rodt.metadata.postup;
-            tracing::debug!("Info: Post up command {}", &device.config.rodt.metadata.postup);
-            let output = Command::new("bash")
-                .arg("-c")
-                .arg(command)
-                .output()
-                .expect("Error: Failed to execute postup command");
-            if output.status.success() {
-                let _stdout = String::from_utf8_lossy(&output.stdout);
-                tracing::debug!("Info: postup command executed successfully: {}",device.config.rodt.metadata.cidrblock);
-            } else {
-                let stderr = String::from_utf8_lossy(&output.stderr);
-                tracing::debug!("Error: postup command failed to execute {}", stderr);
-            }
-        }
-        else{
-            role = "Client";
-            println!("Info: This tunnel uses a {} RODiT", role);    
-            let account_idargs = "{\"token_id\": \"".to_owned() 
-                + &device.config.rodt.metadata.serviceproviderid + "\"}";
-            match nearorg_rpc_token(Self::XNET,
-                Self::SMART_CONTRACT,
-                "nft_token",&account_idargs) {
-                Ok(result) => {
-                    let server_rodt = result;
-                    tracing::debug!("Info: Matching Server RODT Owner: {:?}", server_rodt.owner_id);
-                    let mut peer_port: u16 = 0;
-                    // tracing::debug!("Info: Subdomain read from RODiT {}", server_rodt.metadata.subjectuniqueidentifierurl);
-                    let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
-                    let ipresponse = dnssecresolver.lookup_ip("vpn.cableguard.net.").unwrap();
-                    // let ipresponse = dnssecresolver.lookup_ip(&server_rodt.metadata.subjectuniqueidentifierurl).unwrap();
-                    let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
-                    tracing::debug!("Info: IP address read from subdomain {}", ipaddress);    
-
-                    let cfgresponse = dnssecresolver.txt_lookup("vpn.cableguard.net.");
-                    // let cfgresponse = dnssecresolver.txt_lookup(&server_rodt.metadata.subjectuniqueidentifierurl);
-                    tracing::debug!("Info: Default Server VPN: {}", server_rodt.metadata.subjectuniqueidentifierurl);
-                    cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
-                    let mut peer_base64_pk:String="=".to_string();
-                    for configs in cfgresponse.iter() {
-                        let txt_strings: Vec<String> = configs
-                            .iter()
-                            .map(|txt_data| txt_data.to_string())
-                            .collect();
-                        // CG: Change this so only 1 Public Key per server is accepted
-                        let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
-                        // Extract the public key
-                        let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="
-                        let pk_end = peer_configs.find(";").unwrap_or(peer_configs.len());
-                        peer_base64_pk = peer_configs[pk_start..pk_end].to_string();
-                        // Extract the port
-                        let port_start = peer_configs.find("port=").unwrap_or(0) + 5; // Add 5 to skip "port="
-                        let port_end = peer_configs.len();
-                        let peer_str_port:String;
-                        peer_str_port = peer_configs[port_start..port_end].to_string();
-                        peer_port = peer_str_port.parse().unwrap_or(0);
-                        tracing::debug!("Info: Public Key: {}", peer_base64_pk);
-                        tracing::debug!("Info: Port: {:?}", peer_port);
-                        }
-                    let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                    let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
-                    let peer_u832_pk: [u8; 32] = peer_bytes_pk
-                        .as_slice()
-                        .try_into()
-                        .expect("Invalid public key length");
-                    // CG: Not adding the server peer if WE are the server peer           
-                    if device.config.x25519_public_key != peer_u832_pk {
+        let account_idargs = "{\"token_id\": \"".to_owned() 
+            + &device.config.rodt.metadata.serviceproviderid + "\"}";
+        match nearorg_rpc_token(Self::XNET,
+            Self::SMART_CONTRACT,
+            "nft_token",&account_idargs) {
+            Ok(result) => {
+                let server_rodt = result;
+                let mut peer_port: u16 = 0;
+                let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+                let ipresponse = dnssecresolver.lookup_ip("vpn.cableguard.net.").unwrap();
+                let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");   
+                let cfgresponse = dnssecresolver.txt_lookup("vpn.cableguard.net.");
+                cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
+                let mut peer_base64_pk:String="=".to_string();
+                for configs in cfgresponse.iter() {
+                    let txt_strings: Vec<String> = configs
+                        .iter()
+                        .map(|txt_data| txt_data.to_string())
+                        .collect();
+                    // CG: Change this so only 1 Public Key per server is accepted
+                    let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
+                    // Extract the public key
+                    let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="
+                    let pk_end = peer_configs.find(";").unwrap_or(peer_configs.len());
+                    peer_base64_pk = peer_configs[pk_start..pk_end].to_string();
+                    // Extract the port
+                    let port_start = peer_configs.find("port=").unwrap_or(0) + 5; // Add 5 to skip "port="
+                    let port_end = peer_configs.len();
+                    let peer_str_port:String;
+                    peer_str_port = peer_configs[port_start..port_end].to_string();
+                    peer_port = peer_str_port.parse().unwrap_or(0);
+                    }
+                let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
+                let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
+                let peer_u832_pk: [u8; 32] = peer_bytes_pk
+                    .as_slice()
+                    .try_into()
+                    .expect("Invalid public key length");
+                // Not adding the server peer if WE are the server peer, running postup instead           
+                if device.config.x25519_public_key != peer_u832_pk {
                         device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
                             x25519::PublicKey::from(peer_u832_pk));
-                        }
+                } else {
+                    // Typical postup and postdown commands
+                    // iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+                    // iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+
+                    let postupcommand = "iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE";
+                    let output = Command::new("bash")
+                        .arg("-c")
+                        .arg(postupcommand)
+                        .output()
+                        .expect("Error: Failed to execute postup command");
+                    if output.status.success() {
+                        let stdout = String::from_utf8_lossy(&output.stdout);
+                        tracing::debug!("Info: postup command executed successfully {}". stdout);
+                    } else {
+                        let stderr = String::from_utf8_lossy(&output.stderr);
+                        tracing::debug!("Error: postup command failed to execute {}", stderr);
+                    }
                 }
-                Err(_) => {tracing::debug!("Error: There is no RODT associated with the account");  }
             }
+            Err(_) => {tracing::debug!("Error: There is no RODT associated with the account");  }
         }
         Ok(device)
     }
@@ -912,7 +897,7 @@ impl Device {
             }) // Box
         )?; //self.queue.new_event
     Ok(())
-} // function
+    } // function
 
     fn register_conn_handler(
         &self,
