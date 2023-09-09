@@ -502,6 +502,7 @@ impl Device {
                 } else {
                     // Typical postup and postdown commands
                     // iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+                    // Postdown command to be added to bash scripts
                     // iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
                     // CG: We are harcoding here that exit is via eth0
                     let postupcommand = "iptables -A FORWARD -i " + tunname + " -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE";
