@@ -17,7 +17,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
-use std::str::FromStr;
 use base64::{decode};
 use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
@@ -45,8 +44,6 @@ use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use ed25519_dalek::{Keypair,Signer};
-use ip_network::IpNetwork;
-// use base64::encode as base64encode;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
@@ -498,54 +495,43 @@ impl Device {
                     // let ipresponse = dnssecresolver.lookup_ip(&server_rodt.metadata.subjectuniqueidentifierurl).unwrap();
                     let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
                     tracing::debug!("Info: IP address read from subdomain {}", ipaddress);    
-                    
-                    tracing::debug!("Info: IP address read from subdomain {}", device.config.rodt.metadata.cidrblock); 
+
+                    let cfgresponse = dnssecresolver.txt_lookup("vpn.cableguard.net.");
+                    // let cfgresponse = dnssecresolver.txt_lookup(&server_rodt.metadata.subjectuniqueidentifierurl);
+                    tracing::debug!("Info: Default Server VPN: {}", server_rodt.metadata.subjectuniqueidentifierurl);
+                    cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
+                    let mut peer_base64_pk:String="=".to_string();
+                    for configs in cfgresponse.iter() {
+                        let txt_strings: Vec<String> = configs
+                            .iter()
+                            .map(|txt_data| txt_data.to_string())
+                            .collect();
+                        // CG: Change this so only 1 Public Key per server is accepted
+                        let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
+                        // Extract the public key
+                        let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="
+                        let pk_end = peer_configs.find(";").unwrap_or(peer_configs.len());
+                        peer_base64_pk = peer_configs[pk_start..pk_end].to_string();
+                        // Extract the port
+                        let port_start = peer_configs.find("port=").unwrap_or(0) + 5; // Add 5 to skip "port="
+                        let port_end = peer_configs.len();
+                        let peer_str_port:String;
+                        peer_str_port = peer_configs[port_start..port_end].to_string();
+                        peer_port = peer_str_port.parse().unwrap_or(0);
+                        tracing::debug!("Info: Public Key: {}", peer_base64_pk);
+                        tracing::debug!("Info: Port: {:?}", peer_port);
+                        }
+                    let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
+                    let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
+                    let peer_u832_pk: [u8; 32] = peer_bytes_pk
+                        .as_slice()
+                        .try_into()
+                        .expect("Invalid public key length");
                     // CG: Not adding the server peer if WE are the server peer           
-                    match  IpNetwork::from_str(&device.config.rodt.metadata.cidrblock) {
-                        Ok(parsed_cidr) => {
-                            // Successfully parsed IP address
-                                let parsed_ip = parsed_cidr.network_address();
-                                if parsed_ip != ipaddress {
-                                 let cfgresponse = dnssecresolver.txt_lookup("vpn.cableguard.net.");
-                                // let cfgresponse = dnssecresolver.txt_lookup(&server_rodt.metadata.subjectuniqueidentifierurl);
-                                tracing::debug!("Info: Default Server VPN: {}", server_rodt.metadata.subjectuniqueidentifierurl);
-                                cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
-                                let mut peer_base64_pk:String="=".to_string();
-                                for configs in cfgresponse.iter() {
-                                    let txt_strings: Vec<String> = configs
-                                        .iter()
-                                        .map(|txt_data| txt_data.to_string())
-                                        .collect();
-                                    // CG: Change this so only 1 Public Key per server is accepted
-                                    let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
-                                    // Extract the public key
-                                    let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="
-                                    let pk_end = peer_configs.find(";").unwrap_or(peer_configs.len());
-                                    peer_base64_pk = peer_configs[pk_start..pk_end].to_string();
-                                    // Extract the port
-                                    let port_start = peer_configs.find("port=").unwrap_or(0) + 5; // Add 5 to skip "port="
-                                    let port_end = peer_configs.len();
-                                    let peer_str_port:String;
-                                    peer_str_port = peer_configs[port_start..port_end].to_string();
-                                    peer_port = peer_str_port.parse().unwrap_or(0);
-                                    tracing::debug!("Info: Public Key: {}", peer_base64_pk);
-                                    tracing::debug!("Info: Port: {:?}", peer_port);
-                                }
-                                let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                                let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
-                                let peer_u832_pk: [u8; 32] = peer_bytes_pk
-                                    .as_slice()
-                                    .try_into()
-                                    .expect("Invalid public key length");
-                                device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
-                                    x25519::PublicKey::from(peer_u832_pk));
-                            }
+                    if device.config.x25519_public_key != peer_u832_pk {
+                        device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
+                            x25519::PublicKey::from(peer_u832_pk));
                         }
-                        Err(e) => {
-                            // Handle the error if parsing fails
-                            println!("Failed to parse IP address: {}", e);
-                        }
-                    }
                 }
                 Err(_) => {tracing::debug!("Error: There is no RODT associated with the account");  }
             }
