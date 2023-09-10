@@ -927,7 +927,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                 if let Ok(fetched_publickey_ed25519_public_key) = PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
                     // If the public key parsing is successful, execute this block
                     println!("fetched_publickey_ed25519_public_key {:?}", fetched_publickey_ed25519_public_key);
-                    println!("string_rodtid.as_bytes() {}", string_rodtid.as_bytes());
+                    println!("string_rodtid.as_bytes() {:?}", string_rodtid.as_bytes());
                     println!("signature {:?}", signature);
                     if fetched_publickey_ed25519_public_key.verify(
                         string_rodtid.as_bytes(),
@@ -998,7 +998,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
             Ok(peer_signature) => {
                 if let Ok(own_serviceprovider_publickey_ed25519_public_key) = PublicKey::from_bytes(&own_serviceprovider_bytes_ed25519_public_key) {
                     println!("own_serviceprovider_bytes_ed25519_public_key {:?}", own_serviceprovider_bytes_ed25519_public_key);
-                    println!("peer_token_id.as_bytes() {}", peer_token_id.as_bytes());
+                    println!("peer_token_id.as_bytes() {:?}", peer_token_id.as_bytes());
                     println!("peer_signature {:?}", peer_signature);
                     if own_serviceprovider_publickey_ed25519_public_key.verify(
                         peer_token_id.as_bytes(),
