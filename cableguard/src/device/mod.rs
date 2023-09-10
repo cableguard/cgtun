@@ -22,7 +22,7 @@ use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
-// use hex::ToHex;
+use crate::noise::verify_and_fetch_rodt_id;
 use hex::encode as encode_hex;
 use allowed_ips::AllowedIps;
 use api::nearorg_rpc_token;
@@ -39,11 +39,11 @@ use crate::serialization::{KeyBytes, self};
 use crate::device::api::Rodt;
 use crate::noise::errors::WireGuardError;
 use crate::noise::handshake::consume_received_handshake_peer_2blisted;
-use crate::noise::verify_rodt_id;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use ed25519_dalek::{Keypair,Signer};
+use crate::noise::verify_rodt_match;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
@@ -773,9 +773,11 @@ impl Device {
                                         if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
                                             Some(peer)
                                         } else {
-                                            let evaluation = verify_rodt_id(*p.rodt_id ,*p.rodt_id_signature);
+                                            let evaluation = verify_and_fetch_rodt_id(*p.rodt_id ,*p.rodt_id_signature);
                                             if let Ok((verification_result, rodt)) = evaluation {
-                                                if verification_result {
+                                                if verification_result && verify_rodt_match(device.config.rodt.metadata.serviceproviderid.clone(),
+                                                        rodt.metadata.serviceprovidersignature,
+                                                        rodt.token_id) {
                                                     // Adding the new peer here
                                                     let device_key_pair = device.key_pair.as_ref()
                                                         .expect("Error: Self private key must be set before adding peers")
@@ -1127,6 +1129,7 @@ impl Device {
         
         return 0;
     }
+
 }
 
 /// A basic linear-feedback shift register implemented as xorshift, used to
