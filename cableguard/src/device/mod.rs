@@ -777,7 +777,7 @@ impl Device {
                                             if let Ok((verification_result, rodt)) = evaluation {
                                                 if verification_result && verify_rodt_match(device.config.rodt.metadata.serviceproviderid.clone(),
                                                         rodt.metadata.serviceprovidersignature,
-                                                        rodt.token_id) {
+                                                        *p.rodt_id) {
                                                     // Adding the new peer here
                                                     let device_key_pair = device.key_pair.as_ref()
                                                         .expect("Error: Self private key must be set before adding peers")

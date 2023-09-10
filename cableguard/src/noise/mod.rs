@@ -968,8 +968,13 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
 pub fn verify_rodt_match(
     own_serviceproviderid: String,
     peer_serviceprovidersignature: String,
-    peer_token_id: String,
+    peer_token_id: [u8;RODT_ID_SZ],
 ) -> bool {
+
+let slice_peer_token_id: &[u8] = &peer_token_id[..];
+let string_peer_token_id: &str = std::str::from_utf8(slice_peer_token_id)
+.expect("Error: Failed to convert byte slice to string")
+.trim_end_matches('\0');
 
 // Obtain a RODT from its ID
 let account_idargs = "{\"token_id\": \"".to_owned()
@@ -997,10 +1002,10 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
             Ok(peer_signature) => {
                 if let Ok(own_serviceprovider_publickey_ed25519_public_key) = PublicKey::from_bytes(&own_serviceprovider_bytes_ed25519_public_key) {
                     println!("own_serviceprovider_publickey_ed25519_public_key {:?}", own_serviceprovider_publickey_ed25519_public_key);
-                    println!("peer_token_id {:?}", peer_token_id);
+                    println!("string_peer_token_id {:?}", string_peer_token_id);
                     println!("peer_signature {:?}", peer_signature);
                     if own_serviceprovider_publickey_ed25519_public_key.verify(
-                        peer_token_id.as_bytes(),
+                        string_peer_token_id.as_bytes(),
                         &peer_signature
                         ).is_ok() {
                             tracing::debug!("Info: ServiceProviderEd25519SignatureVerificationSuccess");
