@@ -996,7 +996,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         match Signature::from_bytes(&peer_serviceprovider_u864_signature) {
             Ok(peer_signature) => {
                 if let Ok(own_serviceprovider_publickey_ed25519_public_key) = PublicKey::from_bytes(&own_serviceprovider_bytes_ed25519_public_key) {
-                    println!("own_serviceprovider_publickey_ed25519_public_key {:?}", own_serviceprovider_publickey_ed25519_public_key;
+                    println!("own_serviceprovider_publickey_ed25519_public_key {:?}", own_serviceprovider_publickey_ed25519_public_key);
                     println!("peer_token_id {:?}", peer_token_id);
                     println!("peer_signature {:?}", peer_signature);
                     if own_serviceprovider_publickey_ed25519_public_key.verify(
