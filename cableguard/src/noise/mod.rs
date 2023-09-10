@@ -926,6 +926,9 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                 // If the signature parsing is successful, execute this block
                 if let Ok(fetched_publickey_ed25519_public_key) = PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
                     // If the public key parsing is successful, execute this block
+                    println!("fetched_publickey_ed25519_public_key {:?}", fetched_publickey_ed25519_public_key);
+                    println!("string_rodtid.as_bytes() {}", string_rodtid.as_bytes());
+                    println!("signature {:?}", signature);
                     if fetched_publickey_ed25519_public_key.verify(
                         string_rodtid.as_bytes(),
                         &signature
@@ -967,7 +970,7 @@ pub fn verify_rodt_match(
     peer_serviceprovidersignature: String,
     peer_token_id: String,
 ) -> bool {
-    
+
 // Obtain a RODT from its ID
 let account_idargs = "{\"token_id\": \"".to_owned()
     + &own_serviceproviderid+ "\"}";
@@ -994,8 +997,8 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         match Signature::from_bytes(&peer_serviceprovider_u864_signature) {
             Ok(peer_signature) => {
                 if let Ok(own_serviceprovider_publickey_ed25519_public_key) = PublicKey::from_bytes(&own_serviceprovider_bytes_ed25519_public_key) {
-                    println!("own_serviceprovider_publickey_ed25519_public_key {:?}", own_serviceprovider_publickey_ed25519_public_key);
-                    println!("own_serviceprovider_rodt.token_id {}", own_serviceprovider_rodt.token_id);
+                    println!("own_serviceprovider_bytes_ed25519_public_key {:?}", own_serviceprovider_bytes_ed25519_public_key);
+                    println!("peer_token_id.as_bytes() {}", peer_token_id.as_bytes());
                     println!("peer_signature {:?}", peer_signature);
                     if own_serviceprovider_publickey_ed25519_public_key.verify(
                         peer_token_id.as_bytes(),
@@ -1006,7 +1009,6 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         } else {
                             tracing::debug!("Error: ServiceProviderEd25519SignatureVerificationFailure");
                             // CG: Temporarily disabling returning an error
-                            // Err(WireGuardError::ServiceProviderEd25519SignatureVerificationFailure)
                             return true;
                         }
                     } else {
