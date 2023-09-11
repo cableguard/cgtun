@@ -426,7 +426,6 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
         writeln!(writerbufferdevice, "bcnetwork=={}", "testnet");
     }
     writeln!(writerbufferdevice, "rodtaccountid={}", thisnetworkdevice.config.rodt.owner_id);
-    // writeln!(writerbufferdevice, "This tunnel's RODiT is a={}", role);
 
     for (own_static_key_pair, peer) in thisnetworkdevice.peers.iter() {
         let peer = peer.lock();
