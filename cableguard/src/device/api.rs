@@ -24,6 +24,7 @@ use reqwest::blocking::Client;
 use serde_json::{Value};
 use serde::{Deserialize, Serialize};
 use hex::encode as encode_hex;
+use base64::encode as base64encode;
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
 pub mod constants {
@@ -426,6 +427,7 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
         writeln!(writerbufferdevice, "bcnetwork=={}", "testnet");
     }
     writeln!(writerbufferdevice, "rodtaccountid={}", thisnetworkdevice.config.rodt.owner_id);
+    writeln!(writerbufferdevice, "rodtpublickeybase64={}", base64encode(thisnetworkdevice.config.x25519_public_key));
 
     for (own_static_key_pair, peer) in thisnetworkdevice.peers.iter() {
         let peer = peer.lock();
