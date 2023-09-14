@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.4.0"
+VERSION="1.4.1"
 #export NFTCONTRACTID=$(cat ./walletsh/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
@@ -22,7 +22,7 @@ fi
 if [ "$1" == "genaccount" ]; then
     # Add code for generating a new uninitialized accountID
     echo "Generating a new uninitialized accountID..."
-    wg genaccount
+    near generate-key
     echo Acccount number:
     ls -t "$HOME/.near-credentials/$BLOCKCHAIN_ENV/" | head -n 1 | xargs -I {} basename {} .json
     echo "The balance of the account is:"
