@@ -15,7 +15,7 @@ pub (crate) fn keybytes_to_hex_string(key_bytes: &KeyBytes) -> String {
 impl std::str::FromStr for KeyBytes {
     type Err = &'static str;
 
-    // CG: From Hex or base64 to KeyBytes ~ [u8; 32] 
+    // From Hex or base64 to KeyBytes ~ [u8; 32] 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut internal = [0u8; 32];
 

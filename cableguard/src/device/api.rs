@@ -513,7 +513,6 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                         .iter()
                                         .map(|txt_data| txt_data.to_string())
                                         .collect();
-                                    // CG: Change this so only 1 Public Key per server is accepted
                                     let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
                                     // Extract the public key
                                     let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="

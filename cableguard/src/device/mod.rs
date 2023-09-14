@@ -504,7 +504,7 @@ impl Device {
                     // iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
                     // Postdown command to be added to bash scripts
                     // iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
-                    // CG: We are harcoding here that exit is via eth0
+                    // CG: We are harcoding here that exits is via eth0
                     let postupcommand = "iptables -A FORWARD -i ".to_owned() + tunname + " -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE";
                     let output = Command::new("bash")
                         .arg("-c")
@@ -778,6 +778,9 @@ impl Device {
                                                 if verification_result && verify_rodt_match(device.config.rodt.metadata.serviceproviderid.clone(),
                                                         rodt.metadata.serviceprovidersignature,
                                                         *p.rodt_id) {
+                                                    // CG: Two more conditions to add: RODT not revoked and up to date
+                                                    // CG: Self configuring the DNS
+                                                    // CG: Not taking connections out of the bandwith, network or location limits
                                                     // Adding the new peer here
                                                     let device_key_pair = device.key_pair.as_ref()
                                                         .expect("Error: Self private key must be set before adding peers")

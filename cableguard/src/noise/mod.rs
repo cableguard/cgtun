@@ -397,15 +397,6 @@ impl Tunn {
                 std::process::exit(1);
             }
         }
-        // CG: Find the peer and check if
-        // IsTrusted(rodt.metadata.serviceproviderid);
-        // ,checking if the Issuer smart contract has published a TXT 
-        // entry with the token_id of the server
-        // End of RODT verification
-        // Additional checks include: not accepting notafter and notbefore dates for RODT
-        // Self configuring the DNS
-        // Not taking connections out of the bandwith, network or location limits
-
         let index = session.local_index();
         self.sessions[index % N_SESSIONS] = Some(session);
         self.timer_tick(TimerName::TimeLastPacketReceived);
@@ -951,10 +942,6 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                 return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
             }
         };
-        // CG: Find the peer and check if is trusted
-        // If the signature is good it means it is authentic, it does not mean it is valid for connection
-        // if rodt.token_id.contains(&rodt.metadata.serviceproviderid) is server, if not is client
-        // not accepting notafter and notbefore dates
         Ok::<(bool,Rodt), WireGuardError>((true,fetched_rodt))
     } Err(err) => {
         // If the nearorg_rpc_token function call returns an error, execute this block
@@ -1012,8 +999,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                             return true;
                         } else {
                             tracing::debug!("Error: ServiceProviderEd25519SignatureVerificationFailure");
-                            // CG: Temporarily disabling returning an error
-                            return true;
+                            return false;
                         }
                     } else {
                         tracing::debug!("Error: ServiceProviderEd25519SignatureParsingFailure");
