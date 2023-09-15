@@ -779,13 +779,11 @@ impl Device {
                                                     && verify_rodt_match(device.config.rodt.metadata.serviceproviderid.clone(),
                                                         rodt.metadata.serviceprovidersignature.clone(),
                                                         *p.rodt_id)
-                                                    && verify_rodt_live_and_active(
-                                                        device.config.rodt.metadata.serviceproviderid.clone(),
-                                                        rodt.metadata.notafter,
-                                                        rodt.metadata.notbefore) {
-                                                    // CG: Two more conditions to add: RODT not revoked and up to date
+                                                    && verify_rodt_live_and_active(rodt.metadata.notafter,rodt.metadata.notbefore) {
+                                                    // CG: Condition to add: RODT not revoked 
                                                     // CG: Self configuring the DNS
                                                     // CG: Not taking connections out of the bandwith, network or location limits
+                                                    
                                                     // Adding the new peer here
                                                     let device_key_pair = device.key_pair.as_ref()
                                                         .expect("Error: Self private key must be set before adding peers")

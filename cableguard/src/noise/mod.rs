@@ -21,7 +21,7 @@ use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use ed25519_dalek::{PublicKey,Verifier,Signature};
 use hex::FromHex;
 use base64::{decode};
-use chrono::{NaiveDate,Utc,TimeZone};
+use chrono::{NaiveDate,NaiveDateTime,NaiveTime};
 
 /// The default value to use for rate limiting, when no other rate limiter is defined
 const PEER_HANDSHAKE_RATE_LIMIT: u64 = 10;
@@ -1019,37 +1019,31 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
 }
 
 pub fn verify_rodt_live_and_active(
-    own_serviceproviderid: String,
     peer_rodt_notafter: String,
     peer_rodt_notbefore: String,
 ) -> bool {
 
-let date_notafter = NaiveDate::parse_from_str(&peer_rodt_notafter, "%Y-%m-%d");
-let date_notbefore = NaiveDate::parse_from_str(&peer_rodt_notbefore, "%Y-%m-%d");
+let naivedate_notafter = NaiveDate::parse_from_str(&peer_rodt_notafter, "%Y-%m-%d")
+    .unwrap_or_default(); // Use a default value if parsing fails
+let naivedate_notbefore = NaiveDate::parse_from_str(&peer_rodt_notbefore, "%Y-%m-%d")
+    .unwrap_or_default(); // Use a default value if parsing fails
+let niltime = NaiveTime::from_hms_milli_opt(0, 0, 0, 0).unwrap();
+let naivedatetime_notafter = NaiveDateTime::new(naivedate_notafter, niltime);
+let naivedatetime_notbefore = NaiveDateTime::new(naivedate_notbefore, niltime);
+
 let string_timenow = nearorg_rpc_timestamp(BLOCKCHAIN_NETWORK);
 
 // Convert the timestamp string into an i64
-let i64_timestamp = string_timenow.parse::<i64>().unwrap();
+let i64_timestamp = string_timenow.expect("Error: Can't parse near block timestamp").parse::<i64>().unwrap();
     
 // Create a NaiveDateTime from the timestamp
-let naive_timestamp = NaiveDateTime::from_timestamp(i64_timestamp, 0);
-    
-// Create a normal DateTime from the NaiveDateTime
-let datenow: DateTime<Utc> = DateTime::from_utc(naive_timestamp, Utc);
+let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp, 0);
 
-match (date_notafter, date_notbefore) {
-    (Ok(date_notafter), Ok(date_notbefore)) => {
-        if datenow.date() <= date_notafter && datenow.date() >= date_notbefore {
-            println!("The current datetime is within the specified range.");
-            return true
-        } else {
-            println!("The current datetime is outside the specified range.");
-            return false
-        }
-    }
-    _ => {println!("Failed to parse Unix timestamps.");
-    false;
+if naivedatetime_timestamp <= Some(naivedatetime_notafter) && naivedatetime_timestamp >= Some(naivedatetime_notbefore) {
+    println!("The current datetime is within the specified range.");
+    return true
+} else {
+    println!("The current datetime is outside the specified range.");
+    return false
 }
-}
-false
 } 
