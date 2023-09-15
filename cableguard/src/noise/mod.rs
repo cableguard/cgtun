@@ -16,11 +16,12 @@ use std::convert::{TryFrom, TryInto};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::Arc;
 use std::time::Duration;
-use crate::device::api::{nearorg_rpc_token,Rodt};
+use crate::device::api::{nearorg_rpc_token,nearorg_rpc_timestamp,Rodt};
 use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use ed25519_dalek::{PublicKey,Verifier,Signature};
 use hex::FromHex;
 use base64::{decode};
+use chrono::{NaiveDate,Utc,TimeZone};
 
 /// The default value to use for rate limiting, when no other rate limiter is defined
 const PEER_HANDSHAKE_RATE_LIMIT: u64 = 10;
@@ -1016,3 +1017,39 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         }
 }
 }
+
+pub fn verify_rodt_live_and_active(
+    own_serviceproviderid: String,
+    peer_rodt_notafter: String,
+    peer_rodt_notbefore: String,
+) -> bool {
+
+let date_notafter = NaiveDate::parse_from_str(&peer_rodt_notafter, "%Y-%m-%d");
+let date_notbefore = NaiveDate::parse_from_str(&peer_rodt_notbefore, "%Y-%m-%d");
+let string_timenow = nearorg_rpc_timestamp(BLOCKCHAIN_NETWORK);
+
+// Convert the timestamp string into an i64
+let i64_timestamp = string_timenow.parse::<i64>().unwrap();
+    
+// Create a NaiveDateTime from the timestamp
+let naive_timestamp = NaiveDateTime::from_timestamp(i64_timestamp, 0);
+    
+// Create a normal DateTime from the NaiveDateTime
+let datenow: DateTime<Utc> = DateTime::from_utc(naive_timestamp, Utc);
+
+match (date_notafter, date_notbefore) {
+    (Ok(date_notafter), Ok(date_notbefore)) => {
+        if datenow.date() <= date_notafter && datenow.date() >= date_notbefore {
+            println!("The current datetime is within the specified range.");
+            return true
+        } else {
+            println!("The current datetime is outside the specified range.");
+            return false
+        }
+    }
+    _ => {println!("Failed to parse Unix timestamps.");
+    false;
+}
+}
+false
+} 

@@ -22,7 +22,7 @@ use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
-use crate::noise::verify_and_fetch_rodt_id;
+use crate::noise::{verify_and_fetch_rodt_id,verify_rodt_live_and_active};
 use hex::encode as encode_hex;
 use allowed_ips::AllowedIps;
 use api::nearorg_rpc_token;
@@ -775,9 +775,14 @@ impl Device {
                                         } else {
                                             let evaluation = verify_and_fetch_rodt_id(*p.rodt_id ,*p.rodt_id_signature);
                                             if let Ok((verification_result, rodt)) = evaluation {
-                                                if verification_result && verify_rodt_match(device.config.rodt.metadata.serviceproviderid.clone(),
-                                                        rodt.metadata.serviceprovidersignature,
-                                                        *p.rodt_id) {
+                                                if verification_result
+                                                    && verify_rodt_match(device.config.rodt.metadata.serviceproviderid.clone(),
+                                                        rodt.metadata.serviceprovidersignature.clone(),
+                                                        *p.rodt_id)
+                                                    && verify_rodt_live_and_active(
+                                                        device.config.rodt.metadata.serviceproviderid.clone(),
+                                                        rodt.metadata.notafter,
+                                                        rodt.metadata.notbefore) {
                                                     // CG: Two more conditions to add: RODT not revoked and up to date
                                                     // CG: Self configuring the DNS
                                                     // CG: Not taking connections out of the bandwith, network or location limits
