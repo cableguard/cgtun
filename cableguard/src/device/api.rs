@@ -300,10 +300,11 @@ pub fn nearorg_rpc_timestamp(
 
     // Extract the "timestamp" field
     if let Some(timestamp) = parsed_json["timestamp"].as_str() {
-        println!("timestamp: {}",timestamp);
+        println!("Info: Obtained timestamp: {:?}",timestamp);
         Ok(timestamp.to_string())
         }
      else {
+        println!("Error: could not obtain timestamp);
         Ok(0.to_string())
     }
 }
