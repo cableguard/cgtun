@@ -22,7 +22,7 @@ use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
-use crate::noise::{verify_and_fetch_rodt_id,verify_rodt_live_and_active};
+use crate::noise::{verify_hasrodt_getit,verify_rodt_islive,verify_rodt_isactive};
 use hex::encode as encode_hex;
 use allowed_ips::AllowedIps;
 use api::nearorg_rpc_token;
@@ -43,7 +43,7 @@ use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use ed25519_dalek::{Keypair,Signer};
-use crate::noise::verify_rodt_match;
+use crate::noise::verify_rodt_isamatch;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
@@ -465,7 +465,7 @@ impl Device {
             Ok(serviceprovider_rodt) => {
                 let mut peer_port: u16 = 0;
                 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
-                tracing::debug!("Info: Default Server {}", serviceprovider_rodt.metadata.subjectuniqueidentifierurl);
+                println!("Info: Default subjectuniqueidentifierurl {}", serviceprovider_rodt.metadata.subjectuniqueidentifierurl);
                 let ipresponse = dnssecresolver.lookup_ip("vpn.cableguard.net.").unwrap();
                 let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");   
                 let cfgresponse = dnssecresolver.txt_lookup("vpn.cableguard.net.");
@@ -773,17 +773,16 @@ impl Device {
                                         if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
                                             Some(peer)
                                         } else {
-                                            let evaluation = verify_and_fetch_rodt_id(*p.rodt_id ,*p.rodt_id_signature);
+                                            let evaluation = verify_hasrodt_getit(*p.rodt_id ,*p.rodt_id_signature);
                                             if let Ok((verification_result, rodt)) = evaluation {
                                                 if verification_result
-                                                    && verify_rodt_match(device.config.rodt.metadata.serviceproviderid.clone(),
+                                                    && verify_rodt_isamatch(device.config.rodt.metadata.serviceproviderid.clone(),
                                                         rodt.metadata.serviceprovidersignature.clone(),
                                                         *p.rodt_id)
-                                                    && verify_rodt_live_and_active(rodt.metadata.notafter,rodt.metadata.notbefore) {
-                                                    // CG: Condition to add: RODT not revoked 
+                                                    && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
+                                                    && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl) {
                                                     // CG: Self configuring the DNS
                                                     // CG: Not taking connections out of the bandwith, network or location limits
-                                                    
                                                     // Adding the new peer here
                                                     let device_key_pair = device.key_pair.as_ref()
                                                         .expect("Error: Self private key must be set before adding peers")

@@ -18,6 +18,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use crate::device::api::{nearorg_rpc_token,nearorg_rpc_timestamp,Rodt};
 use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
+use trust_dns_resolver::Resolver;
+use trust_dns_resolver::config::*;
 use ed25519_dalek::{PublicKey,Verifier,Signature};
 use hex::FromHex;
 use base64::{decode};
@@ -381,7 +383,7 @@ impl Tunn {
                 let fetched_rodt = result;
                 tracing::debug!("Info: RODT Owner Init Received (Original): {}", fetched_rodt.owner_id);
                 
-                match verify_and_fetch_rodt_id(*peer_handshake_init.rodt_id,*peer_handshake_init.rodt_id_signature){
+                match verify_hasrodt_getit(*peer_handshake_init.rodt_id,*peer_handshake_init.rodt_id_signature){
                     Ok(_) => {
                         tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
                     }
@@ -420,7 +422,7 @@ impl Tunn {
 
         let session = self.handshake.consume_received_handshake_response(peer_handshake_response)?;
 
-        match verify_and_fetch_rodt_id(*peer_handshake_response.rodt_id,*peer_handshake_response.rodt_id_signature){
+        match verify_hasrodt_getit(*peer_handshake_response.rodt_id,*peer_handshake_response.rodt_id_signature){
             Ok(_) => {
                 tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
             }
@@ -883,7 +885,7 @@ mod tests {
     }
 }
 
-pub fn verify_and_fetch_rodt_id(
+pub fn verify_hasrodt_getit(
     rodt_id: [u8;RODT_ID_SZ],
     rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
 ) -> Result<(bool,Rodt), WireGuardError> {
@@ -894,7 +896,7 @@ let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
 .trim_end_matches('\0');
 
 // We receive this and we have to use it to validate the peer
-tracing::debug!("Info: verify_and_fetch_rodt_id: RODT ID received:  {}", string_rodtid);        
+tracing::debug!("Info: verify_hasrodt_getit: RODT ID received:  {}", string_rodtid);        
 
 // Obtain a RODT from its ID
 let account_idargs = "{\"token_id\": \"".to_owned() 
@@ -950,7 +952,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
 
 }
 
-pub fn verify_rodt_match(
+pub fn verify_rodt_isamatch(
     own_serviceproviderid: String,
     peer_serviceprovidersignature: String,
     peer_token_id: [u8;RODT_ID_SZ],
@@ -1012,11 +1014,14 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
 }
 }
 
-pub fn verify_rodt_live_and_active(
+pub fn verify_rodt_islive(
     peer_rodt_notafter: String,
     peer_rodt_notbefore: String,
 ) -> bool {
 
+let naivedatetime_nul = NaiveDateTime::parse_from_str("0000-00-00", "%Y-%m-%d")
+    .unwrap_or_default(); // Use a default value if parsing fails
+// naivedatetime_nul value is 1970-01-01 00:00:00 
 let naivedate_notafter = NaiveDate::parse_from_str(&peer_rodt_notafter, "%Y-%m-%d")
     .unwrap_or_default(); // Use a default value if parsing fails
 let naivedate_notbefore = NaiveDate::parse_from_str(&peer_rodt_notbefore, "%Y-%m-%d")
@@ -1028,16 +1033,38 @@ let naivedatetime_notbefore = NaiveDateTime::new(naivedate_notbefore, niltime);
 let string_timenow = nearorg_rpc_timestamp(BLOCKCHAIN_NETWORK);
 
 // Convert the timestamp string into an i64
-let i64_timestamp = string_timenow.expect("Error: Can't parse near block timestamp").parse::<i64>().unwrap();
-println!("i64 timenow {:?}",i64_timestamp);  
+let i64_timestamp = string_timenow.expect("Error: Can't parse near block timestamp").parse::<i64>().unwrap(); 
 // Create a NaiveDateTime from the timestamp
 let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp/1000000000,0);
-println!("timenow naive date time {:?}",naivedatetime_timestamp);
 
-if (naivedatetime_timestamp <= Some(naivedatetime_notafter)) && (naivedatetime_timestamp >= Some(naivedatetime_notbefore)) {
+if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_notafter == naivedatetime_nul))
+    && ((naivedatetime_timestamp >= Some(naivedatetime_notbefore)) || (naivedatetime_notbefore == naivedatetime_nul)) {
     return true
 } else {
     // CG: Alll the false returns must have an Error associated
     return false
 }
-} 
+
+}
+
+pub fn verify_rodt_isactive(
+    token_id: String,
+    subjectuniqueidentifierurl: String,
+) -> bool {
+
+let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+tracing::debug!("Info: Default VPN Server {}", subjectuniqueidentifierurl);
+let revokingdnsentry = token_id.clone() + "." + &subjectuniqueidentifierurl;
+let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry);
+
+if cfgresponse.iter().next().is_some() {
+    tracing::debug!("Error RODT {} revoked by {}", token_id, subjectuniqueidentifierurl);
+    return false
+} else {
+    // If an error is found, instead of an entry, the RODT is not revoked
+    return true
+};
+
+}
+
+
