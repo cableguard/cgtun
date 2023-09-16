@@ -1040,10 +1040,10 @@ let i64_timestamp = string_timenow.expect("Error: Can't parse near block timesta
 let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp, 0);
 
 if naivedatetime_timestamp <= Some(naivedatetime_notafter) && naivedatetime_timestamp >= Some(naivedatetime_notbefore) {
-    println!("Info: The current datetime {} is within {} and {}", naivedatetime_timestamp,naivedatetime_notbefore,naivedatetime_notafter);
+    println!("Info: The current datetime {:?} is within {:?} and {:?}", naivedatetime_timestamp,naivedatetime_notbefore,naivedatetime_notafter);
     return true
 } else {
-    println!("Error: The current datetime {} is NOT within {} and {}", naivedatetime_timestamp,naivedatetime_notbefore,naivedatetime_notafter);
+    println!("Error: The current datetime {:?} is within {:?} and {:?}", naivedatetime_timestamp,naivedatetime_notbefore,naivedatetime_notafter);
     return false
 }
 } 
