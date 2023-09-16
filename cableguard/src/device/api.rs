@@ -297,7 +297,7 @@ pub fn nearorg_rpc_timestamp(
 
     let response_text: String = response.text()?;
     let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
-
+    println!("parsed_json: {:?}",parsed_json);
     // Extract the "timestamp" field
     if let Some(timestamp) = parsed_json["timestamp"].as_str() {
         println!("Info: Obtained timestamp: {:?}",timestamp);
