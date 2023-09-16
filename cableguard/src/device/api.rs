@@ -304,7 +304,7 @@ pub fn nearorg_rpc_timestamp(
         Ok(timestamp.to_string())
         }
      else {
-        println!("Error: could not obtain timestamp);
+        println!("Error: could not obtain timestamp");
         Ok(0.to_string())
     }
 }
