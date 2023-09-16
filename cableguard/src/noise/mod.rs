@@ -1058,11 +1058,11 @@ let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::defa
 let domainandextension = Regex::new(r"(\w+\.\w+)$").unwrap();
 
 // Find the rightmost part (domain and extension)
-if let Some(maindomain) = domainandextension.captures(subjectuniqueidentifierurl) {
+if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierurl) {
     let domainandextension = &maindomain[1];
     println!("Domain and extension: {}", domainandextension);
     let revokingdnsentry = token_id.clone() + ".revoked." + &domainandextension;
-    let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry);
+    let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry.clone());
 
     if cfgresponse.iter().next().is_some() {
         tracing::debug!("Error RODT {} revoked by {}", token_id, domainandextension);
