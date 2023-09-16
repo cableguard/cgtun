@@ -1060,24 +1060,55 @@ let domainandextension = Regex::new(r"(\w+\.\w+)$").unwrap();
 // Find the rightmost part (domain and extension)
 if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierurl) {
     let domainandextension = &maindomain[1];
-    println!("Domain and extension: {}", domainandextension);
     let revokingdnsentry = token_id.clone() + ".revoked." + &domainandextension;
     let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry.clone());
-
     if cfgresponse.iter().next().is_some() {
         tracing::debug!("Error RODT {} revoked by {}", token_id, domainandextension);
         println!("Error: RODT {} revoked by {} as per {}", token_id, domainandextension, revokingdnsentry);
         return false
     } else {
         // If an error is found, instead of an entry, the RODT is not revoked
-        println!("Info: RODT {} NOT revoked by {}", token_id, domainandextension);
         return true
     };
 } else {
-    println!("Error: No valid domain found in {}",domainandextension);
+    // If an error is found, instead of an entry, the RODT is not revoked
     return true
 }
 
 }
 
+// CG: Check if the smart contract is authorised by the subjectuniqueidentifierurl
+pub fn verify_smartcontract_istrusted(
+    subjectuniqueidentifierurl: String,
+) -> bool {
+
+let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+
+let smart_contract = SMART_CONTRACT;
+let smart_contract_nonear = smart_contract.replace(".near", "");
+let smart_contract_url = smart_contract_nonear.replace("-", ".");
+
+let domainandextension = Regex::new(r"(\w+\.\w+)$").unwrap();
+
+// Find the rightmost part (domain and extension)
+if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierurl) {
+    let domainandextension = &maindomain[1];
+    let enablingdnsentry = smart_contract_nonear + ".smartcontract." + &domainandextension;
+    let cfgresponse = dnssecresolver.txt_lookup(enablingdnsentry.clone());
+    if cfgresponse.iter().next().is_some() {
+        tracing::debug!("Info Smart Contract {} trusted by {}", smart_contract_url, domainandextension);
+        println!("Info Smart Contract {} trusted by {}", smart_contract_url, domainandextension);
+        return true
+    } else {
+        // CG: Add error traces
+        println!("Error: Smart Contract {} not trusted by {}", smart_contract_url, domainandextension);
+        return false
+    };
+} else {
+    // CG: Add error traces
+    println!("Error: Domain {} can't be parsed", domainandextension);
+    return false
+}
+
+}
 
