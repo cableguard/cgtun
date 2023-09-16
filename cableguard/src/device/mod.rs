@@ -465,9 +465,9 @@ impl Device {
             Ok(serviceprovider_rodt) => {
                 let mut peer_port: u16 = 0;
                 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
-                let ipresponse = dnssecresolver.lookup_ip(serviceprovider_rodt.metadata.subjectuniqueidentifierurl+".").unwrap();
+                let ipresponse = dnssecresolver.lookup_ip(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".").unwrap();
                 let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");   
-                let cfgresponse = dnssecresolver.txt_lookup(serviceprovider_rodt.metadata.subjectuniqueidentifierurl+".");
+                let cfgresponse = dnssecresolver.txt_lookup(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".");
                 cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
                 let mut peer_base64_pk:String="=".to_string();
                 for configs in cfgresponse.iter() {
