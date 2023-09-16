@@ -297,16 +297,10 @@ pub fn nearorg_rpc_timestamp(
 
     let response_text: String = response.text()?;
     let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
-    println!("parsed_json: {:?}",parsed_json);
     // Extract the "timestamp" field
-    if let Some(timestamp) = parsed_json["timestamp"].as_str() {
-        println!("Info: Obtained timestamp: {:?}",timestamp);
-        Ok(timestamp.to_string())
-        }
-     else {
-        println!("Error: could not obtain timestamp");
-        Ok(0.to_string())
-    }
+    let timestamp = parsed_json["timestamp"].as_str();
+    println!("parsed_json timestamp: {:?}",timestamp);
+    Ok(timestamp.expect("Error: Could not obtain blockchain time").to_string())
 }
 
 

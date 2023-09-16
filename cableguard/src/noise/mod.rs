@@ -918,9 +918,6 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                 // If the signature parsing is successful, execute this block
                 if let Ok(fetched_publickey_ed25519_public_key) = PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
                     // If the public key parsing is successful, execute this block
-                    println!("fetched_publickey_ed25519_public_key {:?}", fetched_publickey_ed25519_public_key);
-                    println!("string_rodtid {:?}", string_rodtid);
-                    println!("signature {:?}", signature);
                     if fetched_publickey_ed25519_public_key.verify(
                         string_rodtid.as_bytes(),
                         &signature
@@ -973,7 +970,6 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         let own_serviceprovider_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(own_serviceprovider_rodt.owner_id.clone())
         .expect("Error: Failed to decode hex string");
 
-        println!("owner_id of service provider {:?}", own_serviceprovider_rodt.owner_id);
         // Convert the bytes to a [u8; 32] array
         let own_serviceprovider_bytes_ed25519_public_key: [u8; RODT_ID_PK_SZ] = own_serviceprovider_vec_ed25519_public_key
             .try_into()
@@ -989,9 +985,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         match Signature::from_bytes(&peer_serviceprovider_u864_signature) {
             Ok(peer_signature) => {
                 if let Ok(own_serviceprovider_publickey_ed25519_public_key) = PublicKey::from_bytes(&own_serviceprovider_bytes_ed25519_public_key) {
-                    println!("own_serviceprovider_bytes_ed25519_public_key {:?}", own_serviceprovider_bytes_ed25519_public_key);
-                    println!("string_peer_token_id {:?}", string_peer_token_id);
-                    println!("peer_signature {:?}", peer_signature);
+
                     if own_serviceprovider_publickey_ed25519_public_key.verify(
                         string_peer_token_id.as_bytes(),
                         &peer_signature
@@ -1045,7 +1039,7 @@ if (naivedatetime_timestamp <= Some(naivedatetime_notafter)) && (naivedatetime_t
     println!("Info: The current datetime {:?} is within {:?} and {:?}", naivedatetime_timestamp,naivedatetime_notbefore,naivedatetime_notafter);
     return true
 } else {
-    println!("Error: The current datetime {:?} is within {:?} and {:?}", naivedatetime_timestamp,naivedatetime_notbefore,naivedatetime_notafter);
+    println!("Error: The current datetime {:?} is NOT within {:?} and {:?}", naivedatetime_timestamp,naivedatetime_notbefore,naivedatetime_notafter);
     return false
 }
 } 
