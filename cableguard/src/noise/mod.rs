@@ -1059,9 +1059,11 @@ let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry);
 
 if cfgresponse.iter().next().is_some() {
     tracing::debug!("Error RODT {} revoked by {}", token_id, subjectuniqueidentifierurl);
+    println!("Error: RODT {} revoked by {}", token_id, subjectuniqueidentifierurl);
     return false
 } else {
     // If an error is found, instead of an entry, the RODT is not revoked
+    println!("Info: RODT {} NOT revoked by {}", token_id, subjectuniqueidentifierurl);
     return true
 };
 
