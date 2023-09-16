@@ -1094,19 +1094,19 @@ let domainandextension = Regex::new(r"(\w+\.\w+)$").unwrap();
 if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierurl) {
     let domainandextension = &maindomain[1];
     let enablingdnsentry = smart_contract_nonear + ".smartcontract." + &domainandextension;
+    println!("enablingdnsentry {} - {}", smart_contract_url, domainandextension);
     let cfgresponse = dnssecresolver.txt_lookup(enablingdnsentry.clone());
     if cfgresponse.iter().next().is_some() {
         tracing::debug!("Info Smart Contract {} trusted by {}", smart_contract_url, domainandextension);
-        println!("Info Smart Contract {} trusted by {}", smart_contract_url, domainandextension);
         return true
     } else {
         // CG: Add error traces
-        println!("Error: Smart Contract {} not trusted by {}", smart_contract_url, domainandextension);
+        tracing::debug!("Error: Smart Contract {} not trusted by {}", smart_contract_url, domainandextension);
         return false
     };
 } else {
     // CG: Add error traces
-    println!("Error: Domain {} can't be parsed", domainandextension);
+    tracing::debug!("Error: Domain {} can't be parsed", domainandextension);
     return false
 }
 
