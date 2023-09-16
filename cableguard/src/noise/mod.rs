@@ -22,6 +22,7 @@ use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use ed25519_dalek::{PublicKey,Verifier,Signature};
 use hex::FromHex;
+use regex::Regex;
 use base64::{decode};
 use chrono::{NaiveDate,NaiveDateTime,NaiveTime};
 
@@ -1053,19 +1054,29 @@ pub fn verify_rodt_isactive(
 ) -> bool {
 
 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
-tracing::debug!("Info: Default VPN Server {}", subjectuniqueidentifierurl);
-let revokingdnsentry = token_id.clone() + "." + &subjectuniqueidentifierurl;
-let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry);
 
-if cfgresponse.iter().next().is_some() {
-    tracing::debug!("Error RODT {} revoked by {}", token_id, subjectuniqueidentifierurl);
-    println!("Error: RODT {} revoked by {}", token_id, subjectuniqueidentifierurl);
-    return false
+let domainandextension = Regex::new(r"(\w+\.\w+)$").unwrap();
+
+// Find the rightmost part (domain and extension)
+if let Some(maindomain) = domainandextension.captures(subjectuniqueidentifierurl) {
+    let domainandextension = &maindomain[1];
+    println!("Domain and extension: {}", domainandextension);
+    let revokingdnsentry = token_id.clone() + ".revoked." + &domainandextension;
+    let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry);
+
+    if cfgresponse.iter().next().is_some() {
+        tracing::debug!("Error RODT {} revoked by {}", token_id, domainandextension);
+        println!("Error: RODT {} revoked by {} as per {}", token_id, domainandextension, revokingdnsentry);
+        return false
+    } else {
+        // If an error is found, instead of an entry, the RODT is not revoked
+        println!("Info: RODT {} NOT revoked by {}", token_id, domainandextension);
+        return true
+    };
 } else {
-    // If an error is found, instead of an entry, the RODT is not revoked
-    println!("Info: RODT {} NOT revoked by {}", token_id, subjectuniqueidentifierurl);
+    println!("Error: No valid domain found in {}",domainandextension);
     return true
-};
+}
 
 }
 
