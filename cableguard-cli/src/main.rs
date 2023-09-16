@@ -7,8 +7,8 @@ use cableguard::device::api::{nearorg_rpc_tokens_for_owner,nearorg_rpc_state,Rod
 use cableguard::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use cableguard::device::drop_privileges::drop_privileges;
 use daemonize::Daemonize;
-use base64::encode as encode_base64;
-use hex::{FromHex};
+// use base64::encode as encode_base64;
+// use hex::{FromHex};
 use serde_json::Value;
 use std::os::unix::net::UnixDatagram;
 use std::process::exit;
@@ -164,7 +164,7 @@ fn main() {
 
     // Generate the X25519 public key from the X25519 private key of 32 bytes
     let own_static_bytes_public_x25519_key = skx2pkx(own_staticsecret_private_x25519_key.clone());
-    let own_static_b64_public_x25519_key = hex_to_base64(&own_static_bytes_public_x25519_key);
+    // let own_static_b64_public_x25519_key = hex_to_base64(&own_static_bytes_public_x25519_key);
     
     // Create a socketpair to communicate between forked processes
     let (sock1, sock2) = UnixDatagram::pair().unwrap();
@@ -282,7 +282,7 @@ fn main() {
     device_handle.wait();    
 }
 
-fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
+/* fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
     let hex_string = hex_bytes.iter()
         .map(|byte| format!("{:02X}", byte))
         .collect::<Vec<String>>()
@@ -290,4 +290,4 @@ fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
     
     let bytes = Vec::from_hex(&hex_string).expect("Error: Invalid Hex string");
     encode_base64(&bytes)
-}
+} */

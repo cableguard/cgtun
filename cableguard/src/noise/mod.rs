@@ -1027,12 +1027,11 @@ let naivedatetime_notbefore = NaiveDateTime::new(naivedate_notbefore, niltime);
 
 let string_timenow = nearorg_rpc_timestamp(BLOCKCHAIN_NETWORK);
 
-println!("string timenow {:?}",string_timenow);
 // Convert the timestamp string into an i64
 let i64_timestamp = string_timenow.expect("Error: Can't parse near block timestamp").parse::<i64>().unwrap();
 println!("i64 timenow {:?}",i64_timestamp);  
 // Create a NaiveDateTime from the timestamp
-let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp,0);
+let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp/1000000000,0);
 println!("timenow naive date time {:?}",naivedatetime_timestamp);
 
 if (naivedatetime_timestamp <= Some(naivedatetime_notafter)) && (naivedatetime_timestamp >= Some(naivedatetime_notbefore)) {

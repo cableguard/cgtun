@@ -277,7 +277,6 @@ pub fn nearorg_rpc_timestamp(
 ) -> Result<String, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
-    tracing::debug!("Info: Blockchain Directory Network (. for mainnet): {}",xnet);
     let json_data: String = format!(
         r#"{{
             "jsonrpc": "2.0",
@@ -288,21 +287,19 @@ pub fn nearorg_rpc_timestamp(
             }}
         }}"#
     );
-
     let response: reqwest::blocking::Response = client
         .post(&url)
         .body(json_data)
         .header("Content-Type", "application/json")
         .send()?;
-
     let response_text: String = response.text()?;
     let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
-    // Extract the "timestamp" field
-    let timestamp = parsed_json["timestamp"].as_str();
-    println!("parsed_json timestamp: {:?}",timestamp);
-    Ok(timestamp.expect("Error: Could not obtain blockchain time").to_string())
+    if let Some(timestamp) = parsed_json["result"]["header"]["timestamp"].as_i64() {
+        Ok(timestamp.to_string())
+    } else {
+        Ok("0".to_string())
+    }
 }
-
 
 fn produce_sock_dir() {
     let _ = create_dir(SOCK_DIR); // Create the directory if it does not exist
