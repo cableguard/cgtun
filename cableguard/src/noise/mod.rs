@@ -394,10 +394,10 @@ impl Tunn {
                         && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                         && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                         && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
-                            tracing::debug!("Info: Peer is trusted");
+                            tracing::debug!("Info: Peer is trusted in handshake initation");
                         }
                         else {
-                            tracing::debug!("Error: Peer is not trusted");
+                            tracing::debug!("Error: Peer is not trusted in handshake initiation");
                             return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
                         }
                 }
@@ -431,24 +431,34 @@ impl Tunn {
         let session = self.handshake.consume_received_handshake_response(peer_handshake_response)?;
 
         match verify_hasrodt_getit(*peer_handshake_response.rodt_id,*peer_handshake_response.rodt_id_signature){
-                    // CG: Extra checks need to be performed
-            // let evaluation = verify_hasrodt_getit(*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature);
-            // if let Ok((verification_result, rodt)) = evaluation {
-            //     if verification_result
-            //        && verify_rodt_isamatch(device.config.rodt.metadata.serviceproviderid.clone(),
-            //            rodt.metadata.serviceprovidersignature.clone(),
-            //            *peer_handshake_response.rodt_id)
-            //        && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
-            //        && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-            //        && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
-            Ok(_) => {
-                tracing::debug!("Info: In Response: PeerEd25519SignatureVerificationSuccess");
-            }
-            Err(_) => {
-                    tracing::debug!("Error: In Response: PeerEd25519SignatureVerificationFailure");
-                    return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
+            Ok(result) => {
+                // If the function call is successful, execute this block
+                let fetched_rodt = result;
+                tracing::debug!("Info: RODT Owner Init Received (Original): {}", fetched_rodt.owner_id);
+                
+                let evaluation = verify_hasrodt_getit(*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature);
+                if let Ok((verification_result, rodt)) = evaluation {
+                    if verification_result
+                        // CG: Can't check if it is a match with the info available now
+                        // && verify_rodt_isamatch(self.config.rodt.metadata.serviceproviderid.clone(),
+                        //     rodt.metadata.serviceprovidersignature.clone(),
+                        //    *peer_handshake_init.rodt_id)
+                        && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
+                        && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
+                        && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
+                            tracing::debug!("Info: Peer is trusted in handshake response");
+                        }
+                        else {
+                            tracing::debug!("Error: Peer is not trusted in handshake response");
+                            return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
+                        }
                 }
-        }
+            }
+            Err(err) => {
+                // If the nearorg_rpc_token function call returns an error, execute this block
+                tracing::debug!("Error: There is no server RODT associated with the account: {}", err);
+                std::process::exit(1);
+            }
 
         let keepalive_packet = session.produce_packet_data(&[], dst);
         // Store new session in ring buffer
@@ -942,21 +952,21 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_rodtid.as_bytes(),
                         &signature
                         ).is_ok() {
-                        tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
+                        tracing::debug!("Info: in has and get PeerEd25519SignatureVerificationSuccess");
                     } else {
-                        tracing::debug!("Error: PeerEd25519SignatureVerificationFailure");
+                        tracing::debug!("Error: in has and get PeerEd25519SignatureVerificationFailure");
                         return Err(WireGuardError::PeerEd25519SignatureVerificationFailure)
                     }
                     // Rest of the code if verification is successful
                 } else {
                     // If the public key parsing fails, handle the error and propagate it
-                    tracing::debug!("Error: PeerEd25519PublicKeyParsingFailure");
+                    tracing::debug!("Error: in has and get PeerEd25519PublicKeyParsingFailure");
                     return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure)
                 }                    
             // Rest of the code if public key parsing is successful
             } Err(_) => {
                 // If the signature parsing fails, handle the error and propagate it
-                tracing::debug!("Error: PeerEd25519SignatureParsingFailure");
+                tracing::debug!("Error: in has and get PeerEd25519SignatureParsingFailure");
                 return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
             }
         };
