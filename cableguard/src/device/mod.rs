@@ -819,14 +819,17 @@ impl Device {
                                                             // if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
                                                             Some(peer)
                                                         } else {
+                                                            tracing::debug!("Error: Peer is not trusted in half handshake init");
                                                             None
                                                         }
                                                 } else {
-                                                    None  // Returning None if verification_result is false
+                                                    tracing::debug!("Error: verification failed");
+                                                    None
                                                 }
                                                 
                                             } else {
-                                                None  // Returning None if evaluation is not Ok  
+                                                tracing::debug!("Error: evaluation failed");
+                                                None
                                             } 
                                         }
                                     }

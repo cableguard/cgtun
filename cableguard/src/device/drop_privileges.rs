@@ -18,10 +18,10 @@ pub fn get_saved_ids() -> Result<(uid_t, gid_t), Error> {
                 "Failed parse user; err: {:?}",
                 e
             ))),
-            Ok(None) => Err(Error::DropPrivileges("Failed to find user".to_owned())),
+            Ok(None) => Err(Error::DropPrivileges("Error: Failed to find user".to_owned())),
         },
         Err(e) => Err(Error::DropPrivileges(format!(
-            "Could not get environment variable for user; err: {:?}",
+            "Error: Could not get environment variable for user; err: {:?}",
             e
         ))),
     }
