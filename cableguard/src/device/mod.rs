@@ -450,10 +450,10 @@ impl Device {
             .expect("Error: Failed to execute command");
         if output.status.success() {
             let _stdout = String::from_utf8_lossy(&output.stdout);
-            tracing::debug!("Info: Ip addr add command executed successfully: {}",device.config.rodt.metadata.cidrblock);
+            tracing::debug!("Info: IP addr add command executed successfully: {}",device.config.rodt.metadata.cidrblock);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            tracing::debug!("Error: Ip addr add command Failed to execute {}", stderr);
+            tracing::debug!("Error: IP addr command Failed to execute {}", stderr);
         }
 
         // Proactively setting the Static Private Key for the device

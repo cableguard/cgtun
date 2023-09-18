@@ -574,15 +574,15 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                         // Successfully parsed, you can now compare it
                                         if cidrip == ipaddress {
                                             // IP address matches, return EINVAL or perform your action
-                                            println!("Info: IP address matches");
+                                            tracing::debug!("Info: IP address matches");
                                         } else {
                                             // IP address doesn't match
-                                            println!("Error: IP address does not match");
+                                            tracing::debug!("Error: IP address does not match");
                                         }
                                     }
                                     Err(e) => {
                                         // Handle the parsing Error if it occurs
-                                        println!("Error: Error parsing IP address: {:?}", e);
+                                        tracing::debug!("Error: Parsing IP address: {:?}", e);
                                     }
                                 }
 

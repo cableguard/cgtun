@@ -122,7 +122,7 @@ fn main() {
     // Initialize a RODiT object
     let rodt: Rodt;
 
-    println!("Info: Smart Contract Account: {}", SMART_CONTRACT);
+    tracing::debug!("Info: Smart Contract Account: {}", SMART_CONTRACT);
 
     // Perform a RPC call with it and obtain the token_id
     match nearorg_rpc_state(BLOCKCHAIN_NETWORK, SMART_CONTRACT, account_id) {

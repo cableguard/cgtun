@@ -376,9 +376,6 @@ impl Tunn {
         .expect("Error: Failed to convert byte slice to string")
         .trim_end_matches('\0');
         
-        // We receive this and we have to use it to validate the peer
-        tracing::debug!("Info: process_received_handshake_initiation: Peer RODiT ID {}",peer_string_rodtid);        
-        tracing::debug!("Info: *peer_handshake_init.rodt_id,*peer_handshake_init.rodt_id_signature {:?}, {:?}",*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature); 
         let evaluation = verify_hasrodt_getit(*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature);
         if let Ok((verification_result, rodt)) = evaluation {
             if verification_result
@@ -422,8 +419,6 @@ impl Tunn {
         .expect("Error: Failed to convert byte slice to string")
         .trim_end_matches('\0');
 
-        tracing::debug!("Info: process_received_handshake_response: Peer RODiT ID {}",peer_string_rodtid); 
-        tracing::debug!("Info: *peer_handshake_response.rodt_id,*peer_handshake_response.rodt_id_signature {:?}, {:?}",*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature); 
         let evaluation = verify_hasrodt_getit(*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature);
         if let Ok((verification_result, rodt)) = evaluation {
             if verification_result
@@ -469,7 +464,7 @@ impl Tunn {
         self.timer_tick(TimerName::TimeLastPacketReceived);
         self.timer_tick(TimerName::TimeCookieReceived);
 
-        tracing::debug!("Info: Did set cookie");
+        tracing::debug!("Info: Cookie set");
 
         Ok(TunnResult::Done)
     }
@@ -904,9 +899,6 @@ let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
 .expect("Error: Failed to convert byte slice to string")
 .trim_end_matches('\0');
 
-// We receive this and we have to use it to validate the peer
-tracing::debug!("Info: verify_hasrodt_getit: Peer RODiT ID received:  {}", string_rodtid);        
-
 // Obtain a Peer RODiT from its ID
 let account_idargs = "{\"token_id\": \"".to_owned() 
     + &string_rodtid+ "\"}";
@@ -933,21 +925,21 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_rodtid.as_bytes(),
                         &signature
                         ).is_ok() {
-                        tracing::debug!("Info: possession of declared Peer RODiT  PeerEd25519SignatureVerificationSuccess");
+                        tracing::debug!("Info: Possession of declared Peer RODiT  PeerEd25519SignatureVerificationSuccess");
                     } else {
-                        tracing::debug!("Error: possession of declared Peer RODiT PeerEd25519SignatureVerificationFailure");
+                        tracing::debug!("Error: Possession of declared Peer RODiT PeerEd25519SignatureVerificationFailure");
                         return Err(WireGuardError::PeerEd25519SignatureVerificationFailure)
                     }
                     // Rest of the code if verification is successful
                 } else {
                     // If the public key parsing fails, handle the Error and propagate it
-                    tracing::debug!("Error: possession of declared Peer RODiT PeerEd25519PublicKeyParsingFailure");
+                    tracing::debug!("Error: Possession of declared Peer RODiT PeerEd25519PublicKeyParsingFailure");
                     return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure)
                 }                    
             // Rest of the code if public key parsing is successful
             } Err(_) => {
                 // If the signature parsing fails, handle the Error and propagate it
-                tracing::debug!("Error: possession of declared Peer RODiT PeerEd25519SignatureParsingFailure");
+                tracing::debug!("Error: Possession of declared Peer RODiT PeerEd25519SignatureParsingFailure");
                 return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
             }
         };
@@ -971,8 +963,6 @@ let slice_peer_token_id: &[u8] = &peer_token_id[..];
 let string_peer_token_id: &str = std::str::from_utf8(slice_peer_token_id)
 .expect("Error: Failed to convert byte slice to string")
 .trim_end_matches('\0');
-
-println!("own_serviceproviderid {}",own_serviceproviderid);
 
 // Obtain a Peer RODiT from its ID
 let account_idargs = "{\"token_id\": \"".to_owned()
@@ -1003,7 +993,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_peer_token_id.as_bytes(),
                         &peer_signature
                         ).is_ok() {
-                            println!("Info: The Peer RODiT matches Own RODiT, ServiceProviderEd25519SignatureVerificationSuccess");
+                            tracing::debug!("Info: The Peer RODiT matches Own RODiT, ServiceProviderEd25519SignatureVerificationSuccess");
                             return true;
                         } else {
                             tracing::debug!("Error: ServiceProviderEd25519SignatureVerificationFailure");
@@ -1078,7 +1068,7 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
     let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry.clone());
     if cfgresponse.iter().next().is_some() {
         tracing::debug!("Error Peer RODiT {} revoked by {}", token_id, domainandextension);
-        println!("Error: Peer RODiT {} revoked by {} as per {}", token_id, domainandextension, revokingdnsentry);
+        tracing::debug!("Error: Peer RODiT {} revoked by {} as per {}", token_id, domainandextension, revokingdnsentry);
         return false
     } else {
         // If an Error is found, instead of an entry, the Peer RODiT is not revoked
@@ -1109,7 +1099,6 @@ let domainandextension = Regex::new(r"(\w+\.\w+)$").unwrap();
 if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifierurl) {
     let domainandextension = &maindomain[1];
     let enablingdnsentry = smart_contract_nonear + ".smartcontract." + &domainandextension;
-    println!("enablingdnsentry {} - {}", smart_contract_url, domainandextension);
     let cfgresponse = dnssecresolver.txt_lookup(enablingdnsentry.clone());
     if cfgresponse.iter().next().is_some() {
         tracing::debug!("Info Smart Contract {} trusted by {}", smart_contract_url, domainandextension);
