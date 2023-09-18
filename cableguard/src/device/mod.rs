@@ -778,56 +778,55 @@ impl Device {
                                                     && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                                                     && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                                                     && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
-                                                    // CG: Self configuring the DNS
-                                                    // CG: Not taking connections out of the bandwith, network or location limits
-                                                    // Adding the new peer here
-                                                    let device_key_pair = device.key_pair.as_ref()
-                                                        .expect("Error: Self private key must be set before adding peers")
-                                                        .clone();
-                                                    let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);
-                                                    let own_keypair_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
-                                                        .expect("Error: Invalid private key bytes");
-                                                    let rodt_id_signature = own_keypair_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
-                                                    let next_peer_index = device.next_peer_index().clone();
-                                                    let tunn = Tunn::new(
-                                                        device_key_pair.0.clone(), // Own X25519 private key
-                                                        peer_publickey_public_key,
-                                                        None,
-                                                        device.config.rodt.token_id.clone(), // Own RODT ID
-                                                        rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
-                                                        None,
-                                                        next_peer_index,
-                                                        None,
-                                                    )
-                                                    .unwrap();
-                                                    let endpoint_listenport = addr.as_socket().unwrap();
-                                                    let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
-                                                    let allowed_ip_str = rodt.metadata.allowedips;
-                                                    let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
-                                                    allowed_ips_listed.push(allowed_ip);
-                                                    let peer = Peer::new(tunn, next_peer_index, Some(endpoint_listenport), &allowed_ips_listed, None);
-                                                    let peermutex = Arc::new(Mutex::new(peer));
-                                                    tracing::debug!("Info: Adding peer:  {:?}", peer_publickey_public_key);
-                                                    device.peers.insert(peer_publickey_public_key, Arc::clone(&peermutex));
-                                                    device.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peermutex));
-                                                    for AllowedIP { addr, cidr } in &allowed_ips_listed {
-                                                        device.listbyip_peer_index.insert(*addr, *cidr as _, Arc::clone(&peermutex));
-                                                    }
-                                                    allowed_ips_listed.clear();
-                                                    // Returning the peer from device.peers
-                                                    if let Some(peer) = device.peers.get(&peer_publickey_public_key) {                                                    
-                                                    // if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
-                                                        Some(peer)
-                                                    } else {
-                                                        None
-                                                    }
+                                                        // CG: Self configuring the DNS
+                                                        // CG: Not taking connections out of the bandwith, network or location limits
+                                                        // Adding the new peer here
+                                                        let device_key_pair = device.key_pair.as_ref()
+                                                            .expect("Error: Self private key must be set before adding peers")
+                                                            .clone();
+                                                        let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);
+                                                        let own_keypair_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
+                                                            .expect("Error: Invalid private key bytes");
+                                                        let rodt_id_signature = own_keypair_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
+                                                        let next_peer_index = device.next_peer_index().clone();
+                                                        let tunn = Tunn::new(
+                                                            device_key_pair.0.clone(), // Own X25519 private key
+                                                            peer_publickey_public_key,
+                                                            None,
+                                                            device.config.rodt.token_id.clone(), // Own RODT ID
+                                                            rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
+                                                            None,
+                                                            next_peer_index,
+                                                            None,
+                                                        )
+                                                        .unwrap();
+                                                        let endpoint_listenport = addr.as_socket().unwrap();
+                                                        let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
+                                                        let allowed_ip_str = rodt.metadata.allowedips;
+                                                        let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
+                                                        allowed_ips_listed.push(allowed_ip);
+                                                        let peer = Peer::new(tunn, next_peer_index, Some(endpoint_listenport), &allowed_ips_listed, None);
+                                                        let peermutex = Arc::new(Mutex::new(peer));
+                                                        tracing::debug!("Info: Adding peer:  {:?}", peer_publickey_public_key);
+                                                        device.peers.insert(peer_publickey_public_key, Arc::clone(&peermutex));
+                                                        device.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peermutex));
+                                                        for AllowedIP { addr, cidr } in &allowed_ips_listed {
+                                                            device.listbyip_peer_index.insert(*addr, *cidr as _, Arc::clone(&peermutex));
+                                                        }
+                                                        allowed_ips_listed.clear();
+                                                        // Returning the peer from device.peers
+                                                        if let Some(peer) = device.peers.get(&peer_publickey_public_key) {                                                    
+                                                            // if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
+                                                            Some(peer)
+                                                        } else {
+                                                            None
+                                                        }
                                                 } else {
                                                     None  // Returning None if verification_result is false
                                                 }
                                                 
                                             } else {
-                                                None  // Returning None if evaluation is not Ok
-                                                
+                                                None  // Returning None if evaluation is not Ok  
                                             } 
                                         }
                                     }

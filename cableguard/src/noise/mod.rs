@@ -384,26 +384,23 @@ impl Tunn {
                 let fetched_rodt = result;
                 tracing::debug!("Info: RODT Owner Init Received (Original): {}", fetched_rodt.owner_id);
                 
-                match verify_hasrodt_getit(*peer_handshake_init.rodt_id,*peer_handshake_init.rodt_id_signature){
-                    // CG: Extra checks need to be performed
-            // let evaluation = verify_hasrodt_getit(*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature);
-            // if let Ok((verification_result, rodt)) = evaluation {
-            //     if verification_result
-            //        && verify_rodt_isamatch(device.config.rodt.metadata.serviceproviderid.clone(),
-            //            rodt.metadata.serviceprovidersignature.clone(),
-            //            *peer_handshake_response.rodt_id)
-            //        && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
-            //        && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-            //        && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
-                    Ok(_) => {
-                        tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
-                    }
-                    Err(_) => {
-                            tracing::debug!("Error: PeerEd25519SignatureVerificationFailure");
+                let evaluation = verify_hasrodt_getit(*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature);
+                if let Ok((verification_result, rodt)) = evaluation {
+                    if verification_result
+                        // CG: Can't check if it is a match with the info available now
+                        // && verify_rodt_isamatch(self.config.rodt.metadata.serviceproviderid.clone(),
+                        //     rodt.metadata.serviceprovidersignature.clone(),
+                        //    *peer_handshake_init.rodt_id)
+                        && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
+                        && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
+                        && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
+                            tracing::debug!("Info: Peer is trusted");
+                        }
+                        else {
+                            tracing::debug!("Error: Peer is not trusted");
                             return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
                         }
                 }
-                // Rest of the code if signature parsing is successful
             }
             Err(err) => {
                 // If the nearorg_rpc_token function call returns an error, execute this block
