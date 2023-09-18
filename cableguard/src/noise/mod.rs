@@ -550,7 +550,7 @@ impl Tunn {
     /// Returns the truncated packet and the source IP as TunnResult
     fn validate_decapsulated_packet<'a>(&mut self, packet: &'a mut [u8]) -> TunnResult<'a> {
         let (computed_len, src_ip_address) = match packet.len() {
-            0 => return TunnResult::Done, // This is keepalive, and not an error
+            0 => return TunnResult::Done, // This is keepalive, and not an Error
             _ if packet[0] >> 4 == 4 && packet.len() >= IPV4_MIN_HEADER_SIZE => {
                 let len_bytes: [u8; IP_LEN_SZ] = packet[IPV4_LEN_OFF..IPV4_LEN_OFF + IP_LEN_SZ]
                     .try_into()
@@ -598,7 +598,7 @@ impl Tunn {
         if let Some(packet) = self.dequeue_packet() {
             match self.encapsulate(&packet, dst) {
                 TunnResult::Err(_) => {
-                    // On error, return packet to the queue
+                    // On Error, return packet to the queue
                     self.requeue_packet(packet);
                 }
                 r => return r,
@@ -939,20 +939,20 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                     }
                     // Rest of the code if verification is successful
                 } else {
-                    // If the public key parsing fails, handle the error and propagate it
+                    // If the public key parsing fails, handle the Error and propagate it
                     tracing::debug!("Error: possession of declared Peer RODiT PeerEd25519PublicKeyParsingFailure");
                     return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure)
                 }                    
             // Rest of the code if public key parsing is successful
             } Err(_) => {
-                // If the signature parsing fails, handle the error and propagate it
+                // If the signature parsing fails, handle the Error and propagate it
                 tracing::debug!("Error: possession of declared Peer RODiT PeerEd25519SignatureParsingFailure");
                 return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
             }
         };
         Ok::<(bool,Rodt), WireGuardError>((true,fetched_rodt))
     } Err(err) => {
-        // If the nearorg_rpc_token function call returns an error, execute this block
+        // If the nearorg_rpc_token function call returns an Error, execute this block
         tracing::debug!("Error: There is no Peer RODiT associated with the account: {}", err);
         std::process::exit(1);
     }
@@ -985,7 +985,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
             .try_into()
             .expect("Error: Invalid byte array length");
         
-        let peer_serviceprovider_bytes_signature = decode(&peer_serviceprovidersignature).expect("Error: Base64 decoding error");
+        let peer_serviceprovider_bytes_signature = decode(&peer_serviceprovidersignature).expect("Error: Base64 decoding failed");
 
         let peer_serviceprovider_u864_signature: [u8; RODT_ID_SIGNATURE_SZ] = peer_serviceprovider_bytes_signature
             .as_slice()
@@ -1078,12 +1078,12 @@ if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierur
         println!("Error: Peer RODiT {} revoked by {} as per {}", token_id, domainandextension, revokingdnsentry);
         return false
     } else {
-        // If an error is found, instead of an entry, the Peer RODiT is not revoked
+        // If an Error is found, instead of an entry, the Peer RODiT is not revoked
         tracing::debug!("Info: Peer RODiT {} is not revoked", token_id);
         return true
     };
 } else {
-    // If an error is found, instead of an entry, the Peer RODiT is not revoked
+    // If an Error is found, instead of an entry, the Peer RODiT is not revoked
     tracing::debug!("Info: Peer RODiT {} is not revoked", token_id);
     return true
 }

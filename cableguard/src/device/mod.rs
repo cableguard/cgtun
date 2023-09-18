@@ -284,7 +284,7 @@ impl DeviceHandle {
                         }
                         handler.cancel();
                     }
-                    WaitResult::Error(e) => tracing::debug!(message = "Error: Poll error", error = ?e),
+                    WaitResult::Error(e) => tracing::debug!(message = "Error: Poll failed", error = ?e),
                 }
             }
         }
@@ -489,7 +489,7 @@ impl Device {
                     peer_port = peer_str_port.parse().unwrap_or(0);
                     }
                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
+                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Base64 decoding failed");
                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
                     .as_slice()
                     .try_into()
@@ -593,8 +593,8 @@ impl Device {
                 )
                 .is_err()
             {        
-                // In case we encounter an error, we will remove that peer
-                // An error will be a result of a bad public key/secret key combination
+                // In case we encounter an Error, we will remove that peer
+                // An Error will be a result of a bad public key/secret key combination
                 bad_peers.push(Arc::clone(peer));
             }
         }
@@ -687,7 +687,7 @@ impl Device {
                         TunnResult::Err(WireGuardError::ConnectionExpired) => {
                             p.shutdown_endpoint(); // close open udp socket
                         }
-                        TunnResult::Err(e) => tracing::debug!(message = "Error: Timer error", error = ?e),
+                        TunnResult::Err(e) => tracing::debug!(message = "Error: Timer failed", error = ?e),
                         TunnResult::WriteToNetwork(packet) => {
                             match endpoint_addr {
                                 SocketAddr::V4(_) => {
@@ -935,7 +935,7 @@ impl Device {
                         &mut t.dst_buf[..],
                     ) {
                         TunnResult::Done => {}
-                        TunnResult::Err(e) => tracing::debug!("Decapsulate error {:?}", e),
+                        TunnResult::Err(e) => tracing::debug!("Error: Decapsulate failed {:?}", e),
                         TunnResult::WriteToNetwork(packet) => {
                             flush = true;
                             let _: Result<_, _> = udp.send(packet);
@@ -996,11 +996,11 @@ impl Device {
                             if ek == io::ErrorKind::Interrupted || ek == io::ErrorKind::WouldBlock {
                                 break;
                             }
-                            tracing::debug!("Error: Fatal read error on tun interface: {:?}", e);
+                            tracing::debug!("Error: Read failed on tun interface: {:?}", e);
                             return Action::Exit;
                         }
                         Err(e) => {
-                            tracing::debug!("Error: Unexpected error on tun interface: {:?}", e);
+                            tracing::debug!("Error: Unexpected failure on tun interface: {:?}", e);
                             return Action::Exit;
                         }
                     };
@@ -1018,7 +1018,7 @@ impl Device {
                     match peer.tunnel.encapsulate(src, &mut t.dst_buf[..]) {
                         TunnResult::Done => {}
                         TunnResult::Err(e) => {
-                            tracing::debug!(message = "Error: Encapsulate error", error = ?e)
+                            tracing::debug!(message = "Error: Encapsulate failed", error = ?e)
                         }
                         TunnResult::WriteToNetwork(packet) => {
                             let mut endpoint = peer.endpoint_mut();

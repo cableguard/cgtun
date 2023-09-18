@@ -240,7 +240,7 @@ impl Session {
     ) -> Result<&'a mut [u8], WireGuardError> {
         let ct_len = packet.encrypted_encapsulated_packet.len();
         if dst.len() < ct_len {
-            // This is a very incorrect use of the library, therefore panic and not error
+            // This is a very incorrect use of the library, therefore panic and not Error
             panic!("The destination buffer is too small");
         }
         if packet.receiver_session_index != self.receiving_index {

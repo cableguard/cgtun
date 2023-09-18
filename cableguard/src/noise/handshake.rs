@@ -826,8 +826,8 @@ impl Handshake {
                 tracing::debug!("Info: Initiation Own RODiT ID sent {}",string);
             }
             Err(error) => {
-                // Conversion failed, handle the error
-                tracing::debug!("Error: [u8:128] to String conversion error: {:?}", error);
+                // Conversion failed, handle the Error
+                tracing::debug!("Error: [u8:128] to String conversion failed: {:?}", error);
             }
         }
 

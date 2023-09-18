@@ -16,7 +16,7 @@ pub enum WaitResult<'a, H> {
     Ok(EventGuard<'a, H>),
     /// Event triggered due to End of File conditions
     EoF(EventGuard<'a, H>),
-    /// There was an error
+    /// There was an Error
     Error(String),
 }
 

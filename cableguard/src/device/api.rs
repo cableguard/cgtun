@@ -148,7 +148,7 @@ pub fn nearorg_rpc_tokens_for_owner(
         Ok(value) => value,
         Err(err) => {
             tracing::debug!("Error: can't handle RODiT struct {:?}",result_string);
-            // Handle the error, such as logging or returning an error result
+            // Handle the Error, such as logging or returning an Error
             return Err(Box::new(err));
         }
     };
@@ -157,7 +157,7 @@ pub fn nearorg_rpc_tokens_for_owner(
         Ok(value) => value.into_iter(),
         Err(err) => {
             tracing::debug!("Error: can't handle RODiT iter  {}",result_string);
-            // Handle the error, such as logging or returning an error result
+            // Handle the Error, such as logging or returning an Error
             return Err(Box::new(err));
         }
     };
@@ -184,7 +184,7 @@ pub fn nearorg_rpc_tokens_for_owner(
      // Return the first Rodt instance as the result
         return Ok(rodt.clone());
      } else {
-     // If no Rodt instance is available, return an error
+     // If no Rodt instance is available, return an Error
         return Err("Error: No Rodt instance found".into());
     }
 }
@@ -364,7 +364,7 @@ impl Device {
                         "set=1" => api_set(&mut readerbufferdevice, thisnetworkdevice),
                         _ => EIO,
                     };
-                    // The protocol requires to return an error code as the response, or zero on success
+                    // The protocol requires to return an Error code as the response, or zero on success
                     writeln!(writerbufferdevice, "errno={}\n", status).ok();
                 }
                 Action::Continue // Indicates the worker thread should continue as normal
@@ -392,7 +392,7 @@ impl Device {
                         "set=1" => api_set(&mut readerbufferdevice, thisnetworkdevice),
                         _ => EIO,
                     };
-                    // The protocol requires to return an error code as the response, or zero on success
+                    // The protocol requires to return an Error code as the response, or zero on success
                     writeln!(writerbufferdevice, "errno={}\n", status).ok();
                 } else {
                     // The remote side is likely closed; we should trigger an exit.
@@ -581,14 +581,14 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                         }
                                     }
                                     Err(e) => {
-                                        // Handle the parsing error if it occurs
+                                        // Handle the parsing Error if it occurs
                                         println!("Error: Error parsing IP address: {:?}", e);
                                     }
                                 }
 
                                 // Take the subdomain_endpoint as endpoint of a new peer
                                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                                let peer_bytes_pk = decode(peer_base64_pk).expect("Base64 decoding error");
+                                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Base64 decoding failed");
                                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
                                     .as_slice()
                                     .try_into()

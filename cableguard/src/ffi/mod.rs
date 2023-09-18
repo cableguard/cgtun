@@ -35,7 +35,7 @@ pub enum result_type {
     WIREGUARD_DONE = 0,
     /// Write dst buffer to network. Size indicates the number of bytes to write.
     WRITE_TO_NETWORK = 1,
-    /// Some error occurred, no operation is required. Size indicates error code.
+    /// Some Error occurred, no operation is required. Size indicates Error code.
     WIREGUARD_ERROR = 2,
     /// Write dst buffer to the interface as an ipv4 packet. Size indicates the number of bytes to write.
     WRITE_TO_TUNNEL_IPV4 = 4,
@@ -194,7 +194,7 @@ impl Write for FFIFunctionPointerWriter {
 /// Subscribes to TRACE level events.
 ///
 /// This function should only be called once as setting the default tracing_subscriber
-/// more than once will result in an error.
+/// more than once will result in an Error.
 ///
 /// Returns false on failure.
 ///
@@ -237,7 +237,7 @@ pub unsafe extern "C" fn set_logging_function(
     }
 }
 
-/// Allocate a new tunnel, return NULL on failure.
+/// Allocate a new tunnel, return NULL on Error.
 /// Keys must be valid base64 encoded 32-byte keys.
 #[no_mangle]
 pub unsafe extern "C" fn new_tunnel(

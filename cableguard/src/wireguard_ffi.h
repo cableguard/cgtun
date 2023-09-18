@@ -63,9 +63,9 @@ int check_base64_encoded_x25519_key(const char *key);
 /// Subscribes to TRACE level events.
 ///
 /// This function should only be called once as setting the default tracing_subscriber
-/// more than once will result in an error.
+/// more than once will result in an Error.
 ///
-/// Returns false on failure.
+/// Returns false on Error.
 ///
 /// # Safety
 ///

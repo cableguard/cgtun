@@ -93,21 +93,21 @@ fn main() {
         Ok(accountfile) => accountfile,
         Err(err) => {
             tracing::debug!("Error: Failed to open the file with the accountId: {}", err);
-            return; // Terminate the program or handle the error accordingly
+            return; // Terminate the program or handle the Error accordingly
         }
     };
 
     let mut accountfile_contents = String::new();
     if let Err(err) = accountfile.read_to_string(&mut accountfile_contents) {
         tracing::debug!("Error: Failed to read the file with the accountId: {}", err);
-        return; // Terminate the program or handle the error accordingly
+        return; // Terminate the program or handle the Error accordingly
     }
 
     let json: Value = match serde_json::from_str(&accountfile_contents) {
         Ok(contents) => contents,
         Err(err) => {
             tracing::debug!("Error: Failed to parse JSON of the file with the accountId: {}", err);
-            // Add any additional error handling logic if needed
+            // Add any additional Error handling logic if needed
             return; // Terminate the program
         }
     };
@@ -142,7 +142,7 @@ fn main() {
             rodt = result;
         }
         Err(err) => {
-            // Handle the error
+            // Handle the Error
             tracing::debug!("Error: There is no Own RODiT associated with the account: {}", err);
             std::process::exit(1);
         }
