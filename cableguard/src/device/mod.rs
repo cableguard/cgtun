@@ -22,7 +22,7 @@ use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
-use crate::noise::{verify_hasrodt_getit,verify_rodt_islive,verify_rodt_isactive,verify_smartcontract_istrusted};
+use crate::noise::{verify_hasrodt_getit,verify_rodt_islive,verify_rodt_isactive,verify_rodt_smartcontract_istrusted};
 use hex::encode as encode_hex;
 use allowed_ips::AllowedIps;
 use api::nearorg_rpc_token;
@@ -777,7 +777,7 @@ impl Device {
                                                         *p.rodt_id)
                                                     && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                                                     && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-                                                    && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
+                                                    && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
                                                         // CG: Self configuring the DNS
                                                         // CG: Not taking connections out of the bandwith, network or location limits
                                                         // Adding the new peer here
@@ -823,12 +823,12 @@ impl Device {
                                                             None
                                                         }
                                                 } else {
-                                                    tracing::debug!("Error: verification failed");
+                                                    tracing::debug!("Error: verification failed in half handshake init");
                                                     None
                                                 }
                                                 
                                             } else {
-                                                tracing::debug!("Error: evaluation failed");
+                                                tracing::debug!("Error: evaluation failed in half handshake init");
                                                 None
                                             } 
                                         }

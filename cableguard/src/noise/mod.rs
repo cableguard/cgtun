@@ -393,7 +393,7 @@ impl Tunn {
                         //    *peer_handshake_init.rodt_id)
                         && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                         && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-                        && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
+                        && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
                             tracing::debug!("Info: Peer is trusted in handshake initation");
                         }
                         else {
@@ -439,7 +439,7 @@ impl Tunn {
                 //    *peer_handshake_init.rodt_id)
                 && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-                && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
+                && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
                     tracing::debug!("Info: Peer is trusted in handshake response");
                 }
                 else {
@@ -1097,7 +1097,7 @@ if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierur
 
 }
 
-pub fn verify_smartcontract_istrusted(
+pub fn verify_rodt_smartcontract_istrusted(
     subjectuniqueidentifierurl: String,
 ) -> bool {
 
@@ -1123,7 +1123,7 @@ if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierur
         return false
     };
 } else {
-    tracing::debug!("Error: Domain {} can't be parsed in verify_smartcontract_istrusted", domainandextension);
+    tracing::debug!("Error: Domain {} can't be parsed in verify_rodt_smartcontract_istrusted", domainandextension);
     return false
 }
 
