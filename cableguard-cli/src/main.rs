@@ -214,7 +214,7 @@ fn main() {
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
                     tracing::debug!("Info: CableGuard started successfully");
                 } else {
-                    tracing::debug!("Error: CableGuard failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                    tracing::debug!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
                     exit(1);
                 };
             });
@@ -256,7 +256,7 @@ fn main() {
     let mut device_handle: DeviceHandle = match DeviceHandle::new(&tun_name, &config) {
         Ok(d) => d,
         Err(e) => {
-            // Notify parent that tunnel initiation failed
+            // Notify parent that tunnel initiation Failed
             tracing::debug!(message = "Error: Failed to initialize tunnel. Check if you are running with sudo", error=?e);
             sock1.send(&[0]).unwrap();
             exit(1);

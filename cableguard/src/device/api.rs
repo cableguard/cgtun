@@ -539,7 +539,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 let ipresponse = match dnssecresolver.lookup_ip(&subdomain_peer) {
                                     Ok(response) => response,
                                     Err(_) => {
-                                        tracing::debug!("Error: IP lookup for subdomain failed");
+                                        tracing::debug!("Error: IP lookup for subdomain Failed");
                                         return EINVAL
                                     }
                                 };
@@ -588,7 +588,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
 
                                 // Take the subdomain_endpoint as endpoint of a new peer
                                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Base64 decoding failed");
+                                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Base64 decoding Failed");
                                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
                                     .as_slice()
                                     .try_into()

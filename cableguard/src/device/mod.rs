@@ -284,7 +284,7 @@ impl DeviceHandle {
                         }
                         handler.cancel();
                     }
-                    WaitResult::Error(e) => tracing::debug!(message = "Error: Poll failed", error = ?e),
+                    WaitResult::Error(e) => tracing::debug!(message = "Error: Poll Failed", error = ?e),
                 }
             }
         }
@@ -451,7 +451,7 @@ impl Device {
             tracing::debug!("Info: Ip addr add command executed successfully: {}",device.config.rodt.metadata.cidrblock);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            tracing::debug!("Error: Ip addr add command failed to execute {}", stderr);
+            tracing::debug!("Error: Ip addr add command Failed to execute {}", stderr);
         }
 
         // Proactively setting the Static Private Key for the device
@@ -489,7 +489,7 @@ impl Device {
                     peer_port = peer_str_port.parse().unwrap_or(0);
                     }
                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Base64 decoding failed");
+                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Base64 decoding Failed");
                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
                     .as_slice()
                     .try_into()
@@ -512,7 +512,7 @@ impl Device {
                         tracing::debug!("Info: Postup command executed successfully {}", stdout);
                     } else {
                         let stderr = String::from_utf8_lossy(&output.stderr);
-                        tracing::debug!("Error: Postup command failed to execute {}", stderr);
+                        tracing::debug!("Error: Postup command Failed to execute {}", stderr);
                     }
                 }
             }
@@ -687,7 +687,7 @@ impl Device {
                         TunnResult::Err(WireGuardError::ConnectionExpired) => {
                             p.shutdown_endpoint(); // close open udp socket
                         }
-                        TunnResult::Err(e) => tracing::debug!(message = "Error: Timer failed", error = ?e),
+                        TunnResult::Err(e) => tracing::debug!(message = "Error: Timer Failed", error = ?e),
                         TunnResult::WriteToNetwork(packet) => {
                             match endpoint_addr {
                                 SocketAddr::V4(_) => {
@@ -823,12 +823,12 @@ impl Device {
                                                             None
                                                         }
                                                 } else {
-                                                    tracing::debug!("Error: verification failed in half handshake init");
+                                                    tracing::debug!("Error: verification Failed in half handshake init");
                                                     None
                                                 }
                                                 
                                             } else {
-                                                tracing::debug!("Error: evaluation failed in half handshake init");
+                                                tracing::debug!("Error: evaluation Failed in half handshake init");
                                                 None
                                             } 
                                         }
@@ -935,7 +935,7 @@ impl Device {
                         &mut t.dst_buf[..],
                     ) {
                         TunnResult::Done => {}
-                        TunnResult::Err(e) => tracing::debug!("Error: Decapsulate failed {:?}", e),
+                        TunnResult::Err(e) => tracing::debug!("Error: Decapsulate Failed {:?}", e),
                         TunnResult::WriteToNetwork(packet) => {
                             flush = true;
                             let _: Result<_, _> = udp.send(packet);
@@ -996,7 +996,7 @@ impl Device {
                             if ek == io::ErrorKind::Interrupted || ek == io::ErrorKind::WouldBlock {
                                 break;
                             }
-                            tracing::debug!("Error: Read failed on tun interface: {:?}", e);
+                            tracing::debug!("Error: Read Failed on tun interface: {:?}", e);
                             return Action::Exit;
                         }
                         Err(e) => {
@@ -1018,7 +1018,7 @@ impl Device {
                     match peer.tunnel.encapsulate(src, &mut t.dst_buf[..]) {
                         TunnResult::Done => {}
                         TunnResult::Err(e) => {
-                            tracing::debug!(message = "Error: Encapsulate failed", error = ?e)
+                            tracing::debug!(message = "Error: Encapsulate Failed", error = ?e)
                         }
                         TunnResult::WriteToNetwork(packet) => {
                             let mut endpoint = peer.endpoint_mut();

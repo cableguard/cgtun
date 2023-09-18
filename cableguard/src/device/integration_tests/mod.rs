@@ -189,7 +189,7 @@ mod tests {
                 return res.unwrap();
             }
 
-            panic!("Error: failed to connect");
+            panic!("Error: Failed to connect");
         }
 
         fn get_request(&self) -> String {
@@ -298,7 +298,7 @@ mod tests {
                     "alias",
                 ])
                 .status()
-                .expect("Error: failed to assign ip to tunnel");
+                .expect("Error: Failed to assign ip to tunnel");
 
             // Assign the ipv6 address to the interface
             Command::new("ifconfig")
@@ -311,13 +311,13 @@ mod tests {
                     "alias",
                 ])
                 .status()
-                .expect("Error: failed to assign ipv6 to tunnel");
+                .expect("Error: Failed to assign ipv6 to tunnel");
 
             // Start the tunnel
             Command::new("ifconfig")
                 .args(&[&self.name, "up"])
                 .status()
-                .expect("Error: failed to start the tunnel");
+                .expect("Error: Failed to start the tunnel");
 
             self.started = true;
 
@@ -340,7 +340,7 @@ mod tests {
                             &self.name,
                         ])
                         .status()
-                        .expect("Error: failed to add route");
+                        .expect("Error: Failed to add route");
                 }
             }
         }
@@ -357,7 +357,7 @@ mod tests {
                     &self.name,
                 ])
                 .status()
-                .expect("Error: failed to assign ip to tunnel");
+                .expect("Error: Failed to assign ip to tunnel");
 
             Command::new("ip")
                 .args([
@@ -368,13 +368,13 @@ mod tests {
                     &self.name,
                 ])
                 .status()
-                .expect("Error: failed to assign ipv6 to tunnel");
+                .expect("Error: Failed to assign ipv6 to tunnel");
 
             // Start the tunnel
             Command::new("ip")
                 .args(["link", "set", "mtu", "1400", "up", "dev", &self.name])
                 .status()
-                .expect("Error: failed to start the tunnel");
+                .expect("Error: Failed to start the tunnel");
 
             self.started = true;
 
@@ -390,7 +390,7 @@ mod tests {
                             &self.name,
                         ])
                         .status()
-                        .expect("Error: failed to add route");
+                        .expect("Error: Failed to add route");
                 }
             }
         }
