@@ -823,16 +823,16 @@ impl Device {
                                                             // if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
                                                             Some(peer)
                                                         } else {
-                                                            tracing::debug!("Error: Peer is not trusted in half handshake init");
+                                                            tracing::trace!("Error: Peer is not trusted in half handshake init");
                                                             None
                                                         }
                                                 } else {
-                                                    tracing::debug!("Error: Failed verification in half handshake init");
+                                                    tracing::trace!("Error: Failed verification in half handshake init");
                                                     None
                                                 }
                                                 
                                             } else {
-                                                tracing::debug!("Error: Failed evaluation in half handshake init");
+                                                tracing::trace!("Error: Failed evaluation in half handshake init");
                                                 None
                                             } 
                                         }

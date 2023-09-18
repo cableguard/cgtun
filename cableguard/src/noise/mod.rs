@@ -385,10 +385,10 @@ impl Tunn {
                 && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                 && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
-                    tracing::debug!("Info: Peer is trusted in handshake initiation");
+                    tracing::trace!("Info: Peer is trusted in handshake initiation");
                 }
                 else {
-                    tracing::debug!("Error: Peer is not trusted in handshake initiation");
+                    tracing::trace!("Error: Peer is not trusted in handshake initiation");
                     return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
                 }            }
         let index = session.local_index();
@@ -396,7 +396,7 @@ impl Tunn {
         self.timer_tick(TimerName::TimeLastPacketReceived);
         self.timer_tick(TimerName::TimeLastPacketSent);
         self.timer_tick_session_established(false, index); // New session established, we are not the initiator
-        tracing::debug!(message = "Info: Sending handshake_response", own_index = index);
+        tracing::trace!(message = "Info: Sending handshake_response", own_index = index);
         Ok(TunnResult::WriteToNetwork(packet))
     }
 
@@ -428,10 +428,10 @@ impl Tunn {
                 && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                 && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
-                    tracing::debug!("Info: Peer is trusted in handshake response");
+                    tracing::trace!("Info: Peer is trusted in handshake response");
                 }
                 else {
-                    tracing::debug!("Error: Peer is not trusted in handshake response");
+                    tracing::trace!("Error: Peer is not trusted in handshake response");
                     return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
                 }
         }
@@ -993,23 +993,23 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_peer_token_id.as_bytes(),
                         &peer_signature
                         ).is_ok() {
-                            tracing::debug!("Info: The Peer RODiT matches Own RODiT, ServiceProviderEd25519SignatureVerificationSuccess");
+                            tracing::trace!("Info: The Peer RODiT matches Own RODiT, ServiceProviderEd25519SignatureVerificationSuccess");
                             return true;
                         } else {
-                            tracing::debug!("Error: ServiceProviderEd25519SignatureVerificationFailure");
+                            tracing::trace!("Error: ServiceProviderEd25519SignatureVerificationFailure");
                             return false;
                         }
                     } else {
-                        tracing::debug!("Error: ServiceProviderEd25519SignatureParsingFailure");
+                        tracing::trace!("Error: ServiceProviderEd25519SignatureParsingFailure");
                         return false;
                     }
             } Err(_) => {
-                tracing::debug!("Error: ServiceProviderEd25519PublicKeyParsingFailure");
+                tracing::trace!("Error: ServiceProviderEd25519PublicKeyParsingFailure");
                 return false;
             }
         };
         } Err(_) => {
-            tracing::debug!("Error: ServiceProviderEd25519SignatureFetchingFailure");
+            tracing::trace!("Error: ServiceProviderEd25519SignatureFetchingFailure");
             return false;
         }
 }
@@ -1040,10 +1040,10 @@ let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp/10
 
 if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_notafter == naivedatetime_nul))
     && ((naivedatetime_timestamp >= Some(naivedatetime_notbefore)) || (naivedatetime_notbefore == naivedatetime_nul)) {
-    tracing::debug!("Info: Peer RODiT is live");
+    tracing::trace!("Info: Peer RODiT is live");
     return true
 } else {
-    tracing::debug!("Error: Peer RODiT is not live - notbefore {:?} now {:?} notafter {:?}"
+    tracing::trace!("Error: Peer RODiT is not live - notbefore {:?} now {:?} notafter {:?}"
         , naivedatetime_notbefore
         , naivedatetime_timestamp
         , naivedatetime_notafter);
@@ -1067,17 +1067,16 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
     let revokingdnsentry = token_id.clone() + ".revoked." + &domainandextension;
     let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry.clone());
     if cfgresponse.iter().next().is_some() {
-        tracing::debug!("Error Peer RODiT {} revoked by {}", token_id, domainandextension);
-        tracing::debug!("Error: Peer RODiT {} revoked by {} as per {}", token_id, domainandextension, revokingdnsentry);
+        tracing::trace!("Error: Peer RODiT {} revoked by {} as per {}", token_id, domainandextension, revokingdnsentry);
         return false
     } else {
         // If an Error is found, instead of an entry, the Peer RODiT is not revoked
-        tracing::debug!("Info: Peer RODiT {} is not revoked", token_id);
+        tracing::trace!("Info: Peer RODiT {} is not revoked", token_id);
         return true
     };
 } else {
     // If an Error is found, instead of an entry, the Peer RODiT is not revoked
-    tracing::debug!("Info: Peer RODiT {} is not revoked", token_id);
+    tracing::trace!("Info: Peer RODiT {} is not revoked", token_id);
     return true
 }
 
@@ -1101,14 +1100,14 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
     let enablingdnsentry = smart_contract_nonear + ".smartcontract." + &domainandextension;
     let cfgresponse = dnssecresolver.txt_lookup(enablingdnsentry.clone());
     if cfgresponse.iter().next().is_some() {
-        tracing::debug!("Info Smart Contract {} trusted by {}", smart_contract_url, domainandextension);
+        tracing::trace!("Info Smart Contract {} trusted by {}", smart_contract_url, domainandextension);
         return true
     } else {
-        tracing::debug!("Error: Smart Contract {} not trusted by {} in verify_smartcontract_istruste", smart_contract_url, domainandextension);
+        tracing::trace!("Error: Smart Contract {} not trusted by {} in verify_smartcontract_istruste", smart_contract_url, domainandextension);
         return false
     };
 } else {
-    tracing::debug!("Error: Domain {} can't be parsed in verify_rodt_smartcontract_istrusted", domainandextension);
+    tracing::trace!("Error: Domain {} can't be parsed in verify_rodt_smartcontract_istrusted", domainandextension);
     return false
 }
 
