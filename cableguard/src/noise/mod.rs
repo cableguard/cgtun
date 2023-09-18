@@ -372,7 +372,7 @@ impl Tunn {
 
         // Beginning of Peer RODiT verification
         let peer_slice_rodtid: &[u8] = &peer_handshake_init.rodt_id[..];
-        let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
+        let _peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Error: Failed to convert byte slice to string")
         .trim_end_matches('\0');
         
@@ -415,7 +415,7 @@ impl Tunn {
 
         // Beginning of Peer RODiT verification
         let peer_slice_rodtid: &[u8] = &peer_handshake_response.rodt_id[..];
-        let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
+        let _peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Error: Failed to convert byte slice to string")
         .trim_end_matches('\0');
 
