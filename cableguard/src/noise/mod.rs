@@ -69,7 +69,7 @@ pub struct Tunn {
     /// The handshake currently in progress
     handshake: handshake::Handshake,
     /// The Own serviceprovider ID to check if it matches upon handshake
-    own_subjectuniqueidentifierurl: String,
+    own_serviceproviderid: String,
     /// The N_SESSIONS most recent sessions, index is session id modulo N_SESSIONS
     sessions: [Option<session::Session>; N_SESSIONS],
     /// Index of most recently used session
@@ -224,7 +224,7 @@ impl Tunn {
         peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
         string_rodt_id: String,
-        subjectuniqueidentifierurl: String,
+        serviceproviderid: String,
         rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
         persistent_keepalive: Option<u16>,
         session_index: u32,
@@ -250,7 +250,7 @@ impl Tunn {
                 rodt_id_signature,
             )
             .map_err(|_| "Error: Invalid parameters")?,
-            own_subjectuniqueidentifierurl: subjectuniqueidentifierurl,
+            own_serviceproviderid: serviceproviderid,
             sessions: Default::default(),
             current: Default::default(),
             tx_bytes: Default::default(),
@@ -382,7 +382,7 @@ impl Tunn {
         let evaluation = verify_hasrodt_getit(*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature);
         if let Ok((verification_result, rodt)) = evaluation {
             if verification_result
-                && verify_rodt_isamatch(self.own_subjectuniqueidentifierurl.clone(),
+                && verify_rodt_isamatch(self.own_serviceproviderid.clone(),
                     rodt.metadata.serviceprovidersignature.clone(),
                     *peer_handshake_init.rodt_id)
                 && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
@@ -427,7 +427,7 @@ impl Tunn {
         let evaluation = verify_hasrodt_getit(*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature);
         if let Ok((verification_result, rodt)) = evaluation {
             if verification_result
-                && verify_rodt_isamatch(self.own_subjectuniqueidentifierurl.clone(),
+                && verify_rodt_isamatch(self.own_serviceproviderid.clone(),
                     rodt.metadata.serviceprovidersignature.clone(),
                     *peer_handshake_response.rodt_id)
                 && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
@@ -971,6 +971,8 @@ let slice_peer_token_id: &[u8] = &peer_token_id[..];
 let string_peer_token_id: &str = std::str::from_utf8(slice_peer_token_id)
 .expect("Error: Failed to convert byte slice to string")
 .trim_end_matches('\0');
+
+println!("own_serviceproviderid {}",own_serviceproviderid);
 
 // Obtain a Peer RODiT from its ID
 let account_idargs = "{\"token_id\": \"".to_owned()

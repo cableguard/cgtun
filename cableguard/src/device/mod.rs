@@ -364,7 +364,7 @@ impl Device {
             peer_publickey_public_key,
             preshared_key,
             self.config.rodt.token_id.clone(), // Own RODiT ID
-            self.config.rodt.metadata.subjectuniqueidentifierurl.clone(),
+            self.config.rodt.metadata.serviceproviderid.clone(),
             rodt_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
             // CG: Own declared RODiT ID Signature with own Ed25519 private key
             keepalive,
@@ -796,7 +796,7 @@ impl Device {
                                                             peer_publickey_public_key,
                                                             None,
                                                             device.config.rodt.token_id.clone(), // Own RODiT ID
-                                                            device.config.rodt.metadata.subjectuniqueidentifierurl.clone(),
+                                                            device.config.rodt.metadata.serviceproviderid.clone(),
                                                             rodt_id_signature.to_bytes(), // Own RODiT ID Signature with own Ed25519 private key
                                                             // CG: Own declared RODiT ID Signature with own Ed25519 private key
                                                             None,
