@@ -69,7 +69,7 @@ pub struct Tunn {
     /// The handshake currently in progress
     handshake: handshake::Handshake,
     /// The Own serviceprovider ID to check if it matches upon handshake
-    own_subjectuniqueidentifierurl String,
+    own_subjectuniqueidentifierurl: String,
     /// The N_SESSIONS most recent sessions, index is session id modulo N_SESSIONS
     sessions: [Option<session::Session>; N_SESSIONS],
     /// Index of most recently used session
@@ -224,7 +224,7 @@ impl Tunn {
         peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
         string_rodt_id: String,
-        own_subjectuniqueidentifierurl String,
+        own_subjectuniqueidentifierurl: String,
         rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
         persistent_keepalive: Option<u16>,
         session_index: u32,
@@ -1062,7 +1062,7 @@ if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_
 
 pub fn verify_rodt_isactive(
     token_id: String,
-    own_subjectuniqueidentifierurl String,
+    own_subjectuniqueidentifierurl: String,
 ) -> bool {
 
 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
@@ -1092,7 +1092,7 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
 }
 
 pub fn verify_rodt_smartcontract_istrusted(
-    own_subjectuniqueidentifierurl String,
+    own_subjectuniqueidentifierurl: String,
 ) -> bool {
 
 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
