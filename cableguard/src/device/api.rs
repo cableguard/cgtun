@@ -197,7 +197,6 @@ pub fn nearorg_rpc_token(
 ) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
-    let url: String = "https://rpc".to_string() + &xnet + "near.org";
     if xnet == "." {
         tracing::debug!("Info: Blockchain Directory Network is mainnet: {}", xnet);
     } else {
@@ -250,7 +249,6 @@ pub fn nearorg_rpc_state(
     account_id: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
-    let url: String = "https://rpc".to_string() + &xnet + "near.org";
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
     if xnet == "." {
         tracing::debug!("Info: Blockchain Directory Network is mainnet: {}", xnet);

@@ -15,7 +15,6 @@ use rand_core::OsRng;
 use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, CHACHA20_POLY1305};
 use std::convert::TryInto;
 use std::time::{Duration, SystemTime};
-use tracing::error;
 use hex::ToHex;
 use crate::noise::{RODT_ID_SZ,RODT_ID_SIGNATURE_SZ};
 
@@ -408,8 +407,8 @@ impl NoiseParams {
         assert_eq!(check_key.as_bytes(), static_public.as_bytes());
 
         // Convert static_private and static_public to strings
-        let own_static_string_private_key = static_private.to_bytes().encode_hex::<String>();
-        let own_static_string_public_key = static_public.as_bytes().encode_hex::<String>();
+        // let own_static_string_private_key = static_private.to_bytes().encode_hex::<String>();
+        // let own_static_string_public_key = static_public.as_bytes().encode_hex::<String>();
 
         self.static_private = static_private;
         self.static_public = static_public;
