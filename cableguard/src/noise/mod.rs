@@ -1008,7 +1008,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_peer_token_id.as_bytes(),
                         &peer_signature
                         ).is_ok() {
-                            tracing::debug!("Info: The Peer RODiT matches Own RODiT, ServiceProviderEd25519SignatureVerificationSuccess");
+                            println!("Info: The Peer RODiT matches Own RODiT, ServiceProviderEd25519SignatureVerificationSuccess");
                             return true;
                         } else {
                             tracing::debug!("Error: ServiceProviderEd25519SignatureVerificationFailure");
@@ -1055,6 +1055,7 @@ let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp/10
 
 if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_notafter == naivedatetime_nul))
     && ((naivedatetime_timestamp >= Some(naivedatetime_notbefore)) || (naivedatetime_notbefore == naivedatetime_nul)) {
+    tracing::debug!("Info: Peer RODiT is live");
     return true
 } else {
     tracing::debug!("Error: Peer RODiT is not live - notbefore {:?} now {:?} notafter {:?}"
