@@ -112,7 +112,7 @@ impl TunSocket {
         Ok(self.name.clone())
     }
 
-    /// Get the current MTU value
+    /// Obtain the current MTU value
     pub fn mtu(&self) -> Result<usize, Error> {
         let provided_fd = self.name.parse::<i32>();
         if provided_fd.is_ok() {

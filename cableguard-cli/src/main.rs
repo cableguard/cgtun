@@ -85,7 +85,7 @@ fn main() {
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
     let log_level: Level = matches.value_of_t("verbosity").unwrap_or_else(|e| e.exit());
 
-    // Extract the public key from the file with the accountId
+    // Obtain the public key from the file with the accountId
     let accountfile_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
 
     let accountfile_path = accountfile_name;
@@ -112,10 +112,10 @@ fn main() {
         }
     };
 
-    // Extract the value of the "account_id" field, include it in a json string
+    // Obtain the value of the "account_id" field, include it in a json string
     let account_id = json["account_id"].as_str().expect("Error: Invalid account_id value");
 
-    // Extract the value of the "private_key" field, include it in a json string and encode it as Base58
+    // Obtain the value of the "private_key" field, include it in a json string and encode it as Base58
     let own_static_base58_private_ed25519_key = json["private_key"].as_str().expect("Error: Invalid private_key value");   
     let own_static_base58_private_ed25519_key = own_static_base58_private_ed25519_key.trim_start_matches("ed25519:");
 

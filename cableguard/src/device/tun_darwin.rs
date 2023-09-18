@@ -190,7 +190,7 @@ impl TunSocket {
         Ok(String::from_utf8_lossy(&tunnel_name[..(tunnel_name_len - 1) as usize]).to_string())
     }
 
-    /// Get the current MTU value
+    /// Obtain the current MTU value
     pub fn mtu(&self) -> Result<usize, Error> {
         let fd = match unsafe { socket(AF_INET, SOCK_STREAM, IPPROTO_IP) } {
             -1 => return Err(Error::Socket(io::Error::last_os_error())),

@@ -385,6 +385,7 @@ impl Tunn {
                 tracing::debug!("Info: RODT Owner Init Received (Original): {}", fetched_rodt.owner_id);
                 
                 match verify_hasrodt_getit(*peer_handshake_init.rodt_id,*peer_handshake_init.rodt_id_signature){
+                    // CG: Likewise this spot may be where extra checks need to be performed
                     Ok(_) => {
                         tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
                     }
@@ -424,11 +425,21 @@ impl Tunn {
         let session = self.handshake.consume_received_handshake_response(peer_handshake_response)?;
 
         match verify_hasrodt_getit(*peer_handshake_response.rodt_id,*peer_handshake_response.rodt_id_signature){
+            // CG: Rest of the verify checks go here!
+            // let evaluation = verify_hasrodt_getit(*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature);
+            // if let Ok((verification_result, rodt)) = evaluation {
+            //     if verification_result
+            //        && verify_rodt_isamatch(device.config.rodt.metadata.serviceproviderid.clone(),
+            //            rodt.metadata.serviceprovidersignature.clone(),
+            //            *peer_handshake_response.rodt_id)
+            //        && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
+            //        && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
+            //        && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
             Ok(_) => {
-                tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
+                tracing::debug!("Info: In Response: PeerEd25519SignatureVerificationSuccess");
             }
             Err(_) => {
-                    tracing::debug!("Error: PeerEd25519SignatureVerificationFailure");
+                    tracing::debug!("Error: In Response: PeerEd25519SignatureVerificationFailure");
                     return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
                 }
         }
@@ -491,7 +502,7 @@ impl Tunn {
         let receiving_index = packet.receiver_session_index as usize;
         let idx = receiving_index % N_SESSIONS;
 
-        // Get the (probably) right session
+        // Obtain the (probably) right session
         let decapsulated_packet = {
             let session = self.sessions[idx].as_ref();
             let session = session.ok_or_else(|| {
@@ -586,7 +597,7 @@ impl Tunn {
         }
     }
 
-    /// Get a packet from the queue, and try to encapsulate it
+    /// Obtain a packet from the queue, and try to encapsulate it
     fn send_queued_packet<'a>(&mut self, dst: &'a mut [u8]) -> TunnResult<'a> {
         if let Some(packet) = self.dequeue_packet() {
             match self.encapsulate(&packet, dst) {

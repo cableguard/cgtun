@@ -9,7 +9,7 @@ use std::io;
 use nix::unistd::User;
 
 pub fn get_saved_ids() -> Result<(uid_t, gid_t), Error> {
-    // Get the user name of the sudoer
+    // Obtain the user name of the sudoer
     #[cfg(target_os = "macos")]
     match std::env::var("USER") {
         Ok(uname) => match User::from_name(&uname) {

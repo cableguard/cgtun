@@ -475,13 +475,13 @@ impl Device {
                         .iter()
                         .map(|txt_data| txt_data.to_string())
                         .collect();
-                    // CG: Change this so only 1 Public Key per server is accepted
+                    // CG: Fix: Only 1 Public Key per server should be accepted
                     let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
-                    // Extract the public key
+                    // Obtain the public key
                     let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="
                     let pk_end = peer_configs.find(";").unwrap_or(peer_configs.len());
                     peer_base64_pk = peer_configs[pk_start..pk_end].to_string();
-                    // Extract the port
+                    // Obtain the port
                     let port_start = peer_configs.find("port=").unwrap_or(0) + 5; // Add 5 to skip "port="
                     let port_end = peer_configs.len();
                     let peer_str_port:String;

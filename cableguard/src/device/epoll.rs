@@ -374,7 +374,7 @@ impl<'a, H> Drop for EventGuard<'a, H> {
 }
 
 impl<'a, H> EventGuard<'a, H> {
-    /// Get a mutable reference to the stored value
+    /// Obtain a mutable reference to the stored value
     #[allow(dead_code)]
     pub fn get_mut(&mut self) -> &mut H {
         &mut self.event.handler
