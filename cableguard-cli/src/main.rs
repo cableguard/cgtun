@@ -116,7 +116,7 @@ fn main() {
     let account_id = json["account_id"].as_str().expect("Error: Invalid account_id value");
 
     // Obtain the value of the "private_key" field, include it in a json string and encode it as Base58
-    let own_static_base58_private_ed25519_key = json["private_key"].as_str().expect("Error: Invalid private_key value");   
+    let own_static_base58_private_ed25519_key = json["private_key"].as_str().expect("Error: Invalid Private_key value");   
     let own_static_base58_private_ed25519_key = own_static_base58_private_ed25519_key.trim_start_matches("ed25519:");
 
     // Initialize a RODiT object
@@ -192,7 +192,7 @@ fn main() {
         } else {
             File::create(&log)
         }
-        .unwrap_or_else(|err| panic!("Error: Could not open log file {}: {}", log, err));
+        .unwrap_or_else(|err| panic!("Error: Failed to open log file {}: {}", log, err));
     
         // Create a non-blocking log writer and get a guard to prevent dropping it
         let (non_blocking, guard) = tracing_appender::non_blocking(log_file);
@@ -256,7 +256,7 @@ fn main() {
     let mut device_handle: DeviceHandle = match DeviceHandle::new(&tun_name, &config) {
         Ok(d) => d,
         Err(e) => {
-            // Notify parent that tunnel initiation Failed
+            // Failed to notify parent problem with tunnel initiation
             tracing::debug!(message = "Error: Failed to initialize tunnel. Check if you are running with sudo", error=?e);
             sock1.send(&[0]).unwrap();
             exit(1);

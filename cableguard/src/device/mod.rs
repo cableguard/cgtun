@@ -489,7 +489,7 @@ impl Device {
                     peer_port = peer_str_port.parse().unwrap_or(0);
                     }
                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Base64 decoding Failed");
+                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Failed Base64 decoding");
                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
                     .as_slice()
                     .try_into()
@@ -823,12 +823,12 @@ impl Device {
                                                             None
                                                         }
                                                 } else {
-                                                    tracing::debug!("Error: verification Failed in half handshake init");
+                                                    tracing::debug!("Error: Failed verification in half handshake init");
                                                     None
                                                 }
                                                 
                                             } else {
-                                                tracing::debug!("Error: evaluation Failed in half handshake init");
+                                                tracing::debug!("Error: Failed evaluation in half handshake init");
                                                 None
                                             } 
                                         }
@@ -935,7 +935,7 @@ impl Device {
                         &mut t.dst_buf[..],
                     ) {
                         TunnResult::Done => {}
-                        TunnResult::Err(e) => tracing::debug!("Error: Decapsulate Failed {:?}", e),
+                        TunnResult::Err(e) => tracing::debug!("Error: Failed to decapsulate {:?}", e),
                         TunnResult::WriteToNetwork(packet) => {
                             flush = true;
                             let _: Result<_, _> = udp.send(packet);
@@ -996,7 +996,7 @@ impl Device {
                             if ek == io::ErrorKind::Interrupted || ek == io::ErrorKind::WouldBlock {
                                 break;
                             }
-                            tracing::debug!("Error: Read Failed on tun interface: {:?}", e);
+                            tracing::debug!("Error: Failed read on tun interface: {:?}", e);
                             return Action::Exit;
                         }
                         Err(e) => {

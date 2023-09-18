@@ -371,7 +371,7 @@ impl Tunn {
         // Beginning of Peer RODiT verification
         let peer_slice_rodtid: &[u8] = &peer_handshake_init.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
-        .expect("Failed to convert byte slice to string")
+        .expect("Error: Failed to convert byte slice to string")
         .trim_end_matches('\0');
         
         // We receive this and we have to use it to validate the peer
@@ -417,7 +417,7 @@ impl Tunn {
         // Beginning of Peer RODiT verification
         let peer_slice_rodtid: &[u8] = &peer_handshake_response.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
-        .expect("Failed to convert byte slice to string")
+        .expect("Error: Failed to convert byte slice to string")
         .trim_end_matches('\0');
 
         tracing::debug!("Info: process_received_handshake_response: Peer RODiT ID {}",peer_string_rodtid); 
@@ -985,7 +985,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
             .try_into()
             .expect("Error: Invalid byte array length");
         
-        let peer_serviceprovider_bytes_signature = decode(&peer_serviceprovidersignature).expect("Error: Base64 decoding Failed");
+        let peer_serviceprovider_bytes_signature = decode(&peer_serviceprovidersignature).expect("Error: Failed Base64 decoding");
 
         let peer_serviceprovider_u864_signature: [u8; RODT_ID_SIGNATURE_SZ] = peer_serviceprovider_bytes_signature
             .as_slice()

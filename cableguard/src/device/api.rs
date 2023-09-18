@@ -147,7 +147,7 @@ pub fn nearorg_rpc_tokens_for_owner(
     let result_struct: Vec<Rodt> = match serde_json::from_str(result_string) {
         Ok(value) => value,
         Err(err) => {
-            tracing::debug!("Error: can't handle RODiT struct {:?}",result_string);
+            tracing::debug!("Error: Invalid RODiT struct {:?}",result_string);
             // Handle the Error, such as logging or returning an Error
             return Err(Box::new(err));
         }
@@ -156,7 +156,7 @@ pub fn nearorg_rpc_tokens_for_owner(
     let mut result_iter = match serde_json::from_str::<Vec<Rodt>>(result_string) {
         Ok(value) => value.into_iter(),
         Err(err) => {
-            tracing::debug!("Error: can't handle RODiT iter  {}",result_string);
+            tracing::debug!("Error: Invalid RODiT iter {}",result_string);
             // Handle the Error, such as logging or returning an Error
             return Err(Box::new(err));
         }
@@ -539,7 +539,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                 let ipresponse = match dnssecresolver.lookup_ip(&subdomain_peer) {
                                     Ok(response) => response,
                                     Err(_) => {
-                                        tracing::debug!("Error: IP lookup for subdomain Failed");
+                                        tracing::debug!("Error: Failed IP lookup for subdomain");
                                         return EINVAL
                                     }
                                 };
@@ -588,7 +588,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
 
                                 // Take the subdomain_endpoint as endpoint of a new peer
                                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Base64 decoding Failed");
+                                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Failed Base64 decoding");
                                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
                                     .as_slice()
                                     .try_into()

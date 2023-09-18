@@ -827,7 +827,7 @@ impl Handshake {
             }
             Err(error) => {
                 // Conversion Failed, handle the Error
-                tracing::debug!("Error: [u8:128] to String conversion Failed: {:?}", error);
+                tracing::debug!("Error: Failed [u8:128] to String conversion: {:?}", error);
             }
         }
 
