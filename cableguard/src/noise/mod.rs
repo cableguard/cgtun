@@ -376,38 +376,22 @@ impl Tunn {
         
         // We receive this and we have to use it to validate the peer
         tracing::debug!("Info: process_received_handshake_initiation: Peer RODiT ID {}",peer_string_rodtid);        
-        let account_idargs = "{\"token_id\": \"".to_owned() 
-        + &peer_string_rodtid+ "\"}";
-        match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
-            Ok(result) => {
-                // If the function call is successful, execute this block
-                let fetched_rodt = result;
-                tracing::debug!("Info: Peer RODiT Owner ID Init Received (Original): {}", fetched_rodt.owner_id);
-                
-                let evaluation = verify_hasrodt_getit(*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature);
-                if let Ok((verification_result, rodt)) = evaluation {
-                    if verification_result
-                        // CG: Can't check if it is a match with the info available now
-                        // && verify_rodt_isamatch(self.config.rodt.metadata.serviceproviderid.clone(),
-                        //     rodt.metadata.serviceprovidersignature.clone(),
-                        //    *peer_handshake_init.rodt_id)
-                        && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
-                        && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-                        && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
-                            tracing::debug!("Info: Peer is trusted in handshake initation");
-                        }
-                        else {
-                            tracing::debug!("Error: Peer is not trusted in handshake initiation");
-                            return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
-                        }
+        tracing::debug!("Info: *peer_handshake_init.rodt_id,*peer_handshake_init.rodt_id_signature {:?}, {:?}",*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature); 
+        let evaluation = verify_hasrodt_getit(*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature);
+        if let Ok((verification_result, rodt)) = evaluation {
+            if verification_result
+                // && verify_rodt_isamatch(self.config.rodt.metadata.serviceproviderid.clone(),
+                //     rodt.metadata.serviceprovidersignature.clone(),
+                //    *peer_handshake_init.rodt_id)
+                && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
+                && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
+                && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
+                    tracing::debug!("Info: Peer is trusted in handshake initiation");
                 }
-            }
-            Err(err) => {
-                // If the nearorg_rpc_token function call returns an error, execute this block
-                tracing::debug!("Error: There is no Peer RODiT associated with the account: {}", err);
-                std::process::exit(1);
-            }
-        }
+                else {
+                    tracing::debug!("Error: Peer is not trusted in handshake initiation");
+                    return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
+                }            }
         let index = session.local_index();
         self.sessions[index % N_SESSIONS] = Some(session);
         self.timer_tick(TimerName::TimeLastPacketReceived);
@@ -430,6 +414,14 @@ impl Tunn {
 
         let session = self.handshake.consume_received_handshake_response(peer_handshake_response)?;
 
+        // Beginning of Peer RODiT verification
+        let peer_slice_rodtid: &[u8] = &peer_handshake_response.rodt_id[..];
+        let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
+        .expect("Failed to convert byte slice to string")
+        .trim_end_matches('\0');
+
+        tracing::debug!("Info: process_received_handshake_response: Peer RODiT ID {}",peer_string_rodtid); 
+        tracing::debug!("Info: *peer_handshake_response.rodt_id,*peer_handshake_response.rodt_id_signature {:?}, {:?}",*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature); 
         let evaluation = verify_hasrodt_getit(*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature);
         if let Ok((verification_result, rodt)) = evaluation {
             if verification_result
