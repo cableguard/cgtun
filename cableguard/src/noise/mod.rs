@@ -386,11 +386,12 @@ impl Tunn {
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                 && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
                     tracing::trace!("Info: Peer is trusted in handshake initiation");
-                }
-                else {
+            }
+            else {
                     tracing::trace!("Error: Peer is not trusted in handshake initiation");
                     return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
-                }            }
+            }            
+        }
         let index = session.local_index();
         self.sessions[index % N_SESSIONS] = Some(session);
         self.timer_tick(TimerName::TimeLastPacketReceived);
@@ -429,11 +430,13 @@ impl Tunn {
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                 && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
                     tracing::trace!("Info: Peer is trusted in handshake response");
-                }
-                else {
-                    tracing::trace!("Error: Peer is not trusted in handshake response");
-                    return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
-                }
+            }
+            else {
+                tracing::trace!("Error: Peer is not trusted in handshake response");
+                return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
+            }
+        } else {
+            tracing::trace!("Error: Fetching RODiT with verify_hasrodt_getit in handshake response");
         }
         
         let keepalive_packet = session.produce_packet_data(&[], dst);
