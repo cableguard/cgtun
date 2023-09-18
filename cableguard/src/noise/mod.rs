@@ -385,7 +385,16 @@ impl Tunn {
                 tracing::debug!("Info: RODT Owner Init Received (Original): {}", fetched_rodt.owner_id);
                 
                 match verify_hasrodt_getit(*peer_handshake_init.rodt_id,*peer_handshake_init.rodt_id_signature){
-                    // CG: Likewise this spot may be where extra checks need to be performed
+                    // CG: Extra checks need to be performed
+            // let evaluation = verify_hasrodt_getit(*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature);
+            // if let Ok((verification_result, rodt)) = evaluation {
+            //     if verification_result
+            //        && verify_rodt_isamatch(device.config.rodt.metadata.serviceproviderid.clone(),
+            //            rodt.metadata.serviceprovidersignature.clone(),
+            //            *peer_handshake_response.rodt_id)
+            //        && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
+            //        && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
+            //        && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
                     Ok(_) => {
                         tracing::debug!("Info: PeerEd25519SignatureVerificationSuccess");
                     }
@@ -425,7 +434,7 @@ impl Tunn {
         let session = self.handshake.consume_received_handshake_response(peer_handshake_response)?;
 
         match verify_hasrodt_getit(*peer_handshake_response.rodt_id,*peer_handshake_response.rodt_id_signature){
-            // CG: Rest of the verify checks go here!
+                    // CG: Extra checks need to be performed
             // let evaluation = verify_hasrodt_getit(*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature);
             // if let Ok((verification_result, rodt)) = evaluation {
             //     if verification_result
@@ -1053,7 +1062,10 @@ if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_
     && ((naivedatetime_timestamp >= Some(naivedatetime_notbefore)) || (naivedatetime_notbefore == naivedatetime_nul)) {
     return true
 } else {
-    // CG: Alll the false returns must have an Error associated
+    tracing::debug!("Error:  RODT is not live - notbefore {:?} now {:?} notafter {:?}"
+        , naivedatetime_notbefore
+        , naivedatetime_timestamp
+        , naivedatetime_notafter);
     return false
 }
 
@@ -1079,16 +1091,17 @@ if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierur
         return false
     } else {
         // If an error is found, instead of an entry, the RODT is not revoked
+        tracing::debug!("Info: RODT {} is not revoked", token_id);
         return true
     };
 } else {
     // If an error is found, instead of an entry, the RODT is not revoked
+    tracing::debug!("Info: RODT {} is not revoked", token_id);
     return true
 }
 
 }
 
-// CG: Check if the smart contract is authorised by the subjectuniqueidentifierurl
 pub fn verify_smartcontract_istrusted(
     subjectuniqueidentifierurl: String,
 ) -> bool {
@@ -1111,15 +1124,12 @@ if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierur
         tracing::debug!("Info Smart Contract {} trusted by {}", smart_contract_url, domainandextension);
         return true
     } else {
-        // CG: Add error traces
-        tracing::debug!("Error: Smart Contract {} not trusted by {}", smart_contract_url, domainandextension);
+        tracing::debug!("Error: Smart Contract {} not trusted by {} in verify_smartcontract_istruste", smart_contract_url, domainandextension);
         return false
     };
 } else {
-    // CG: Add error traces
-    tracing::debug!("Error: Domain {} can't be parsed", domainandextension);
+    tracing::debug!("Error: Domain {} can't be parsed in verify_smartcontract_istrusted", domainandextension);
     return false
 }
 
 }
-

@@ -496,22 +496,11 @@ impl Device {
                     .expect("Invalid public key length");
                 // Not adding the server peer if WE are the server peer, running postup instead           
                 if device.config.x25519_public_key != peer_u832_pk {
-                        // CG: Perform same checks for the server, maybe here of as handshake response
-                        // && verify_rodt_isamatch(device.config.rodt.metadata.serviceproviderid.clone(),
-                        //    rodt.metadata.serviceprovidersignature.clone(),
-                        //    *p.rodt_id)
-                        // && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
-                        // && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-                        // && verify_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
-                    
+                        // It is ok to add a peer without checks as they are performed during handshake
                         device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
                             x25519::PublicKey::from(peer_u832_pk));
                 } else {
-                    // Typical postup and postdown commands
-                    // iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-                    // Postdown command to be added to bash scripts
-                    // iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
-                    // CG: We are harcoding here that exits is via eth0
+                    // CG: We have to uses namespaces, We are harcoding here that exits is via eth0
                     let postupcommand = "iptables -A FORWARD -i ".to_owned() + tunname + " -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE";
                     let output = Command::new("bash")
                         .arg("-c")
