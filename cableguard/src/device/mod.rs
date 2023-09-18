@@ -356,7 +356,7 @@ impl Device {
         .expect("Error: Invalid private key bytes");
 
         let rodt_id_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
-
+        
         tracing::debug!("Info: Own RODiT ID signature {}",rodt_id_signature);
 
         let tunn = Tunn::new(
@@ -364,7 +364,9 @@ impl Device {
             peer_publickey_public_key,
             preshared_key,
             self.config.rodt.token_id.clone(), // Own RODiT ID
+            self.config.rodt.metadata.subjectuniqueidentifierurl.clone(),
             rodt_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
+            // CG: Own declared RODiT ID Signature with own Ed25519 private key
             keepalive,
             next_peer_index,
             None,
@@ -794,7 +796,9 @@ impl Device {
                                                             peer_publickey_public_key,
                                                             None,
                                                             device.config.rodt.token_id.clone(), // Own RODiT ID
+                                                            device.config.rodt.metadata.subjectuniqueidentifierurl.clone(),
                                                             rodt_id_signature.to_bytes(), // Own RODiT ID Signature with own Ed25519 private key
+                                                            // CG: Own declared RODiT ID Signature with own Ed25519 private key
                                                             None,
                                                             next_peer_index,
                                                             None,

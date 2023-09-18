@@ -176,7 +176,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::debug!("Info: postup: {}", rodt.metadata.postup);
             tracing::debug!("Info: postdown: {}", rodt.metadata.postdown);
             tracing::debug!("Info: allowedips: {}", rodt.metadata.allowedips);
-            tracing::debug!("Info: subjectuniqueidentifierurl: {}", rodt.metadata.subjectuniqueidentifierurl);
+            tracing::debug!("Info: own_subjectuniqueidentifierurl {}", rodt.metadata.subjectuniqueidentifierurl);
             tracing::debug!("Info: serviceproviderid: {}", rodt.metadata.serviceproviderid);
             tracing::debug!("Info: serviceprovidersignature: {}", rodt.metadata.serviceprovidersignature);
             tracing::debug!("Info: kbpersecond: {}", rodt.metadata.kbpersecond);

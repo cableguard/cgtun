@@ -68,6 +68,8 @@ impl<'a> From<WireGuardError> for TunnResult<'a> {
 pub struct Tunn {
     /// The handshake currently in progress
     handshake: handshake::Handshake,
+    /// The Own serviceprovider ID to check if it matches upon handshake
+    own_subjectuniqueidentifierurl String,
     /// The N_SESSIONS most recent sessions, index is session id modulo N_SESSIONS
     sessions: [Option<session::Session>; N_SESSIONS],
     /// Index of most recently used session
@@ -222,6 +224,7 @@ impl Tunn {
         peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
         string_rodt_id: String,
+        own_subjectuniqueidentifierurl String,
         rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
         persistent_keepalive: Option<u16>,
         session_index: u32,
@@ -244,6 +247,7 @@ impl Tunn {
                 session_index << 8,
                 preshared_key,
                 rodt_id,
+                own_subjectuniqueidentifierurl,
                 rodt_id_signature,
             )
             .map_err(|_| "Error: Invalid parameters")?,
@@ -251,10 +255,8 @@ impl Tunn {
             current: Default::default(),
             tx_bytes: Default::default(),
             rx_bytes: Default::default(),
-
             packet_queue: VecDeque::new(),
             timers: Timers::new(persistent_keepalive, rate_limiter.is_none()),
-
             rate_limiter: rate_limiter.unwrap_or_else(|| {
                 Arc::new(RateLimiter::new(&static_public, PEER_HANDSHAKE_RATE_LIMIT))
             }),
@@ -380,9 +382,9 @@ impl Tunn {
         let evaluation = verify_hasrodt_getit(*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature);
         if let Ok((verification_result, rodt)) = evaluation {
             if verification_result
-                // && verify_rodt_isamatch(self.config.rodt.metadata.serviceproviderid.clone(),
-                //     rodt.metadata.serviceprovidersignature.clone(),
-                //    *peer_handshake_init.rodt_id)
+                && verify_rodt_isamatch(self.own_subjectuniqueidentifierurl.clone(),
+                    rodt.metadata.serviceprovidersignature.clone(),
+                    *peer_handshake_init.rodt_id)
                 && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                 && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
@@ -425,10 +427,9 @@ impl Tunn {
         let evaluation = verify_hasrodt_getit(*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature);
         if let Ok((verification_result, rodt)) = evaluation {
             if verification_result
-                // CG: Can't check if it is a match with the info available now
-                // && verify_rodt_isamatch(self.config.rodt.metadata.serviceproviderid.clone(),
-                //     rodt.metadata.serviceprovidersignature.clone(),
-                //    *peer_handshake_init.rodt_id)
+                && verify_rodt_isamatch(self.own_subjectuniqueidentifierurl.clone(),
+                    rodt.metadata.serviceprovidersignature.clone(),
+                    *peer_handshake_response.rodt_id)
                 && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                 && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
@@ -1061,7 +1062,7 @@ if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_
 
 pub fn verify_rodt_isactive(
     token_id: String,
-    subjectuniqueidentifierurl: String,
+    own_subjectuniqueidentifierurl String,
 ) -> bool {
 
 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
@@ -1069,7 +1070,7 @@ let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::defa
 let domainandextension = Regex::new(r"(\w+\.\w+)$").unwrap();
 
 // Find the rightmost part (domain and extension)
-if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierurl) {
+if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifierurl) {
     let domainandextension = &maindomain[1];
     let revokingdnsentry = token_id.clone() + ".revoked." + &domainandextension;
     let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry.clone());
@@ -1091,7 +1092,7 @@ if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierur
 }
 
 pub fn verify_rodt_smartcontract_istrusted(
-    subjectuniqueidentifierurl: String,
+    own_subjectuniqueidentifierurl String,
 ) -> bool {
 
 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
@@ -1103,7 +1104,7 @@ let smart_contract_url = smart_contract_nonear.replace("-", ".");
 let domainandextension = Regex::new(r"(\w+\.\w+)$").unwrap();
 
 // Find the rightmost part (domain and extension)
-if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierurl) {
+if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifierurl) {
     let domainandextension = &maindomain[1];
     let enablingdnsentry = smart_contract_nonear + ".smartcontract." + &domainandextension;
     println!("enablingdnsentry {} - {}", smart_contract_url, domainandextension);
