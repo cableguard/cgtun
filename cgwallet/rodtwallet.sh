@@ -10,11 +10,11 @@ if [ "$1" == "help" ]; then
     echo ""
     echo "Options:"
     echo "  "$0" List of available accounts"
-    echo "  "$0" <accountID>           : Lists the RODT Ids in the account and its balance"
+    echo "  "$0" <accountID>           : Lists the RODiT Ids in the account and its balance"
     echo "  "$0" <accountID> keys      : Displays the accountID and the Private Key of the account"
-    echo "  "$0" <accountID> <RODT Id> : Displays the indicated RODT"
+    echo "  "$0" <accountID> <RODiT Id> : Displays the indicated RODiT"
     echo "  "$0" <funding accountId> <unitialized accountId> init    : Initializes account with 0.01 NEAR from funding acount"
-    echo "  "$0" <origin accountId>  <destination accountId> <rotid> : Sends RODT from origin account to destination account"
+    echo "  "$0" <origin accountId>  <destination accountId> <rotid> : Sends RODiT from origin account to destination account"
     echo "  "$0" genaccount            : Creates a new uninitialized accountID"
     exit 0
 fi
@@ -38,7 +38,7 @@ if [ "$1" == "genaccount" ]; then
 fi
 
 if [ -n "$3" ] && [ "$3" != "init" ]; then
-    echo "Sending RODT $3 from $1 to $2..."
+    echo "Sending RODiT $3 from $1 to $2..."
     near call $NFTCONTRACTID nft_transfer "{\"receiver_id\": \"$2\", \"token_id\": \"$3\"}" --accountId $1 --depositYocto 1
     exit 0
 fi
@@ -63,7 +63,7 @@ if [ -n "$2" ]; then
 	cat "$key_file" | jq -r '"\(.private_key | sub("ed25519:"; ""))\n\(.account_id)"'
         exit 0
     else
-        echo "RODT Contents"
+        echo "RODiT Contents"
         near view $NFTCONTRACTID nft_token "{\"token_id\": \"$2\"}"
         exit 0
     fi
@@ -71,7 +71,7 @@ fi
 
 if [ -n "$1" ]; then
     echo "There is a lag while collecting information from the blockchain"
-    echo "The following is a list of RODT belonging to the input account:"
+    echo "The following is a list of RODiT belonging to the input account:"
     output2=$(near view "$NFTCONTRACTID" nft_tokens_for_owner "{\"account_id\": \"$1\"}")
     filtered_output2=$(echo "$output2" | grep -o "token_id: '[^']*'" | sed "s/token_id: //")
     echo "$filtered_output2"

@@ -239,9 +239,9 @@ struct NoiseParams {
     static_shared: x25519::SharedSecret,
     sending_mac1_key: [u8; KEY_LEN],
     preshared_key: Option<[u8; KEY_LEN]>,
-    // RODT ID of the peer (Same blockchain and smart contract only, for the time being)
+    // Peer RODiT ID (Same blockchain and smart contract only, for the time being)
     rodt_id: [u8; RODT_ID_SZ],
-    // RODT ID of the peer signed with the peer's Public Ed25519 Key
+    // Peer RODiT ID signed with the Public Ed25519 Key
     rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
 }
 
@@ -410,13 +410,6 @@ impl NoiseParams {
         // Convert static_private and static_public to strings
         let own_static_string_private_key = static_private.to_bytes().encode_hex::<String>();
         let own_static_string_public_key = static_public.as_bytes().encode_hex::<String>();
-
-        // Display the converted values in the trace
-        error!(
-            "Info: static_private: {}, static_public: {} fn set_static_private",
-            own_static_string_private_key,
-            own_static_string_public_key
-        );
 
         self.static_private = static_private;
         self.static_public = static_public;
@@ -831,7 +824,7 @@ impl Handshake {
         match string_rodt_id {
             Ok(string) => {
                 // Conversion success, use the resulting string
-                tracing::debug!("Info: Initiation RODT_ID sent {}",string);
+                tracing::debug!("Info: Initiation Own RODiT ID sent {}",string);
             }
             Err(error) => {
                 // Conversion failed, handle the error
@@ -947,9 +940,6 @@ impl Handshake {
 
         rodt_id.copy_from_slice(&self.params.rodt_id);
         rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
-
-        // tracing::debug!("Info: Response RODT_ID {:?}", self.params.rodt_id);
-        // tracing::debug!("Info: Response Signature of the RODT_ID {:?}",rodt_id_signature);
 
         let dst = self.append_mac1_and_mac2(local_index, &mut dst[..super::HANDSHAKE_RESP_SZ])?;
 

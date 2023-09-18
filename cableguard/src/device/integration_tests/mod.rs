@@ -181,7 +181,7 @@ mod tests {
             for _i in 0..5 {
                 let res = std::net::TcpStream::connect(http_addr);
                 if let Err(err) = res {
-                    tracing::debug!("Error: failed to connect: {:?}", err);
+                    tracing::debug!("Error: Failed to connect: {:?}", err);
                     std::thread::sleep(std::time::Duration::from_millis(100));
                     continue;
                 }
@@ -426,7 +426,7 @@ mod tests {
         fn wg_set_key(&self, key: StaticSecret) -> String {
             let bytesk = key.to_bytes();
             let encoded_key = encode_hex(&bytesk);
-            tracing::debug!(message = "Info: Private_key FN wg_set_key: {}", encoded_key);
+            tracing::debug!(message = "Info: Private_key wg_set_key: {}", encoded_key);
             self.wg_set(&format!("private_key={}", encode_hex(key.to_bytes()));
         }
 

@@ -7,8 +7,8 @@ use cableguard::device::api::{nearorg_rpc_tokens_for_owner,nearorg_rpc_state,Rod
 use cableguard::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use cableguard::device::drop_privileges::drop_privileges;
 use daemonize::Daemonize;
-// use base64::encode as encode_base64;
-// use hex::{FromHex};
+use base64::encode as encode_base64;
+use hex::{FromHex};
 use serde_json::Value;
 use std::os::unix::net::UnixDatagram;
 use std::process::exit;
@@ -119,7 +119,7 @@ fn main() {
     let own_static_base58_private_ed25519_key = json["private_key"].as_str().expect("Error: Invalid private_key value");   
     let own_static_base58_private_ed25519_key = own_static_base58_private_ed25519_key.trim_start_matches("ed25519:");
 
-    // Initialize a RODT object
+    // Initialize a RODiT object
     let rodt: Rodt;
 
     println!("Info: Smart Contract Account: {}", SMART_CONTRACT);
@@ -129,13 +129,13 @@ fn main() {
         Ok(result) => { result
         }
         Err(err) => {
-            // Show a warning if the account is not primed or the account has not RODT
+            // Show a warning if the account is not primed or the account has not RODiT
             tracing::debug!("Error: Account has no NEAR balance): {}", err);
             std::process::exit(1);
         }
     }
 
-    // Retrieve from the blockchain the RODT using the account_id
+    // Retrieve from the blockchain the Own RODiT using the account_id
     let account_idargs = "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
     match nearorg_rpc_tokens_for_owner(BLOCKCHAIN_NETWORK, SMART_CONTRACT, SMART_CONTRACT, "nft_tokens_for_owner", &account_idargs) {
         Ok(result) => {
@@ -143,7 +143,7 @@ fn main() {
         }
         Err(err) => {
             // Handle the error
-            tracing::debug!("Error: There is no RODT associated with the account: {}", err);
+            tracing::debug!("Error: There is no Own RODiT associated with the account: {}", err);
             std::process::exit(1);
         }
     }
@@ -172,7 +172,7 @@ fn main() {
     
     let _guard;
     
-    tracing::debug!("Info: To create or display available RODT Blockchain Directory accounts use: \"./wallet/rodtwallet.sh\"");
+    tracing::debug!("Info: To create or display available RODiT Blockchain Directory accounts use: \"./wallet/rodtwallet.sh\"");
 
     if background {
         // Running in background mode
@@ -238,7 +238,7 @@ fn main() {
     let mut own_bytes_ed25519_private_key: [u8; 64] = [0; 64];
     own_bytes_ed25519_private_key.copy_from_slice(&own_static_bytes_private_ed25519_key[..64]);
 
-    // Configure the device with the RODT and the keys
+    // Configure the device with the Own RODiT and the keys
     let config = DeviceConfig {
         n_threads,
         #[cfg(target_os = "linux")]
@@ -282,7 +282,7 @@ fn main() {
     device_handle.wait();    
 }
 
-/* fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
+fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
     let hex_string = hex_bytes.iter()
         .map(|byte| format!("{:02X}", byte))
         .collect::<Vec<String>>()
@@ -290,4 +290,4 @@ fn main() {
     
     let bytes = Vec::from_hex(&hex_string).expect("Error: Invalid Hex string");
     encode_base64(&bytes)
-} */
+}

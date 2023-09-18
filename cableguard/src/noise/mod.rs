@@ -368,21 +368,21 @@ impl Tunn {
         let peer_static_public: [u8; KEY_LEN] = [0; KEY_LEN];
         let (packet, session) = self.handshake.consume_received_handshake_initiation(peer_handshake_init,dst,peer_static_public)?;
 
-        // Beginning of RODT verification
+        // Beginning of Peer RODiT verification
         let peer_slice_rodtid: &[u8] = &peer_handshake_init.rodt_id[..];
         let peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Failed to convert byte slice to string")
         .trim_end_matches('\0');
         
         // We receive this and we have to use it to validate the peer
-        tracing::debug!("Info: process_received_handshake_initiation: RODT ID {}",peer_string_rodtid);        
+        tracing::debug!("Info: process_received_handshake_initiation: Peer RODiT ID {}",peer_string_rodtid);        
         let account_idargs = "{\"token_id\": \"".to_owned() 
         + &peer_string_rodtid+ "\"}";
         match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
             Ok(result) => {
                 // If the function call is successful, execute this block
                 let fetched_rodt = result;
-                tracing::debug!("Info: RODT Owner Init Received (Original): {}", fetched_rodt.owner_id);
+                tracing::debug!("Info: Peer RODiT Owner ID Init Received (Original): {}", fetched_rodt.owner_id);
                 
                 let evaluation = verify_hasrodt_getit(*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature);
                 if let Ok((verification_result, rodt)) = evaluation {
@@ -404,7 +404,7 @@ impl Tunn {
             }
             Err(err) => {
                 // If the nearorg_rpc_token function call returns an error, execute this block
-                tracing::debug!("Error: There is no server RODT associated with the account: {}", err);
+                tracing::debug!("Error: There is no Peer RODiT associated with the account: {}", err);
                 std::process::exit(1);
             }
         }
@@ -912,15 +912,15 @@ let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
 .trim_end_matches('\0');
 
 // We receive this and we have to use it to validate the peer
-tracing::debug!("Info: verify_hasrodt_getit: RODT ID received:  {}", string_rodtid);        
+tracing::debug!("Info: verify_hasrodt_getit: Peer RODiT ID received:  {}", string_rodtid);        
 
-// Obtain a RODT from its ID
+// Obtain a Peer RODiT from its ID
 let account_idargs = "{\"token_id\": \"".to_owned() 
     + &string_rodtid+ "\"}";
 
 match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
     Ok(fetched_rodt) => {
-        tracing::debug!("Info: RODT Owner Init Received: {:?}", fetched_rodt.owner_id);
+        tracing::debug!("Info: Peer RODiT Owner Init Received: {:?}", fetched_rodt.owner_id);
         // Convert the owner_id string to a Vec<u8> by decoding it from hex
         let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id.clone())
             .expect("Error: Failed to decode hex string");
@@ -940,28 +940,28 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_rodtid.as_bytes(),
                         &signature
                         ).is_ok() {
-                        tracing::debug!("Info: in has and get PeerEd25519SignatureVerificationSuccess");
+                        tracing::debug!("Info: possession of declared Peer RODiT  PeerEd25519SignatureVerificationSuccess");
                     } else {
-                        tracing::debug!("Error: in has and get PeerEd25519SignatureVerificationFailure");
+                        tracing::debug!("Error: possession of declared Peer RODiT PeerEd25519SignatureVerificationFailure");
                         return Err(WireGuardError::PeerEd25519SignatureVerificationFailure)
                     }
                     // Rest of the code if verification is successful
                 } else {
                     // If the public key parsing fails, handle the error and propagate it
-                    tracing::debug!("Error: in has and get PeerEd25519PublicKeyParsingFailure");
+                    tracing::debug!("Error: possession of declared Peer RODiT PeerEd25519PublicKeyParsingFailure");
                     return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure)
                 }                    
             // Rest of the code if public key parsing is successful
             } Err(_) => {
                 // If the signature parsing fails, handle the error and propagate it
-                tracing::debug!("Error: in has and get PeerEd25519SignatureParsingFailure");
+                tracing::debug!("Error: possession of declared Peer RODiT PeerEd25519SignatureParsingFailure");
                 return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
             }
         };
         Ok::<(bool,Rodt), WireGuardError>((true,fetched_rodt))
     } Err(err) => {
         // If the nearorg_rpc_token function call returns an error, execute this block
-        tracing::debug!("Error: There is no server RODT associated with the account: {}", err);
+        tracing::debug!("Error: There is no Peer RODiT associated with the account: {}", err);
         std::process::exit(1);
     }
 }
@@ -979,7 +979,7 @@ let string_peer_token_id: &str = std::str::from_utf8(slice_peer_token_id)
 .expect("Error: Failed to convert byte slice to string")
 .trim_end_matches('\0');
 
-// Obtain a RODT from its ID
+// Obtain a Peer RODiT from its ID
 let account_idargs = "{\"token_id\": \"".to_owned()
     + &own_serviceproviderid+ "\"}";
 match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
@@ -1008,7 +1008,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_peer_token_id.as_bytes(),
                         &peer_signature
                         ).is_ok() {
-                            tracing::debug!("Info: It is a match, ServiceProviderEd25519SignatureVerificationSuccess");
+                            tracing::debug!("Info: The Peer RODiT matches Own RODiT, ServiceProviderEd25519SignatureVerificationSuccess");
                             return true;
                         } else {
                             tracing::debug!("Error: ServiceProviderEd25519SignatureVerificationFailure");
@@ -1057,7 +1057,7 @@ if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_
     && ((naivedatetime_timestamp >= Some(naivedatetime_notbefore)) || (naivedatetime_notbefore == naivedatetime_nul)) {
     return true
 } else {
-    tracing::debug!("Error:  RODT is not live - notbefore {:?} now {:?} notafter {:?}"
+    tracing::debug!("Error: Peer RODiT is not live - notbefore {:?} now {:?} notafter {:?}"
         , naivedatetime_notbefore
         , naivedatetime_timestamp
         , naivedatetime_notafter);
@@ -1081,17 +1081,17 @@ if let Some(maindomain) = domainandextension.captures(&subjectuniqueidentifierur
     let revokingdnsentry = token_id.clone() + ".revoked." + &domainandextension;
     let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry.clone());
     if cfgresponse.iter().next().is_some() {
-        tracing::debug!("Error RODT {} revoked by {}", token_id, domainandextension);
-        println!("Error: RODT {} revoked by {} as per {}", token_id, domainandextension, revokingdnsentry);
+        tracing::debug!("Error Peer RODiT {} revoked by {}", token_id, domainandextension);
+        println!("Error: Peer RODiT {} revoked by {} as per {}", token_id, domainandextension, revokingdnsentry);
         return false
     } else {
-        // If an error is found, instead of an entry, the RODT is not revoked
-        tracing::debug!("Info: RODT {} is not revoked", token_id);
+        // If an error is found, instead of an entry, the Peer RODiT is not revoked
+        tracing::debug!("Info: Peer RODiT {} is not revoked", token_id);
         return true
     };
 } else {
-    // If an error is found, instead of an entry, the RODT is not revoked
-    tracing::debug!("Info: RODT {} is not revoked", token_id);
+    // If an error is found, instead of an entry, the Peer RODiT is not revoked
+    tracing::debug!("Info: Peer RODiT {} is not revoked", token_id);
     return true
 }
 

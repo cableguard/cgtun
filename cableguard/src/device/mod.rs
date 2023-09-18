@@ -351,20 +351,20 @@ impl Device {
         .as_ref()
         .expect("Error: Self private key must be set before adding peers");
     
-        // Creating the own signature of the rodt_id, this is used to validate posession of the RODT
+        // Creating the own signature of the rodt_id, this is used to validate posession of the RODiT
         let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Error: Invalid private key bytes");
 
         let rodt_id_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
 
-        tracing::debug!("Info: Own RODT ID signature {}",rodt_id_signature);
+        tracing::debug!("Info: Own RODiT ID signature {}",rodt_id_signature);
 
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Own X25519 private key
             peer_publickey_public_key,
             preshared_key,
-            self.config.rodt.token_id.clone(), // Own RODT ID
-            rodt_id_signature.to_bytes(), // Own declared RODT ID Signature with own Ed25519 private key
+            self.config.rodt.token_id.clone(), // Own RODiT ID
+            rodt_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
             keepalive,
             next_peer_index,
             None,
@@ -509,14 +509,14 @@ impl Device {
                         .expect("Error: Failed to execute postup command");
                     if output.status.success() {
                         let stdout = String::from_utf8_lossy(&output.stdout);
-                        tracing::debug!("Info: postup command executed successfully {}", stdout);
+                        tracing::debug!("Info: Postup command executed successfully {}", stdout);
                     } else {
                         let stderr = String::from_utf8_lossy(&output.stderr);
-                        tracing::debug!("Error: postup command failed to execute {}", stderr);
+                        tracing::debug!("Error: Postup command failed to execute {}", stderr);
                     }
                 }
             }
-            Err(_) => {tracing::debug!("Error: There is no RODT associated with the account");  }
+            Err(_) => {tracing::debug!("Error: There is no Own RODiT associated with the account");  }
         }
         Ok(device)
     }
@@ -570,7 +570,7 @@ impl Device {
 
         let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
 
-        // We are using the input value of the function instead of value from the RODT
+        // We are using the input value of the function instead of value from the Own RODiT
         let own_key_pair = Some((own_staticsecret_private_key.clone(), own_publickey_public_key));
 
         // x25519 (rightly) doesn't let us expose secret keys for comparison.
@@ -793,8 +793,8 @@ impl Device {
                                                             device_key_pair.0.clone(), // Own X25519 private key
                                                             peer_publickey_public_key,
                                                             None,
-                                                            device.config.rodt.token_id.clone(), // Own RODT ID
-                                                            rodt_id_signature.to_bytes(), // Own RODT ID Signature with own Ed25519 private key
+                                                            device.config.rodt.token_id.clone(), // Own RODiT ID
+                                                            rodt_id_signature.to_bytes(), // Own RODiT ID Signature with own Ed25519 private key
                                                             None,
                                                             next_peer_index,
                                                             None,
@@ -807,7 +807,7 @@ impl Device {
                                                         allowed_ips_listed.push(allowed_ip);
                                                         let peer = Peer::new(tunn, next_peer_index, Some(endpoint_listenport), &allowed_ips_listed, None);
                                                         let peermutex = Arc::new(Mutex::new(peer));
-                                                        tracing::debug!("Info: Adding peer:  {:?}", peer_publickey_public_key);
+                                                        tracing::debug!("Info: Adding peer: {:?}", peer_publickey_public_key);
                                                         device.peers.insert(peer_publickey_public_key, Arc::clone(&peermutex));
                                                         device.listbysession_peer_index.insert(next_peer_index, Arc::clone(&peermutex));
                                                         for AllowedIP { addr, cidr } in &allowed_ips_listed {
@@ -1055,8 +1055,8 @@ impl Device {
             "listen_port" => match self.config.rodt.metadata.listenport.parse::<u16>() {
                 Ok(port) => match self.open_listen_socket(port) {
                     Ok(()) => {
-                        tracing::debug!("Info: Port FN api_set_internal: {}", port);
-                        tracing::debug!("Info: Rodt Port  FN api_set_internal: {}", self.config.rodt.metadata.listenport);
+                        tracing::debug!("Info: Port api_set_internal: {}", port);
+                        tracing::debug!("Info: Own RODiT Port api_set_internal: {}", self.config.rodt.metadata.listenport);
                     }
                     Err(_) => return,
                 },
@@ -1082,7 +1082,7 @@ impl Device {
             "set_peer_public_key" => match value.parse::<KeyBytes>() {
                 Ok(peer_keybytes_key) => {
                     let peer_hex_public_key = encode_hex(peer_keybytes_key.0);
-                    tracing::debug!("Info: Peer Public Key FN api_set_internal {:?}", peer_hex_public_key);
+                    tracing::debug!("Info: Peer Public Key api_set_internal {:?}", peer_hex_public_key);
                         self.api_set_subdomain_peer_internal(Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080)),x25519::PublicKey::from(peer_keybytes_key.0));
                         return
                     }
@@ -1103,7 +1103,7 @@ impl Device {
         let clone_peer_publickey_public_key = peer_publickey_public_key;
         let preshared_key = None;
         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
-        tracing::debug!("Info: Setting Server IP and port {:?}", endpoint_listenport);     
+        tracing::debug!("Info: Setting subdomain IP and port {:?}", endpoint_listenport);     
 
         // Cidrblock is allowed_ip, it fails if the cidr format is not followed
         let allowed_ip_str = &self.config.rodt.metadata.cidrblock;

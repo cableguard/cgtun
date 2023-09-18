@@ -2,12 +2,12 @@
 
 # CableGuard TUN
 
-**CableGuard TUN** is an implementation of the [WireGuard<sup>®</sup>](https://www.wireguard.com/) protocol with Rich Online Digital Tokens (RODT). RODT are an implementation of non-fungible tokens that contain all the configuration, identity, and subscription information for Cableguard TUN endpoints. Cableguard TUN is based on Cloudflare's Borintung, a Rust implememtation of Wireguard. 
+**CableGuard TUN** is an implementation of the [WireGuard<sup>®</sup>](https://www.wireguard.com/) protocol with Rich Online Digital Tokens (RODiT). RODiT are an implementation of non-fungible tokens that contain all the configuration, identity, and subscription information for Cableguard TUN endpoints. Cableguard TUN is based on Cloudflare's Borintung, a Rust implememtation of Wireguard. 
 This project is part of a large ecosystem (Cableguard FORGE, Cableguard TOOL, Cableguard WALLET, Cableguard FIND and Cableguard AUTH), and consists of three parts:
 
 * The executable `cableguard-cli`, a [userspace WireGuard](https://www.wireguard.com/xplatform/) implementation for Linux and macOS.
 * The library `cableguard` that implements the underlying WireGuard protocol, without the network or tunnel stacks that need to be that need to be implemented in a platform idiomatic way.
-* The rodtwallet.sh scripts (temporary implementation of Cableguard WALLET) that works with the NEAR CLI interface. It provides barebones command line crytographic commands for the management of RODT and NEAR implicit accounts.
+* The rodtwallet.sh scripts (temporary implementation of Cableguard WALLET) that works with the NEAR CLI interface. It provides barebones command line crytographic commands for the management of RODiT and NEAR implicit accounts.
 
 ## License
 This project is released under the [GPLv2](COPYING).
@@ -47,9 +47,9 @@ It may be possible to use with [wg-quick](https://git.zx2c4.com/WireGuard/about/
 # Cableguard Ecosystem
 - Cableguard TUN: VPN tunnels
 - Cableguard TOOLS: local VPN tunnel configuration
-- Cableguard FORGE: RODT minter
-- Cableguard WALLET: RODT manager
-- Cableguard AUTH: RODT authentication for interoperability with implementation of the Triangle of Trust.
+- Cableguard FORGE: RODiT minter
+- Cableguard WALLET: RODiT manager
+- Cableguard AUTH: RODiT authentication for interoperability with implementation of the Triangle of Trust.
 - Cableguard FIND: Server and peer finder
 
 ---
