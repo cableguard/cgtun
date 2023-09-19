@@ -688,19 +688,6 @@ mod tests {
         let their_publickey_public_key = x25519::PublicKey::from(&their_secret_key);
         let their_index = OsRng.next_u32();
 
-        // Convert the keys to strings
-        let own_string_private_key = encode_hex(own_staticsecret_private_key.to_bytes());
-        let own_string_public_key = encode_hex(own_publickey_public_key.as_bytes());
-        let their_string_private_key = encode_hex(their_staticsecret_private_key.to_bytes());
-        let their_string_public_key = encode_hex(their_publickey_public_key.as_bytes());
-
-        // Display the converted values in the trace
-            own_string_private_key,
-            own_string_public_key,
-            their_string_private_key,
-            their_string_public_key
-        );
-
         let my_tun = Tunn::new(own_staticsecret_private_key, their_publickey_public_key, None, None, my_index, None).unwrap();
         let their_tun = Tunn::new(their_staticsecret_private_key, own_publickey_public_key, None, None, their_index, None).unwrap();
 
@@ -905,6 +892,7 @@ let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
 let account_idargs = "{\"token_id\": \"".to_owned() 
     + &string_rodtid+ "\"}";
 
+// CG: Return values need to be honed, probably false / true better than codes here
 match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
     Ok(fetched_rodt) => {
         tracing::info!("Info: Peer RODiT Owner Init Received: {:?}", fetched_rodt.owner_id);
@@ -927,21 +915,21 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_rodtid.as_bytes(),
                         &signature
                         ).is_ok() {
-                        tracing::info!("Info: Possession of declared Peer RODiT  PeerEd25519SignatureVerificationSuccess");
+                        tracing::info!("Info: Peer RODiT possession check confirmed");
                     } else {
-                        tracing::trace!("Error: Possession of declared Peer RODiT PeerEd25519SignatureVerificationFailure");
+                        tracing::trace!("Error: Peer RODiT possession check failed");
                         return Err(WireGuardError::PeerEd25519SignatureVerificationFailure)
                     }
                     // Rest of the code if verification is successful
                 } else {
                     // If the public key parsing fails, handle the Error and propagate it
-                    tracing::trace!("Error: Possession of declared Peer RODiT PeerEd25519PublicKeyParsingFailure");
+                    tracing::trace!("Error: Peer RODiT possession check failed - Parsing publick key");
                     return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure)
                 }                    
             // Rest of the code if public key parsing is successful
             } Err(_) => {
                 // If the signature parsing fails, handle the Error and propagate it
-                tracing::trace!("Error: Possession of declared Peer RODiT PeerEd25519SignatureParsingFailure");
+                tracing::trace!("Error: Peer RODiT possession check failed - Obtaining public key");
                 return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
             }
         };
@@ -995,23 +983,23 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_peer_token_id.as_bytes(),
                         &peer_signature
                         ).is_ok() {
-                            tracing::trace!("Info: Peer RODiT matches Own RODiT, ServiceProviderEd25519SignatureVerificationSuccess");
+                            tracing::trace!("Info: Peer RODiT matches Own RODiT");
                             return true;
                         } else {
-                            tracing::error!("Error: ServiceProviderEd25519SignatureVerificationFailure");
+                            tracing::error!("Error: Peer RODiT does not match Own RODiT");
                             return false;
                         }
                     } else {
-                        tracing::error!("Error: ServiceProviderEd25519SignatureParsingFailure");
+                        tracing::error!("Error: Peer RODiT does not match Own RODiT - Parsing public key");
                         return false;
                     }
             } Err(_) => {
-                tracing::error!("Error: ServiceProviderEd25519PublicKeyParsingFailure");
+                tracing::error!("Error: Peer RODiT does not match Own RODiT - Obtaining public key");
                 return false;
             }
         };
         } Err(_) => {
-            tracing::error!("Error: ServiceProviderEd25519SignatureFetchingFailure");
+            tracing::error!("Error: Peer RODiT does not match Own RODiT - Fetching");
             return false;
         }
 }
@@ -1073,12 +1061,12 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
         return false
     } else {
         // If an Error is found, instead of an entry, the Peer RODiT is not revoked
-        tracing::trace!("Info: Peer RODiT {} is not revoked", token_id);
+        tracing::trace!("Info: Peer RODiT is not revoked");
         return true
     };
 } else {
     // If an Error is found, instead of an entry, the Peer RODiT is not revoked
-    tracing::trace!("Info: Peer RODiT {} is not revoked", token_id);
+    tracing::trace!("Info: Peer RODiT is not revoked");
     return true
 }
 
@@ -1102,7 +1090,7 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
     let enablingdnsentry = smart_contract_nonear + ".smartcontract." + &domainandextension;
     let cfgresponse = dnssecresolver.txt_lookup(enablingdnsentry.clone());
     if cfgresponse.iter().next().is_some() {
-        tracing::trace!("Info Smart Contract {} trusted by {}", smart_contract_url, domainandextension);
+        tracing::trace!("Info Smart Contract is trusted");
         return true
     } else {
         tracing::error!("Error: Smart Contract {} not trusted by {} in verify_smartcontract_istruste", smart_contract_url, domainandextension);

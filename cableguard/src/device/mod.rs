@@ -383,7 +383,7 @@ impl Device {
             self.listbyip_peer_index
                 .insert(*addr, *cidr as _, Arc::clone(&peer));
         }
-        tracing::info!("Info: Peer added {}",peer_publickey_public_key);
+        tracing::info!("Info: Peer added {:?}",peer_publickey_public_key);
     }
 
     pub fn new(tunname: &str, config: DeviceConfig) -> Result<Device, Error> {
