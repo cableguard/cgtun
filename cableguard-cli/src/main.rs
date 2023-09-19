@@ -143,7 +143,7 @@ fn main() {
         }
         Err(err) => {
             // Handle the Error
-            tracing::error!("Error: There is no Own RODiT associated with the account: {}", err);
+            println!("Error: There is no Own RODiT associated with the account: {}", err);
             std::process::exit(1);
         }
     }
@@ -172,7 +172,7 @@ fn main() {
     
     let _guard;
     
-    tracing::trace!("Info: To create or display available RODiT Blockchain Directory accounts use: \"./wallet/rodtwallet.sh\"");
+    tracing::trace!("Info: To create or display available RODiT Blockchain Directory accounts use: \"rodtwallet.sh\"");
 
     if background {
         // Running in background mode
