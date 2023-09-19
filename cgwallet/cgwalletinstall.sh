@@ -7,8 +7,8 @@
 
 # If no command-line arguments provided, set to "mainnet"
 if [ $# -eq 0 ]; then
-    BLOCKCHAIN_ENV="mainnet"
-    NEAR_ENV="mainnet"
+    BLOCKCHAIN_ENV=mainnet
+    NEAR_ENV=mainnet
 else
     BLOCKCHAIN_ENV="$1"
     NEAR_ENV="$1"
