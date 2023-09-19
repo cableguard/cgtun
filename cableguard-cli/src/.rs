@@ -582,7 +582,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                     }
                                     Err(e) => {
                                         // Handle the parsing Error if it occurs
-                                        tracing::trace!("Error: Parsing Subdomain IP address: {:?}", e);
+                                        tracing::trace!("Error: Parsing IP address: {:?}", e);
                                     }
                                 }
 

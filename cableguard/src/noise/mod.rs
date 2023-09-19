@@ -388,7 +388,7 @@ impl Tunn {
                     tracing::trace!("Info: Peer is trusted in handshake initiation");
             }
             else {
-                    tracing::trace!("Error: Peer is not trusted in handshake initiation");
+                    tracing::error!("Error: Peer is not trusted in handshake initiation");
                     return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
             }            
         }
@@ -432,11 +432,11 @@ impl Tunn {
                     tracing::trace!("Info: Peer is trusted in handshake response");
             }
             else {
-                tracing::trace!("Error: Peer is not trusted in handshake response");
+                tracing::error!("Error: Peer is not trusted in handshake response");
                 return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
             }
         } else {
-            tracing::trace!("Error: Fetching RODiT with verify_hasrodt_getit in handshake response");
+            tracing::error!("Error: Fetching RODiT with verify_hasrodt_getit in handshake response");
         }
         
         let keepalive_packet = session.produce_packet_data(&[], dst);
@@ -449,7 +449,7 @@ impl Tunn {
         self.timer_tick_session_established(true, index); // New session established, we are the initiator
         self.set_current_session(local_index);
 
-        tracing::debug!("Info: Sending keepalive");
+        tracing::info!("Info: Sending keepalive");
 
         Ok(TunnResult::WriteToNetwork(keepalive_packet)) // Send a keepalive as a response
     }
@@ -467,7 +467,7 @@ impl Tunn {
         self.timer_tick(TimerName::TimeLastPacketReceived);
         self.timer_tick(TimerName::TimeCookieReceived);
 
-        tracing::debug!("Info: Cookie set");
+        tracing::info!("Info: Cookie set");
 
         Ok(TunnResult::Done)
     }
@@ -533,7 +533,7 @@ impl Tunn {
 
         match self.handshake.produce_handshake_initiation(dst) {
             Ok(packet) => {
-                tracing::debug!("Info: Sending handshake_initiation");
+                tracing::info!("Info: Sending handshake_initiation");
 
                 if starting_new_handshake {
                     self.timer_tick(TimerName::TimeLastHandshakeStarted);
@@ -695,7 +695,6 @@ mod tests {
         let their_string_public_key = encode_hex(their_publickey_public_key.as_bytes());
 
         // Display the converted values in the trace
-        tracing::debug!("Info: own_staticsecret_private_key: {}, own_publickey_public_key: {}, their_secret_key: {}, their_public_key: {} in fn produce_two_tuns",
             own_string_private_key,
             own_string_public_key,
             their_string_private_key,
@@ -908,7 +907,7 @@ let account_idargs = "{\"token_id\": \"".to_owned()
 
 match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
     Ok(fetched_rodt) => {
-        tracing::debug!("Info: Peer RODiT Owner Init Received: {:?}", fetched_rodt.owner_id);
+        tracing::info!("Info: Peer RODiT Owner Init Received: {:?}", fetched_rodt.owner_id);
         // Convert the owner_id string to a Vec<u8> by decoding it from hex
         let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id.clone())
             .expect("Error: Failed to decode hex string");
@@ -928,28 +927,28 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_rodtid.as_bytes(),
                         &signature
                         ).is_ok() {
-                        tracing::debug!("Info: Possession of declared Peer RODiT  PeerEd25519SignatureVerificationSuccess");
+                        tracing::info!("Info: Possession of declared Peer RODiT  PeerEd25519SignatureVerificationSuccess");
                     } else {
-                        tracing::debug!("Error: Possession of declared Peer RODiT PeerEd25519SignatureVerificationFailure");
+                        tracing::trace!("Error: Possession of declared Peer RODiT PeerEd25519SignatureVerificationFailure");
                         return Err(WireGuardError::PeerEd25519SignatureVerificationFailure)
                     }
                     // Rest of the code if verification is successful
                 } else {
                     // If the public key parsing fails, handle the Error and propagate it
-                    tracing::debug!("Error: Possession of declared Peer RODiT PeerEd25519PublicKeyParsingFailure");
+                    tracing::trace!("Error: Possession of declared Peer RODiT PeerEd25519PublicKeyParsingFailure");
                     return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure)
                 }                    
             // Rest of the code if public key parsing is successful
             } Err(_) => {
                 // If the signature parsing fails, handle the Error and propagate it
-                tracing::debug!("Error: Possession of declared Peer RODiT PeerEd25519SignatureParsingFailure");
+                tracing::trace!("Error: Possession of declared Peer RODiT PeerEd25519SignatureParsingFailure");
                 return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
             }
         };
         Ok::<(bool,Rodt), WireGuardError>((true,fetched_rodt))
     } Err(err) => {
         // If the nearorg_rpc_token function call returns an Error, execute this block
-        tracing::debug!("Error: There is no Peer RODiT associated with the account: {}", err);
+        tracing::trace!("Error: There is no Peer RODiT associated with the account: {}", err);
         std::process::exit(1);
     }
 }
@@ -996,23 +995,23 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_peer_token_id.as_bytes(),
                         &peer_signature
                         ).is_ok() {
-                            tracing::trace!("Info: The Peer RODiT matches Own RODiT, ServiceProviderEd25519SignatureVerificationSuccess");
+                            tracing::trace!("Info: Peer RODiT matches Own RODiT, ServiceProviderEd25519SignatureVerificationSuccess");
                             return true;
                         } else {
-                            tracing::trace!("Error: ServiceProviderEd25519SignatureVerificationFailure");
+                            tracing::error!("Error: ServiceProviderEd25519SignatureVerificationFailure");
                             return false;
                         }
                     } else {
-                        tracing::trace!("Error: ServiceProviderEd25519SignatureParsingFailure");
+                        tracing::error!("Error: ServiceProviderEd25519SignatureParsingFailure");
                         return false;
                     }
             } Err(_) => {
-                tracing::trace!("Error: ServiceProviderEd25519PublicKeyParsingFailure");
+                tracing::error!("Error: ServiceProviderEd25519PublicKeyParsingFailure");
                 return false;
             }
         };
         } Err(_) => {
-            tracing::trace!("Error: ServiceProviderEd25519SignatureFetchingFailure");
+            tracing::error!("Error: ServiceProviderEd25519SignatureFetchingFailure");
             return false;
         }
 }
@@ -1046,7 +1045,7 @@ if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_
     tracing::trace!("Info: Peer RODiT is live");
     return true
 } else {
-    tracing::trace!("Error: Peer RODiT is not live - notbefore {:?} now {:?} notafter {:?}"
+    tracing::error!("Error: Peer RODiT is not live - notbefore {:?} now {:?} notafter {:?}"
         , naivedatetime_notbefore
         , naivedatetime_timestamp
         , naivedatetime_notafter);
@@ -1070,7 +1069,7 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
     let revokingdnsentry = token_id.clone() + ".revoked." + &domainandextension;
     let cfgresponse = dnssecresolver.txt_lookup(revokingdnsentry.clone());
     if cfgresponse.iter().next().is_some() {
-        tracing::trace!("Error: Peer RODiT {} revoked by {} as per {}", token_id, domainandextension, revokingdnsentry);
+        tracing::error!("Error: Peer RODiT {} revoked by {} as per {}", token_id, domainandextension, revokingdnsentry);
         return false
     } else {
         // If an Error is found, instead of an entry, the Peer RODiT is not revoked
@@ -1106,11 +1105,11 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
         tracing::trace!("Info Smart Contract {} trusted by {}", smart_contract_url, domainandextension);
         return true
     } else {
-        tracing::trace!("Error: Smart Contract {} not trusted by {} in verify_smartcontract_istruste", smart_contract_url, domainandextension);
+        tracing::error!("Error: Smart Contract {} not trusted by {} in verify_smartcontract_istruste", smart_contract_url, domainandextension);
         return false
     };
 } else {
-    tracing::trace!("Error: Domain {} can't be parsed in verify_rodt_smartcontract_istrusted", domainandextension);
+    tracing::error!("Error: Domain {} can't be parsed in verify_rodt_smartcontract_istrusted", domainandextension);
     return false
 }
 

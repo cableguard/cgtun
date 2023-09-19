@@ -92,21 +92,21 @@ fn main() {
     let mut accountfile = match File::open(&accountfile_path) {
         Ok(accountfile) => accountfile,
         Err(err) => {
-            tracing::trace!("Error: Failed to open the file with the accountId: {}", err);
+            tracing::error!("Error: Failed to open the file with the accountId: {}", err);
             return; // Terminate the program or handle the Error accordingly
         }
     };
 
     let mut accountfile_contents = String::new();
     if let Err(err) = accountfile.read_to_string(&mut accountfile_contents) {
-        tracing::trace!("Error: Failed to read the file with the accountId: {}", err);
+        tracing::error!("Error: Failed to read the file with the accountId: {}", err);
         return; // Terminate the program or handle the Error accordingly
     }
 
     let json: Value = match serde_json::from_str(&accountfile_contents) {
         Ok(contents) => contents,
         Err(err) => {
-            tracing::trace!("Error: Failed to parse JSON of the file with the accountId: {}", err);
+            tracing::error!("Error: Failed to parse JSON of the file with the accountId: {}", err);
             // Add any additional Error handling logic if needed
             return; // Terminate the program
         }
@@ -130,7 +130,7 @@ fn main() {
         }
         Err(err) => {
             // Show a warning if the account is not primed or the account has not RODiT
-            tracing::trace!("Error: Account has no NEAR balance): {}", err);
+            tracing::error!("Error: Account has no NEAR balance): {}", err);
             std::process::exit(1);
         }
     }
@@ -143,7 +143,7 @@ fn main() {
         }
         Err(err) => {
             // Handle the Error
-            tracing::trace!("Error: There is no Own RODiT associated with the account: {}", err);
+            tracing::error!("Error: There is no Own RODiT associated with the account: {}", err);
             std::process::exit(1);
         }
     }
@@ -212,16 +212,16 @@ fn main() {
                 // Perform an action when the daemon process exits
                 let mut b = [0u8; 1];
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
-                    tracing::trace!("Info: CableGuard started successfully");
+                    tracing::info!("Info: CableGuard started successfully");
                 } else {
-                    tracing::trace!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                    tracing::error!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
                     exit(1);
                 };
             });
     
         // Start the daemon process
         match daemonize.start() {
-            Ok(_) => tracing::trace!("Info: CableGuard started successfully"),
+            Ok(_) => tracing::info!("Info: CableGuard started successfully"),
             Err(e) => {
                 tracing::debug!(error = ?e);
                 exit(1);
@@ -276,7 +276,7 @@ fn main() {
     sock1.send(&[1]).unwrap();
     drop(sock1);
     
-    tracing::trace!("Info: CableGuard will hand over to TUN handle");
+    tracing::info!("Info: CableGuard will hand over to TUN handle");
     
     // Wait for the device handle to finish processing
     device_handle.wait();    

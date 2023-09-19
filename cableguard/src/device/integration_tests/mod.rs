@@ -181,7 +181,7 @@ mod tests {
             for _i in 0..5 {
                 let res = std::net::TcpStream::connect(http_addr);
                 if let Err(err) = res {
-                    tracing::debug!("Error: Failed to connect: {:?}", err);
+                    tracing::trace!("Error: Failed to connect: {:?}", err);
                     std::thread::sleep(std::time::Duration::from_millis(100));
                     continue;
                 }
