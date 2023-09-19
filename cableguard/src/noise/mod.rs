@@ -385,7 +385,7 @@ impl Tunn {
                 && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                 && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
-                    tracing::trace!("Info: Peer is trusted in handshake initiation");
+                    tracing::info!("Info Peer is trusted in handshake initiation");
             }
             else {
                     tracing::error!("Error: Peer is not trusted in handshake initiation");
@@ -429,7 +429,7 @@ impl Tunn {
                 && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                 && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
-                    tracing::trace!("Info: Peer is trusted in handshake response");
+                    tracing::info!("Info Peer is trusted in handshake response");
             }
             else {
                 tracing::error!("Error: Peer is not trusted in handshake response");
@@ -983,7 +983,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                         string_peer_token_id.as_bytes(),
                         &peer_signature
                         ).is_ok() {
-                            tracing::trace!("Info: Peer RODiT matches Own RODiT");
+                            tracing::info!("Info Peer RODiT matches Own RODiT");
                             return true;
                         } else {
                             tracing::error!("Error: Peer RODiT does not match Own RODiT");
@@ -1030,7 +1030,7 @@ let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp/10
 
 if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_notafter == naivedatetime_nul))
     && ((naivedatetime_timestamp >= Some(naivedatetime_notbefore)) || (naivedatetime_notbefore == naivedatetime_nul)) {
-    tracing::trace!("Info: Peer RODiT is live");
+    tracing::info!("Info Peer RODiT is live");
     return true
 } else {
     tracing::error!("Error: Peer RODiT is not live - notbefore {:?} now {:?} notafter {:?}"
@@ -1061,12 +1061,12 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
         return false
     } else {
         // If an Error is found, instead of an entry, the Peer RODiT is not revoked
-        tracing::trace!("Info: Peer RODiT is not revoked");
+        tracing::info!("Info Peer RODiT is not revoked");
         return true
     };
 } else {
     // If an Error is found, instead of an entry, the Peer RODiT is not revoked
-    tracing::trace!("Info: Peer RODiT is not revoked");
+    tracing::info!("Info Peer RODiT is not revoked");
     return true
 }
 
