@@ -1,12 +1,15 @@
 [package]
 name = "cableguard-cli"
-description = "an implementation of the WireGuard® protocol designed for portability and speed"
+description = "an implementation of the WireGuard® protocol combined with NEAR Protocol RODiT custom fungible tokens"
 version = "0.90.10"
 authors = ["Vicente Aceituno Canal <vpn@cableguard.org>","Noah Kennedy <nkennedy@cloudflare.com>", "Andy Grover <agrover@cloudflare.com>", "Jeff Hiner <jhiner@cloudflare.com>"]
 license = "BSD-3-Clause"
 repository = "https://github.com/alanesmizi/cgtun"
 documentation = "https://docs.rs/cgtun/0.90.10/cgtun/"
 edition = "2021"
+readme = "README.md"
+homepage = "https://cableguard.org"
+keywords = ["wireguard", "vpn", "blockchain"]
 
 [dependencies]
 daemonize = "0.4.1"
