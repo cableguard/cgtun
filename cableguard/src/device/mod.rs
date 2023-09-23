@@ -503,7 +503,9 @@ impl Device {
                             x25519::PublicKey::from(peer_u832_pk));
                 } else {
                     // CG: We have to uses namespaces, We are harcoding here that exits is via eth0
-                    let postupcommand = "iptables -A FORWARD -i ".to_owned() + tunname + " -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE";
+                    let postupcommand = "iptables -A FORWARD -i ".to_owned() + tunname + " -j ACCEPT"
+                    // CG: Second half of the postup command
+                    // let postupcommand = "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE";
                     let output = Command::new("bash")
                         .arg("-c")
                         .arg(postupcommand)

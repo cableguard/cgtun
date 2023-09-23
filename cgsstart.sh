@@ -9,7 +9,7 @@ VERSION="1.0.0"
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
 # Run cableguard and start the tunnel
-if /usr/bin/sudo /home/icarus24/cgtun/target/release/cableguard-cli /home/icarus24/.near-credentials/mainnet/3b251bcc1985e34c7fb8bb0f20304dd4f20c673e7977fe72f00c6eda81b60da6.json >> /var/log/cableguard.log 2>&1; then
+if /usr/bin/sudo /home/icarus24/cgtun/target/release/cableguard-cli /home/icarus24/.near-credentials/mainnet/$1.json >> /var/log/cableguard.log 2>&1; then
     echo "cableguard-cli: Started and created the tunnel."
 else
     echo "Error: cableguard-cli failed to start."
@@ -30,12 +30,12 @@ if [ -n "$interface_name" ]; then
     fi
 
     # Update iptables rules
-    if /usr/bin/sudo iptables -A FORWARD -i "$interface_name" -j ACCEPT >> /var/log/cableguard.log 2>&1; then
-        echo "iptables FORWARD rule: Added for interface '$interface_name'."
-    else
-        echo "Error: Failed to add iptables FORWARD rule."
-        exit 1
-    fi
+#    if /usr/bin/sudo iptables -A FORWARD -i "$interface_name" -j ACCEPT >> /var/log/cableguard.log 2>&1; then
+#        echo "iptables FORWARD rule: Added for interface '$interface_name'."
+#    else
+#        echo "Error: Failed to add iptables FORWARD rule."
+#        exit 1
+#    fi
 
     if /usr/bin/sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE >> /var/log/cableguard.log 2>&1; then
         echo "iptables NAT rule: Added for interface '$interface_name' to eth0."
