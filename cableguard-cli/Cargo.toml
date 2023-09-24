@@ -1,8 +1,13 @@
 [package]
 name = "cableguard-cli"
-description = "an implementation of the WireGuard® protocol combined with NEAR Protocol RODiT custom fungible tokens"
+description = "an implementation of the an implementation of the WireGuard® protocol that uses rich online digital tokens for configuration and mutual authenticationthat uses rich online digital tokens for configuration and mutual authentication"
 version = "0.90.10"
-authors = ["Vicente Aceituno Canal <vpn@cableguard.org>","Noah Kennedy <nkennedy@cloudflare.com>", "Andy Grover <agrover@cloudflare.com>", "Jeff Hiner <jhiner@cloudflare.com>"]
+authors = [
+    "Vicente Aceituno Canal <vpn@cableguard.org>",
+    "Noah Kennedy <nkennedy@cloudflare.com>",
+    "Andy Grover <agrover@cloudflare.com>",
+    "Jeff Hiner <jhiner@cloudflare.com>",
+]
 license = "BSD-3-Clause"
 repository = "https://github.com/alanesmizi/cgtun"
 documentation = "https://docs.rs/cgtun/0.90.10/cgtun/"

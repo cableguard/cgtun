@@ -1,6 +1,6 @@
 [package]
 name = "cableguard"
-description = "an implementation of the WireGuard® protocol designed for portability and speed"
+description = "an implementation of the WireGuard® protocol that uses rich online digital tokens for configuration and mutual authentication"
 version = "0.90.10"
 authors = [
     "Vicente Aceituno Canal <vpn@cableguard.org>",
