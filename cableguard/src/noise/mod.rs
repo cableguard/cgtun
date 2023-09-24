@@ -10,7 +10,7 @@ use crate::noise::errors::WireGuardError;
 use crate::noise::handshake::Handshake;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::timers::{TimerName, Timers};
-use crate::device::api::{nearorg_rpc_token,nearorg_rpc_timestamp,Rodt};
+use crate::device::api::{nearorg_rpc_token,Rodt};
 use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use crate::x25519;
 use std::collections::VecDeque;
@@ -25,6 +25,9 @@ use hex::FromHex;
 use regex::Regex;
 use base64::{decode};
 use chrono::{NaiveDate,NaiveDateTime,NaiveTime};
+// Moving timestamp function
+use reqwest::blocking::Client;
+use serde_json::Value;
 
 /// The default value to use for rate limiting, when no other rate limiter is defined
 const PEER_HANDSHAKE_RATE_LIMIT: u64 = 10;
@@ -1101,4 +1104,33 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
     return false
 }
 
+}
+
+pub fn nearorg_rpc_timestamp(
+    xnet: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let client: Client = Client::new();
+    let url: String = "https://rpc".to_string() + &xnet + "near.org";
+    let json_data: String = format!(
+        r#"{{
+            "jsonrpc": "2.0",
+            "id": "dontcare",
+            "method": "block",
+            "params": {{
+                "finality": "final"
+            }}
+        }}"#
+    );
+    let response: reqwest::blocking::Response = client
+        .post(&url)
+        .body(json_data)
+        .header("Content-Type", "application/json")
+        .send()?;
+    let response_text: String = response.text()?;
+    let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
+    if let Some(timestamp) = parsed_json["result"]["header"]["timestamp"].as_i64() {
+        Ok(timestamp.to_string())
+    } else {
+        Ok("0".to_string())
+    }
 }
