@@ -3,7 +3,6 @@
 pub mod allowed_ips;
 pub mod api;
 pub mod drop_privileges;
-pub mod peer;
 mod dev_lock;
 use tracing::error;
 use std::convert::TryInto;
@@ -50,6 +49,7 @@ const MAX_ITR: usize = 100; // Number of packets to handle per handler call
 
 #[cfg(test)]
 mod integration_tests;
+pub mod peer;
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 #[path = "kqueue.rs"]
