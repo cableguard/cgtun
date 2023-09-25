@@ -35,7 +35,6 @@ use dev_lock::{Lock, LockReadGuard};
 use crate::x25519;
 use crate::x25519::{PublicKey,StaticSecret};
 use crate::serialization::{KeyBytes, self};
-use crate::device::api::Rodt;
 use crate::noise::errors::WireGuardError;
 use crate::noise::handshake::consume_received_handshake_peer_2blisted;
 use crate::noise::rate_limiter::RateLimiter;
@@ -116,6 +115,18 @@ type Handler = Box<dyn Fn(&mut LockReadGuard<Device>, &mut ThreadData) -> Action
 pub struct DeviceHandle {
     device: Arc<Lock<Device>>, // The interface this handle owns
     threads: Vec<JoinHandle<()>>,
+}
+
+impl Default for Rodt {
+    fn default() -> Self {
+        Rodt {
+            token_id: String::default(),
+            owner_id: String::default(),
+            metadata: RodtMetadata::default(),
+            approved_account_ids: serde_json::Value::Null,
+            royalty: serde_json::Value::Null,
+        }
+    }
 }
 
 //#[derive(Debug, Clone, Copy)] 

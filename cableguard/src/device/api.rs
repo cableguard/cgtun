@@ -42,18 +42,6 @@ pub struct Rodt {
     pub royalty: serde_json::Value,
 }
 
-impl Default for Rodt {
-    fn default() -> Self {
-        Rodt {
-            token_id: String::default(),
-            owner_id: String::default(),
-            metadata: RodtMetadata::default(),
-            approved_account_ids: serde_json::Value::Null,
-            royalty: serde_json::Value::Null,
-        }
-    }
-}
-
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RodtMetadata {
     pub issuername: String,
