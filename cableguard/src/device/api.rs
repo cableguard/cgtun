@@ -22,7 +22,6 @@ use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use reqwest::blocking::Client;
 use serde_json::{Value};
-use serde::{Deserialize, Serialize};
 use hex::encode as encode_hex;
 use base64::encode as base64encode;
 use crate::device::Rodt;
