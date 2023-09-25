@@ -25,6 +25,7 @@ use serde_json::{Value};
 use serde::{Deserialize, Serialize};
 use hex::encode as encode_hex;
 use base64::encode as base64encode;
+use crate::device::Rodt;
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
 pub mod constants {
@@ -33,53 +34,7 @@ pub mod constants {
     pub const BLOCKCHAIN_NETWORK: &str = "."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Rodt {
-    pub token_id: String,
-    pub owner_id: String,
-    pub metadata: RodtMetadata,
-    pub approved_account_ids: serde_json::Value,
-    pub royalty: serde_json::Value,
-}
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct RodtMetadata {
-    pub issuername: String,
-    pub description: String,
-    pub notafter: String,
-    pub notbefore: String,
-    pub cidrblock: String,
-    pub listenport: String,
-    pub dns: String,
-    pub postup: String,
-    pub postdown: String,
-    pub allowedips: String,
-    pub subjectuniqueidentifierurl: String,
-    pub serviceproviderid: String,
-    pub serviceprovidersignature: String,
-    pub kbpersecond: String,
-}
-
-impl Default for RodtMetadata {
-    fn default() -> Self {
-        RodtMetadata {
-            issuername: String::default(),
-            description: String::default(),
-            notafter: String::default(),
-            notbefore: String::default(),
-            cidrblock: String::default(),
-            listenport: String::default(),
-            dns: String::default(),
-            postup: String::default(),
-            postdown: String::default(),
-            allowedips: String::default(),
-            subjectuniqueidentifierurl: String::default(),
-            serviceproviderid: String::default(),
-            serviceprovidersignature: String::default(),
-            kbpersecond: String::default(),
-        }
-    }
-}
 
 pub fn nearorg_rpc_tokens_for_owner(
     xnet: &str,

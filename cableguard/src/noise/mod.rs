@@ -11,7 +11,7 @@ use crate::noise::handshake::Handshake;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::timers::{TimerName, Timers};
 use crate::device::api::nearorg_rpc_token;
-use crate::device::api::Rodt;
+use crate::device::Rodt;
 use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use crate::x25519;
 use std::collections::VecDeque;

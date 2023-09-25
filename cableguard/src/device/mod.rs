@@ -42,6 +42,7 @@ use crate::noise::{Packet, Tunn, TunnResult};
 use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use ed25519_dalek::{Keypair,Signer};
 use crate::noise::verify_rodt_isamatch;
+use serde::{Deserialize,Serialize};
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
@@ -117,6 +118,16 @@ pub struct DeviceHandle {
     threads: Vec<JoinHandle<()>>,
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Rodt {
+    pub token_id: String,
+    pub owner_id: String,
+    pub metadata: RodtMetadata,
+    pub approved_account_ids: serde_json::Value,
+    pub royalty: serde_json::Value,
+}
+
+
 impl Default for Rodt {
     fn default() -> Self {
         Rodt {
@@ -125,6 +136,45 @@ impl Default for Rodt {
             metadata: RodtMetadata::default(),
             approved_account_ids: serde_json::Value::Null,
             royalty: serde_json::Value::Null,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct RodtMetadata {
+    pub issuername: String,
+    pub description: String,
+    pub notafter: String,
+    pub notbefore: String,
+    pub cidrblock: String,
+    pub listenport: String,
+    pub dns: String,
+    pub postup: String,
+    pub postdown: String,
+    pub allowedips: String,
+    pub subjectuniqueidentifierurl: String,
+    pub serviceproviderid: String,
+    pub serviceprovidersignature: String,
+    pub kbpersecond: String,
+}
+
+impl Default for RodtMetadata {
+    fn default() -> Self {
+        RodtMetadata {
+            issuername: String::default(),
+            description: String::default(),
+            notafter: String::default(),
+            notbefore: String::default(),
+            cidrblock: String::default(),
+            listenport: String::default(),
+            dns: String::default(),
+            postup: String::default(),
+            postdown: String::default(),
+            allowedips: String::default(),
+            subjectuniqueidentifierurl: String::default(),
+            serviceproviderid: String::default(),
+            serviceprovidersignature: String::default(),
+            kbpersecond: String::default(),
         }
     }
 }
