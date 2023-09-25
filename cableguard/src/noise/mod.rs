@@ -10,9 +10,7 @@ use crate::noise::errors::WireGuardError;
 use crate::noise::handshake::Handshake;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::timers::{TimerName, Timers};
-use crate::device::api::nearorg_rpc_token;
-use crate::device::Rodt;
-use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
+use crate::noise::constants::{BLOCKCHAIN_NETWORK,SMART_CONTRACT};
 use crate::x25519;
 use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
@@ -29,6 +27,9 @@ use chrono::{NaiveDate,NaiveDateTime,NaiveTime};
 // Moving timestamp function
 use reqwest::blocking::Client;
 use serde_json::Value;
+use serde::Serialize;
+use serde::Deserialize;
+use base64::URL_SAFE_NO_PAD;
 
 /// The default value to use for rate limiting, when no other rate limiter is defined
 const PEER_HANDSHAKE_RATE_LIMIT: u64 = 10;
@@ -52,6 +53,73 @@ const MAX_QUEUE_DEPTH: usize = 256;
 const N_SESSIONS: usize = 8;
 
 const KEY_LEN: usize = 32;
+
+pub mod constants {
+    // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
+    pub const SMART_CONTRACT: &str = "cableguard-org.near";
+    pub const BLOCKCHAIN_NETWORK: &str = "."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Rodt {
+    pub token_id: String,
+    pub owner_id: String,
+    pub metadata: RodtMetadata,
+    pub approved_account_ids: serde_json::Value,
+    pub royalty: serde_json::Value,
+}
+
+
+impl Default for Rodt {
+    fn default() -> Self {
+        Rodt {
+            token_id: String::default(),
+            owner_id: String::default(),
+            metadata: RodtMetadata::default(),
+            approved_account_ids: serde_json::Value::Null,
+            royalty: serde_json::Value::Null,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct RodtMetadata {
+    pub issuername: String,
+    pub description: String,
+    pub notafter: String,
+    pub notbefore: String,
+    pub cidrblock: String,
+    pub listenport: String,
+    pub dns: String,
+    pub postup: String,
+    pub postdown: String,
+    pub allowedips: String,
+    pub subjectuniqueidentifierurl: String,
+    pub serviceproviderid: String,
+    pub serviceprovidersignature: String,
+    pub kbpersecond: String,
+}
+
+impl Default for RodtMetadata {
+    fn default() -> Self {
+        RodtMetadata {
+            issuername: String::default(),
+            description: String::default(),
+            notafter: String::default(),
+            notbefore: String::default(),
+            cidrblock: String::default(),
+            listenport: String::default(),
+            dns: String::default(),
+            postup: String::default(),
+            postdown: String::default(),
+            allowedips: String::default(),
+            subjectuniqueidentifierurl: String::default(),
+            serviceproviderid: String::default(),
+            serviceprovidersignature: String::default(),
+            kbpersecond: String::default(),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub enum TunnResult<'a> {
@@ -1134,4 +1202,58 @@ pub fn nearorg_rpc_timestamp(
     } else {
         Ok("0".to_string())
     }
+}
+
+pub fn nearorg_rpc_token(
+    xnet: &str,
+    id: &str,
+    method_name: &str,
+    args: &str,
+) -> Result<Rodt, Box<dyn std::error::Error>> {
+    let client: Client = Client::new();
+    let url: String = "https://rpc".to_string() + &xnet + "near.org";
+    if xnet == "." {
+        tracing::info!("Info: Blockchain Directory Network is mainnet");
+    } else {
+        tracing::info!("Info: Blockchain Directory Network is {}",xnet);
+    }
+    let json_data: String = format!(
+        r#"{{
+            "jsonrpc": "2.0",
+            "id": "{}",
+            "method": "query",
+            "params": {{
+                "request_type": "call_function",
+                "finality": "final",
+                "account_id": "{}",
+                "method_name": "{}",
+                "args_base64": "{}"
+            }}
+        }}"#,
+        id, id, method_name, base64::encode_config(args,URL_SAFE_NO_PAD)
+    );
+    let response: reqwest::blocking::Response = client
+        .post(&url)
+        .body(json_data)
+        .header("Content-Type", "application/json")
+        .send()?;
+
+    let response_text: String = response.text()?;
+
+    let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
+    
+    let result_array = parsed_json["result"]["result"].as_array().ok_or("Error: Result is not an array")?;
+
+    let result_bytes: Vec<u8> = result_array
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
+
+    let result_slice: &[u8] = &result_bytes;    
+
+    let result_string = String::from_utf8(result_slice.to_vec()).unwrap();
+    
+    let rodt: Rodt = serde_json::from_str(&result_string).unwrap();
+
+    Ok(rodt.clone())
 }

@@ -5,7 +5,7 @@ use super::dev_lock::LockReadGuard;
 use super::drop_privileges::get_saved_ids;
 use super::{AllowedIP, Device, Error, SocketAddr};
 use crate::device::Action;
-use crate::device::BLOCKCHAIN_NETWORK;
+use crate::noise::constants::{BLOCKCHAIN_NETWORK};
 use crate::serialization::{KeyBytes};
 use crate::x25519;
 use libc::*;
@@ -24,16 +24,8 @@ use reqwest::blocking::Client;
 use serde_json::{Value};
 use hex::encode as encode_hex;
 use base64::encode as base64encode;
-use crate::device::Rodt;
+use crate::noise::Rodt;
 const SOCK_DIR: &str = "/var/run/wireguard/";
-
-pub mod constants {
-    // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
-    pub const SMART_CONTRACT: &str = "cableguard-org.near";
-    pub const BLOCKCHAIN_NETWORK: &str = "."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
-}
-
-
 
 pub fn nearorg_rpc_tokens_for_owner(
     xnet: &str,
@@ -129,60 +121,6 @@ pub fn nearorg_rpc_tokens_for_owner(
      // If no Rodt instance is available, return an Error
         return Err("Error: No Rodt instance found".into());
     }
-}
-
-pub fn nearorg_rpc_token(
-    xnet: &str,
-    id: &str,
-    method_name: &str,
-    args: &str,
-) -> Result<Rodt, Box<dyn std::error::Error>> {
-    let client: Client = Client::new();
-    let url: String = "https://rpc".to_string() + &xnet + "near.org";
-    if xnet == "." {
-        tracing::info!("Info: Blockchain Directory Network is mainnet");
-    } else {
-        tracing::info!("Info: Blockchain Directory Network is {}",xnet);
-    }
-    let json_data: String = format!(
-        r#"{{
-            "jsonrpc": "2.0",
-            "id": "{}",
-            "method": "query",
-            "params": {{
-                "request_type": "call_function",
-                "finality": "final",
-                "account_id": "{}",
-                "method_name": "{}",
-                "args_base64": "{}"
-            }}
-        }}"#,
-        id, id, method_name, base64::encode_config(args,URL_SAFE_NO_PAD)
-    );
-    let response: reqwest::blocking::Response = client
-        .post(&url)
-        .body(json_data)
-        .header("Content-Type", "application/json")
-        .send()?;
-
-    let response_text: String = response.text()?;
-
-    let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
-    
-    let result_array = parsed_json["result"]["result"].as_array().ok_or("Error: Result is not an array")?;
-
-    let result_bytes: Vec<u8> = result_array
-        .iter()
-        .map(|v| v.as_u64().unwrap() as u8)
-        .collect();
-
-    let result_slice: &[u8] = &result_bytes;    
-
-    let result_string = String::from_utf8(result_slice.to_vec()).unwrap();
-    
-    let rodt: Rodt = serde_json::from_str(&result_string).unwrap();
-
-    Ok(rodt.clone())
 }
 
 pub fn nearorg_rpc_state(

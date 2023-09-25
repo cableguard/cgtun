@@ -22,9 +22,9 @@ use trust_dns_resolver::config::*;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
 use crate::noise::{verify_hasrodt_getit,verify_rodt_islive,verify_rodt_isactive,verify_rodt_smartcontract_istrusted};
+use crate::noise::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use hex::encode as encode_hex;
 use allowed_ips::AllowedIps;
-use api::nearorg_rpc_token;
 use parking_lot::Mutex;
 use peer::{AllowedIP, Peer};
 use poll::{EventPoll, EventRef, WaitResult};
@@ -39,10 +39,12 @@ use crate::noise::errors::WireGuardError;
 use crate::noise::handshake::consume_received_handshake_peer_2blisted;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
-use crate::device::api::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use ed25519_dalek::{Keypair,Signer};
 use crate::noise::verify_rodt_isamatch;
-use serde::{Deserialize,Serialize};
+use serde_json::Value;
+use reqwest::blocking::Client;
+use crate::noise::Rodt;
+use crate::noise::nearorg_rpc_token;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
@@ -116,67 +118,6 @@ type Handler = Box<dyn Fn(&mut LockReadGuard<Device>, &mut ThreadData) -> Action
 pub struct DeviceHandle {
     device: Arc<Lock<Device>>, // The interface this handle owns
     threads: Vec<JoinHandle<()>>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Rodt {
-    pub token_id: String,
-    pub owner_id: String,
-    pub metadata: RodtMetadata,
-    pub approved_account_ids: serde_json::Value,
-    pub royalty: serde_json::Value,
-}
-
-
-impl Default for Rodt {
-    fn default() -> Self {
-        Rodt {
-            token_id: String::default(),
-            owner_id: String::default(),
-            metadata: RodtMetadata::default(),
-            approved_account_ids: serde_json::Value::Null,
-            royalty: serde_json::Value::Null,
-        }
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct RodtMetadata {
-    pub issuername: String,
-    pub description: String,
-    pub notafter: String,
-    pub notbefore: String,
-    pub cidrblock: String,
-    pub listenport: String,
-    pub dns: String,
-    pub postup: String,
-    pub postdown: String,
-    pub allowedips: String,
-    pub subjectuniqueidentifierurl: String,
-    pub serviceproviderid: String,
-    pub serviceprovidersignature: String,
-    pub kbpersecond: String,
-}
-
-impl Default for RodtMetadata {
-    fn default() -> Self {
-        RodtMetadata {
-            issuername: String::default(),
-            description: String::default(),
-            notafter: String::default(),
-            notbefore: String::default(),
-            cidrblock: String::default(),
-            listenport: String::default(),
-            dns: String::default(),
-            postup: String::default(),
-            postdown: String::default(),
-            allowedips: String::default(),
-            subjectuniqueidentifierurl: String::default(),
-            serviceproviderid: String::default(),
-            serviceprovidersignature: String::default(),
-            kbpersecond: String::default(),
-        }
-    }
 }
 
 //#[derive(Debug, Clone, Copy)] 
@@ -1239,6 +1180,7 @@ impl IndexLfsr {
         value ^ self.mask
     }
 }
+
 
 impl Default for IndexLfsr {
     fn default() -> Self {
