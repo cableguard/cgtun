@@ -41,8 +41,6 @@ use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use ed25519_dalek::{Keypair,Signer};
 use crate::noise::verify_rodt_isamatch;
-use serde_json::Value;
-use reqwest::blocking::Client;
 use crate::noise::Rodt;
 use crate::noise::nearorg_rpc_token;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
