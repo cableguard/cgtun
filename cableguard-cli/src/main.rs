@@ -130,7 +130,7 @@ fn main() {
         Ok(result) => { result
         }
         Err(err) => {
-            // Show a warning if the account is not primed or the account has not RODiT
+            // CG: Show a warning if the account is not primed or the account has not RODiT
             tracing::error!("Error: Account has no NEAR balance): {}", err);
             std::process::exit(1);
         }
@@ -213,7 +213,7 @@ fn main() {
                 // Perform an action when the daemon process exits
                 let mut b = [0u8; 1];
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
-                    tracing::info!("Info: CableGuard started successfully");
+                    tracing::debug!("Info: CableGuard started successfully");
                 } else {
                     tracing::error!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
                     exit(1);
@@ -222,7 +222,7 @@ fn main() {
     
         // Start the daemon process
         match daemonize.start() {
-            Ok(_) => tracing::info!("Info: CableGuard started successfully"),
+            Ok(_) => tracing::debug!("Info: CableGuard started successfully"),
             Err(e) => {
                 tracing::debug!(error = ?e);
                 exit(1);
@@ -277,7 +277,7 @@ fn main() {
     sock1.send(&[1]).unwrap();
     drop(sock1);
     
-    tracing::info!("Info: CableGuard will hand over to TUN handle");
+    tracing::debug!("Info: CableGuard will hand over to TUN handle");
     
     // Wait for the device handle to finish processing
     device_handle.wait();    

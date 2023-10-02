@@ -37,9 +37,9 @@ pub fn nearorg_rpc_tokens_for_owner(
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
     if xnet == "." {
-        tracing::info!("Info: Blockchain Directory Network is mainnet (nearorg_rpc_tokens_for_owner)");
+        tracing::debug!("Info: Blockchain Directory Network is mainnet (nearorg_rpc_tokens_for_owner)");
     } else {
-        tracing::info!("Info: Blockchain Directory Network is {} (nearorg_rpc_tokens_for_owner)",xnet);
+        tracing::debug!("Info: Blockchain Directory Network is {} (nearorg_rpc_tokens_for_owner)",xnet);
     }
     let json_data: String = format!(
         r#"{{
@@ -132,9 +132,9 @@ pub fn nearorg_rpc_state(
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
     if xnet == "." {
-        tracing::info!("Info: Blockchain Directory Network is mainnet (nearorg_rpc_state)");
+        tracing::debug!("Info: Blockchain Directory Network is mainnet (nearorg_rpc_state)");
     } else {
-        tracing::info!("Info: Blockchain Directory Network is {} (nearorg_rpc_state)",xnet);
+        tracing::debug!("Info: Blockchain Directory Network is {} (nearorg_rpc_state)",xnet);
     }
     let json_data: String = format!(
         r#"{{
