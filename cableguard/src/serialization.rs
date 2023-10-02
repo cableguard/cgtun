@@ -24,7 +24,7 @@ impl std::str::FromStr for KeyBytes {
                 // Try to parse as Hex
                 for i in 0..32 {
                     internal[i] = u8::from_str_radix(&s[i * 2..=i * 2 + 1], 16)
-                        .map_err(|_| "Illegal character in key")?;
+                        .map_err(|_| "Error: Illegal character in key")?;
                 }
             }
             43 | 44 => {
@@ -33,11 +33,11 @@ impl std::str::FromStr for KeyBytes {
                     if decoded_key.len() == internal.len() {
                         internal[..].copy_from_slice(&decoded_key);
                     } else {
-                        return Err("Illegal character in key");
+                        return Err("Error: Illegal character in key");
                     }
                 }
             }
-            _ => return Err("Illegal key size"),
+            _ => return Err("Error: Illegal key size"),
         }
 
         Ok(KeyBytes(internal))

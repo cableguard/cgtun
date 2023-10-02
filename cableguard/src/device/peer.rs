@@ -114,7 +114,7 @@ impl Peer {
 
         let addr = endpoint
             .addr
-            .expect("Attempt to connect to undefined endpoint");
+            .expect("Error: Attempt to connect to undefined endpoint");
 
         let udp_conn =
             socket2::Socket::new(Domain::for_address(addr), Type::STREAM, Some(Protocol::UDP))?;

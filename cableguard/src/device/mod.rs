@@ -342,7 +342,7 @@ impl Device {
         // Update an existing peer
         if self.peers.get(&peer_publickey_public_key).is_some() {
             tracing::info!("Info: Peers are dinamically added and removed so it makes no sense to update them. No actions have been performed");
-            return
+            return;
         }
 
         let next_peer_index = self.next_peer_index();
@@ -1092,7 +1092,7 @@ impl Device {
                     let peer_hex_public_key = encode_hex(peer_keybytes_key.0);
                     tracing::info!("Info: Peer Public Key api_set_internal {:?}", peer_hex_public_key);
                         self.api_set_subdomain_peer_internal(Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080)),x25519::PublicKey::from(peer_keybytes_key.0));
-                        return
+                        return;
                     }
                     Err(_) => return,
                 },

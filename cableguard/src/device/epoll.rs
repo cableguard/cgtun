@@ -226,7 +226,7 @@ impl<H: Sync + Send> EventPoll<H> {
         match unsafe { epoll_wait(self.epoll, &mut event, 1, -1) } {
             -1 => return WaitResult::Error(io::Error::last_os_error().to_string()),
             1 => {}
-            _ => return WaitResult::Error("unexpected number of events returned".to_string()),
+            _ => return WaitResult::Error("Error: unexpected number of events returned".to_string()),
         }
 
         let event_data = unsafe { (event.u64 as *mut Event<H>).as_mut().unwrap() };

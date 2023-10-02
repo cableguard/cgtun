@@ -1213,9 +1213,9 @@ pub fn nearorg_rpc_token(
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
     if xnet == "." {
-        tracing::info!("Info: Blockchain Directory Network is mainnet");
+        tracing::info!("Info: Blockchain Directory Network is mainnet (nearorg_rpc_token)");
     } else {
-        tracing::info!("Info: Blockchain Directory Network is {}",xnet);
+        tracing::info!("Info: Blockchain Directory Network is {} nearorg_rpc_token",xnet);
     }
     let json_data: String = format!(
         r#"{{

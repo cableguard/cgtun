@@ -31,11 +31,11 @@ pub fn get_saved_ids() -> Result<(uid_t, gid_t), Error> {
 
         let uname = unsafe { getlogin() };
         if uname.is_null() {
-            return Err(Error::DropPrivileges("NULL from getlogin".to_owned()));
+            return Err(Error::DropPrivileges("Error: NULL from getlogin".to_owned()));
         }
         let userinfo = unsafe { getpwnam(uname) };
         if userinfo.is_null() {
-            return Err(Error::DropPrivileges("NULL from getpwnam".to_owned()));
+            return Err(Error::DropPrivileges("Error: NULL from getpwnam".to_owned()));
         }
 
         // Saved group ID
@@ -67,7 +67,7 @@ pub fn drop_privileges() -> Result<(), Error> {
     // Validated we can't get sudo back again
     if unsafe { (setgid(0) != -1) || (setuid(0) != -1) } {
         Err(Error::DropPrivileges(
-            "Failed to permanently drop privileges".to_owned(),
+            "Error: Failed to permanently drop privileges".to_owned(),
         ))
     } else {
         Ok(())
