@@ -4,7 +4,7 @@ export BLOCKCHAIN_ENV=mainnet
 export NEAR_ENV=mainnet
 export NFTCONTRACTID=cableguard-org.near
 
-VERSION="1.1.0"
+VERSION="1.2.0"
 #export NFTCONTRACTID=$(cat /home/icarus24/cgwallet/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
@@ -43,14 +43,14 @@ if [ -n "$interface_name" ]; then
     fi
 
     # Update iptables rules
-#    if /usr/bin/sudo iptables -A FORWARD -i "$interface_name" -j ACCEPT >> /var/log/cableguard.log 2>&1; then
-#        echo "iptables FORWARD rule: Added for interface '$interface_name'."
-#    else
-#        echo "Error: Failed to add iptables FORWARD rule."
-#        exit 1
-#    fi
+    if /usr/bin/sudo iptables -A FORWARD -i "$interface_name" -j ACCEPT >> /var/log/cableguard.log 2>&1; then
+        echo "iptables FORWARD rule: Added for interface '$interface_name'."
+    else
+        echo "Error: Failed to add iptables FORWARD rule."
+        exit 1
+    fi
 
-    if /usr/bin/sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE >> /var/log/cableguard.log 2>&1; then
+    if /usr/bin/sudo iptables -t nat -A POSTROUTING -s 192.168.0.2/24 -o eth0 -j MASQUERADE >> /var/log/cableguard.log 2>&1; then
         echo "iptables NAT rule: Added for interface '$interface_name' to eth0."
     else
         echo "Error: Failed to add iptables NAT rule."
