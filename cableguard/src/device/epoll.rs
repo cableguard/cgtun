@@ -291,10 +291,10 @@ impl<H: Sync + Send> EventPoll<H> {
         let events = self.events.lock();
 
         let event_ref = &(*events)[notification_event.trigger as usize];
-        let event_data = event_ref.as_ref().expect("Expected an event");
+        let event_data = event_ref.as_ref().expect("Error: Expected an event");
 
         if !event_data.notifier {
-            panic!("Can only trigger a notification event");
+            panic!("Error: Can only trigger a notification event");
         }
 
         // Write some data to the eventfd to trigger an EPOLLIN event
@@ -312,10 +312,10 @@ impl<H: Sync + Send> EventPoll<H> {
         let events = self.events.lock();
 
         let event_ref = &(*events)[notification_event.trigger as usize];
-        let event_data = event_ref.as_ref().expect("Expected an event");
+        let event_data = event_ref.as_ref().expect("Error: Expected an event");
 
         if !event_data.notifier {
-            panic!("Can only trigger a notification event");
+            panic!("Error: Can only trigger a notification event");
         }
 
         let mut buf = [0u8; 8];

@@ -41,7 +41,7 @@ impl<D> AllowedIps<D> {
         // These are networks, it doesn't make sense for host bits to be set, so
         // use new_truncate().
         self.ips.insert(
-            IpNetwork::new_truncate(key, cidr as u8).expect("cidr is valid length"),
+            IpNetwork::new_truncate(key, cidr as u8).expect("Info: cidr is valid length"),
             data,
         )
     }

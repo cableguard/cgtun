@@ -1113,9 +1113,8 @@ impl Device {
         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
         tracing::info!("Info: Setting subdomain IP and port {:?}", endpoint_listenport);     
 
-        // Cidrblock is allowed_ip, it fails if the cidr format is not followed
-        let allowed_ip_str = &self.config.rodt.metadata.cidrblock;
-        let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid own AllowedIP");
+        let allowed_ip_str = &self.config.rodt.metadata.allowedips;
+        let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid AllowedIPs");
         tracing::info!("Info: Setting own assigned IP {:?}", allowed_ip);
 
         // CG: Add IPv6 support

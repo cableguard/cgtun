@@ -259,10 +259,10 @@ impl<H: Send + Sync> EventPoll<H> {
         let event_index = -notification_event.trigger - 1; // Custom events have negative index from -1
 
         let event_ref = &(*events)[event_index as usize];
-        let event_data = event_ref.as_ref().expect("Expected an event");
+        let event_data = event_ref.as_ref().expect("Error: Expected an event");
 
         if event_data.kind != EventKind::Notifier {
-            panic!("Can only trigger a notification event");
+            panic!("Error: Can only trigger a notification event");
         }
 
         let mut kev = event_data.event;
@@ -276,10 +276,10 @@ impl<H: Send + Sync> EventPoll<H> {
         let event_index = -notification_event.trigger - 1; // Custom events have negative index from -1
 
         let event_ref = &(*events)[event_index as usize];
-        let event_data = event_ref.as_ref().expect("Expected an event");
+        let event_data = event_ref.as_ref().expect("Error: Expected an event");
 
         if event_data.kind != EventKind::Notifier {
-            panic!("Can only stop a notification event");
+            panic!("Error: Can only stop a notification event");
         }
 
         let mut kev = event_data.event;
