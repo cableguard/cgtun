@@ -228,25 +228,25 @@ impl Tunn {
                 //} TOTAL SIZE WAS 148 (with MAC), now plus 128
                 sender_session_index: u32::from_le_bytes(src[4..8].try_into().unwrap()), // SIZE u32 = 4 times 8, 8-4 = 4 bytes
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[8..40]) // SIZE u8;32, 40-8 = 32 bytes
-                    .expect("Failure checking packet field length"),
+                    .expect("Error: Failure checking packet field length"),
                 encrypted_static: &src[40..88], // SIZE u8;32, 88-40 = 48 bytes, seems too big for the spec u8 encrypted_static[AEAD_LEN(32)]
                 encrypted_timestamp: &src[88..116], // SIZE u8;12, 116-88 = 28 bytes, seems too big for the spec u8 encrypted_timestamp[AEAD_LEN(12)]
                 rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[116..244])
-                    .expect("Failure checking packet field length"), // SIZE u8;128, 244-116 = 128 bytes
+                    .expect("Error: Failure checking packet field length"), // SIZE u8;128, 244-116 = 128 bytes
                 rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[244..308])
-                    .expect("Failure checking packet field length"), // SIZE u8;64, 308-244 = 64 bytes
+                    .expect("Error: Failure checking packet field length"), // SIZE u8;64, 308-244 = 64 bytes
                 }),
                 (HANDSHAKE_RESP, HANDSHAKE_RESP_SZ) => Packet::HandshakeResponse(HandshakeResponse {  
                 //} TOTAL SIZE WAS 92 (with MAC), now plus 128
                 sender_session_index: u32::from_le_bytes(src[4..8].try_into().unwrap()), // SIZE u32 = 4 times 8, 8-4 = 4 bytes
                 receiver_session_index: u32::from_le_bytes(src[8..12].try_into().unwrap()), // SIZE u32 = 4 times 8, 12-8 = 4 bytes
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44]) // SIZE u8;32, 40-8 = 32 bytes
-                    .expect("Failure checking packet field length"),
+                    .expect("Error: Failure checking packet field length"),
                 encrypted_nothing: &src[44..60], // SIZE 60-44 = 16 bytes but u8 encrypted_nothing[AEAD_LEN(0)]
                 rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[60..188])
-                    .expect("Failure checking packet field length"), // SIZE u8;64, 188-60 = 128 bytes
+                    .expect("Error: Failure checking packet field length"), // SIZE u8;64, 188-60 = 128 bytes
                 rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[188..252])
-                    .expect("Failure checking packet field length"), // SIZE u8;64, 252-188 = 64 bytes
+                    .expect("Error: Failure checking packet field length"), // SIZE u8;64, 252-188 = 64 bytes
             }),
             (COOKIE_REPLY, COOKIE_REPLY_SZ) => Packet::PacketCookieReply(PacketCookieReply {
                 receiver_session_index: u32::from_le_bytes(src[4..8].try_into().unwrap()),

@@ -1001,6 +1001,6 @@ mod tests {
         tracing::trace!("Error: encrypted_nothing: {:?}", encrypted_nothing);
 
         aead_chacha20_open(&mut [], &key, counter, &encrypted_nothing, &aad)
-            .expect("Should open what we just sealed");
+            .expect("Info: Should open what we just sealed");
     }
 }
