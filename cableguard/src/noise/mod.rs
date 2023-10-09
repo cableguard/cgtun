@@ -1009,7 +1009,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
     } Err(err) => {
         // If the nearorg_rpc_token function call returns an Error, execute this block
         tracing::trace!("Error: There is no Peer RODiT associated with the account: {}", err);
-        std::process::exit(1);
+        return Err(WireGuardError::PeerEd25519RoditMissing);
     }
 }
 

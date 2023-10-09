@@ -28,4 +28,5 @@ pub enum WireGuardError {
     ServiceProviderEd25519SignatureParsingFailure,
     ServiceProviderEd25519PublicKeyParsingFailure,
     ServiceProviderEd25519SignatureFetchingFailure,
+    PeerEd25519RoditMissing,
 }
