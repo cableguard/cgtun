@@ -1088,6 +1088,7 @@ impl Device {
                       Err(_) => return,
                     },
             "set_peer_public_key" => match value.parse::<KeyBytes>() {
+                // CG: This bit is not tested
                 Ok(peer_keybytes_key) => {
                     let peer_hex_public_key = encode_hex(peer_keybytes_key.0);
                     tracing::info!("Info: Peer Public Key api_set_internal {:?}", peer_hex_public_key);
@@ -1122,7 +1123,6 @@ impl Device {
         // let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Error: Invalid IPv6 AllowedIP");
 
         // Create or update peer
-
         allowed_ips_listed.push(allowed_ip);
         self.update_peer(
             clone_peer_publickey_public_key,
