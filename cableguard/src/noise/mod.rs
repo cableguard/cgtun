@@ -1096,21 +1096,33 @@ let naivedatetime_notbefore = NaiveDateTime::new(naivedate_notbefore, niltime);
 let string_timenow = nearorg_rpc_timestamp(BLOCKCHAIN_NETWORK);
 
 // Convert the timestamp string into an i64
-let i64_timestamp = string_timenow.expect("Error: Can't parse near block timestamp").parse::<i64>().unwrap(); 
-// Create a NaiveDateTime from the timestamp
-let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp/1000000000,0);
+// Try to parse the timestamp, and if successful, create a NaiveDateTime from it
+// Try to parse the timestamp, and if successful, create a NaiveDateTime from it
+if let Ok(string_timenow) = string_timenow {
+    if let Ok(i64_timestamp) = string_timenow.parse::<i64>() {
+        let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp / 1000000000, 0);
 
-if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_notafter == naivedatetime_nul))
-    && ((naivedatetime_timestamp >= Some(naivedatetime_notbefore)) || (naivedatetime_notbefore == naivedatetime_nul)) {
-    tracing::info!("Info Peer RODiT is live");
-    return true
+        if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_notafter == naivedatetime_nul))
+            && ((naivedatetime_timestamp >= Some(naivedatetime_notbefore)) || (naivedatetime_notbefore == naivedatetime_nul)) {
+            tracing::info!("Info Peer RODiT is live");
+            return true;
+        } else {
+            tracing::error!("Error: Peer RODiT is not live - notbefore {:?} now {:?} notafter {:?}",
+                naivedatetime_notbefore,
+                naivedatetime_timestamp,
+                naivedatetime_notafter);
+            return false;
+        }
+    } else {
+        tracing::error!("Error: Can't parse near block timestamp");
+        return false;
+    }
 } else {
-    tracing::error!("Error: Peer RODiT is not live - notbefore {:?} now {:?} notafter {:?}"
-        , naivedatetime_notbefore
-        , naivedatetime_timestamp
-        , naivedatetime_notafter);
-    return false
+    // Handle the case where string_timenow is an error
+    tracing::error!("Error: {}", string_timenow.unwrap_err());
+    return false;
 }
+
 
 }
 
