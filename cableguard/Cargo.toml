@@ -24,7 +24,7 @@ mock-instant = ["mock_instant"]
 [dependencies]
 serde_json = "1.0"
 serde = "1.0.163"
-base64 = "0.13"
+base64 = "0.13.1"
 hex = "0.4"
 untrusted = "0.9.0"
 libc = "0.2"
@@ -33,7 +33,7 @@ tracing = "0.1.29"
 tracing-subscriber = { version = "0.3", features = ["fmt"], optional = true }
 ip_network = "0.4.1"
 ip_network_table = "0.2.0"
-ring = "0.16"
+ring = "0.17.4"
 bs58 = "0.5.0"
 ed25519-dalek = "1.0.1"
 x25519-dalek = { version = "2.0.0", features = [
