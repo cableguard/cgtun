@@ -28,6 +28,10 @@ You may want to add to .bashrc these lines:
 - sudo setcap cap_net_admin+epi ./<path>/cableguard-cli
 - export BLOCKCHAIN_ENV=testnet (for testnet, mainnet for mainnet)
 
+## How to Install from .deb package
+wget https://drive.google.com/file/d/17FCSKV3C3CGW7wG_eZ3y_qPUHbLo8cov/view?usp=drive_link
+sudo apt install ./cableguard-cli_0.90.11_amd64.deb
+
 ## How to Use
 To start a tunnel use:
 `cableguard-cli [-f/--foreground] <filewithaccount.json>`
