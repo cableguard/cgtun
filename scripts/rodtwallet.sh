@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="1.4.2"
+VERSION="1.5.0"
 #export NFTCONTRACTID=$(cat ./walletsh/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
@@ -22,7 +22,7 @@ fi
 if [ "$1" == "genaccount" ]; then
     # Add code for generating a new uninitialized accountID
     echo "Generating a new uninitialized accountID..."
-    near generate-key
+    near generate-key --saveImplicit
     echo Acccount number:
     ls -t "$HOME/.near-credentials/$BLOCKCHAIN_ENV/" | head -n 1 | xargs -I {} basename {} .json
     echo "The balance of the account is:"
@@ -60,7 +60,7 @@ if [ -n "$2" ]; then
     if [ "$2" == "keys" ]; then
         key_file="$HOME/.near-credentials/$BLOCKCHAIN_ENV/$1.json"
         echo "The contents of the key file (PrivateKey in Base58 account ID in Hex) are:"
-	cat "$key_file" | jq -r '"\(.private_key | sub("ed25519:"; ""))\n\(.account_id)"'
+        cat "$key_file" | jq -r '"\(.private_key | sub("ed25519:"; ""))\n\(.account_id)"'
         exit 0
     else
         echo "RODT Contents"
@@ -84,4 +84,4 @@ if [ -n "$1" ]; then
         echo "Account $1"
         echo "Balance: '$balance'"
     fi
-fi	
+fi
