@@ -53,7 +53,7 @@ const MAX_QUEUE_DEPTH: usize = 256;
 const N_SESSIONS: usize = 8;
 
 const KEY_LEN: usize = 32;
-//
+
 pub mod constants {
     // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
     pub const SMART_CONTRACT: &str = "cableguard-org.near";
