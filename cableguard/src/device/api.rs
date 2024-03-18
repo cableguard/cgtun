@@ -86,7 +86,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             return Err(Box::new(err));
         }
     };
-    
+
     let mut result_iter = match serde_json::from_str::<Vec<Rodt>>(result_string) {
         Ok(value) => value.into_iter(),
         Err(err) => {
@@ -125,9 +125,9 @@ pub fn nearorg_rpc_tokens_for_owner(
 }
 
 pub fn nearorg_rpc_state(
-    xnet: &str,
-    id: &str,
-    account_id: &str,
+    xnet: &str, // Network that can be mainnet or testnet
+    id: &str, // Name of the smart contract that controls the tokens
+    account_id: &str, // Account ID in Base58
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
@@ -156,8 +156,8 @@ pub fn nearorg_rpc_state(
         .header("Content-Type", "application/json")
         .send()?;
 
-    let response_text: String = response.text()?;
-    let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
+    let response_text: String = response.text()?; // Convert the ASCII array to the String type
+    let parsed_json: Value = serde_json::from_str(&response_text).unwrap(); // Deserialize the string into a JSON
     if parsed_json.to_string().contains("does not exist while viewing") {
         tracing::trace!("Error: The account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR");
         return Err("Error: The account does not exist in the blockchain".into());

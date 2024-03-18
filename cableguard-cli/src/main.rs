@@ -136,7 +136,7 @@ fn main() {
         }
     }
 
-    // Retrieve from the blockchain the Own RODiT using the account_id
+    // Retrieve from the blockchain the Own RODiT using the account_id, not the token_id
     let account_idargs = "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
     match nearorg_rpc_tokens_for_owner(BLOCKCHAIN_NETWORK, SMART_CONTRACT, SMART_CONTRACT, "nft_tokens_for_owner", &account_idargs) {
         Ok(result) => {
