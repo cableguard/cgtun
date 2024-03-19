@@ -28,11 +28,11 @@ use crate::noise::Rodt;
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
 pub fn nearorg_rpc_tokens_for_owner(
-    xnet: &str,
-    id: &str,
-    account_id: &str,
-    method_name: &str,
-    args: &str,
+    xnet: &str, // Network that can be mainnet or testnet
+    id: &str, // Smart contract that controls the tokens
+    account_id: &str, // Smart contract that controls the tokens
+    method_name: &str, // Method name, for example "nft_tokens_for_owner"
+    args: &str,  // Account ID in a json string followwin the format "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}"
 ) -> Result<Rodt, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
@@ -126,8 +126,8 @@ pub fn nearorg_rpc_tokens_for_owner(
 
 pub fn nearorg_rpc_state(
     xnet: &str, // Network that can be mainnet or testnet
-    id: &str, // Name of the smart contract that controls the tokens
-    account_id: &str, // Account ID in Base58
+    id: &str, // Smart contract that controls the tokens
+    account_id: &str, // Account ID in a json string like for example {"account_id":"ACCOUNTIDINBASE58"}
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
@@ -162,7 +162,7 @@ pub fn nearorg_rpc_state(
         tracing::trace!("Error: The account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR");
         return Err("Error: The account does not exist in the blockchain".into());
     }
-    Ok(())
+    Ok(()) // This function returns the RODT in the parsed_json variable but we are not currently doing anything with it in the main function
 }
 
 fn produce_sock_dir() {
