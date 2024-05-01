@@ -1,6 +1,9 @@
 #!/bin/bash
 
-VERSION="1.5.0"
+#SPDX-License-Identifier: GPL-2.0
+#Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
+
+VERSION="1.5.1"
 #export NFTCONTRACTID=$(cat ./walletsh/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 

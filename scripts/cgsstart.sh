@@ -1,9 +1,5 @@
 #!/bin/bash
 
-export BLOCKCHAIN_ENV=mainnet
-export NEAR_ENV=mainnet
-export NFTCONTRACTID=cableguard-org.near
-
 VERSION="1.4.0"
 
 # Print script information

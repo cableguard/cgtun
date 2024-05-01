@@ -15,7 +15,7 @@ use rand_core::OsRng;
 use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, CHACHA20_POLY1305};
 use std::convert::TryInto;
 use std::time::{Duration, SystemTime};
-use hex::ToHex;
+// use hex::ToHex;
 use crate::noise::{RODT_ID_SZ,RODT_ID_SIGNATURE_SZ};
 
 #[cfg(feature = "mock-instant")]

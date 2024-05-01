@@ -5,3 +5,4 @@ vendor/
 privatekey
 publickey
 dev-account
+Cargo.lock

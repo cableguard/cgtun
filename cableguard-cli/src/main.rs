@@ -7,9 +7,10 @@ use cableguard::noise::Rodt;
 use cableguard::device::api::{nearorg_rpc_tokens_for_owner,nearorg_rpc_state};
 use cableguard::noise::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use cableguard::device::drop_privileges::drop_privileges;
-use daemonize::Daemonize;
-use base64::encode as encode_base64;
-use hex::{FromHex};
+// use daemonize::Daemonize;
+use daemonize::{Daemonize, Outcome};
+// use base64::encode as encode_base64;
+// use hex::{FromHex};
 use serde_json::Value;
 use std::os::unix::net::UnixDatagram;
 use std::process::exit;
@@ -178,7 +179,7 @@ fn main() {
     if background {
         // Running in background mode
         let log = matches.value_of("log").unwrap();
-    
+
         // Check if the log file exists, open it in append mode if it does
         // Otherwise, create a new log file
         let log_file = if let Ok(metadata) = std::fs::metadata(&log) {
@@ -194,18 +195,19 @@ fn main() {
             File::create(&log)
         }
         .unwrap_or_else(|err| panic!("Error: Failed to open log file {}: {}", log, err));
-    
+
         // Create a non-blocking log writer and get a guard to prevent dropping it
         let (non_blocking, guard) = tracing_appender::non_blocking(log_file);
         _guard = guard;
-    
+
         // Initialize the logging system with the configured log level and writer
         tracing_subscriber::fmt()
             .with_max_level(log_level)
             .with_writer(non_blocking)
             .with_ansi(false)
             .init();
-    
+
+        /* daemonize 0.4.1 version
         // Create a daemon process and configure it
         let daemonize = Daemonize::new()
             .working_directory("/tmp")
@@ -219,13 +221,38 @@ fn main() {
                     exit(1);
                 };
             });
-    
+
         // Start the daemon process
         match daemonize.start() {
             Ok(_) => tracing::debug!("Info: CableGuard started successfully"),
             Err(e) => {
                 tracing::debug!(error = ?e);
                 exit(1);
+            }
+        } */
+
+        // daemonize 0.5.0 version
+        // Create a daemon process and configure it
+        let daemonize = Daemonize::new().working_directory("/tmp");
+        match daemonize.execute() {
+            Outcome::Parent(Ok(_)) => {
+                // In parent process, child forked ok
+                let mut b = [0u8; 1];
+                if sock2.recv(&mut b).is_ok() && b[0] == 1 {
+                    tracing::debug!("Info: CableGuard started successfully");
+                    exit(0);
+                } else {
+                    tracing::error!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                    exit(1);
+                }
+            }
+            Outcome::Parent(Err(_e)) => {
+                tracing::error!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                exit(1);
+            }
+            Outcome::Child(_) => {
+                // In child process, we'll continue below with code that is common with foreground exec
+                tracing::debug!("Info: CableGuard started successfully");
             }
         }
     } else {
@@ -283,6 +310,7 @@ fn main() {
     device_handle.wait();    
 }
 
+/*
 fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
     let hex_string = hex_bytes.iter()
         .map(|byte| format!("{:02X}", byte))
@@ -292,3 +320,4 @@ fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
     let bytes = Vec::from_hex(&hex_string).expect("Error: Invalid Hex string");
     encode_base64(&bytes)
 }
+*/

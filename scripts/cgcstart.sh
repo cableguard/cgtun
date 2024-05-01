@@ -1,9 +1,5 @@
 #!/bin/bash
 
-export BLOCKCHAIN_ENV=mainnet
-export NEAR_ENV=mainnet
-export NFTCONTRACTID=cableguard-org.near
-
 VERSION="1.0.0"
 #export NFTCONTRACTID=$(cat /home/icarus24/cgwallet/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
