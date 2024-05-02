@@ -29,7 +29,7 @@ You may want to add to .bashrc these lines:
 - export BLOCKCHAIN_ENV=testnet (for testnet, mainnet for mainnet)
 
 ## How to Install from .deb package
-wget https://cableguard.fra1.digitaloceanspaces.com/cableguard-cli_0.90.15_amd64.deb
+wget https://cableguard.fra1.digitaloceanspaces.com/cableguard-cli_0.89.99_amd64.deb
 sudo apt install ./cableguard-cli_0.90.11_amd64.deb
 
 ## How to Use
