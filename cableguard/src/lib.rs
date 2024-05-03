@@ -24,6 +24,6 @@ pub(crate) mod serialization;
 // Re-export of the x25519 types
 mod x25519 {
     pub use x25519_dalek::{
-        EphemeralSecret, PublicKey, ReusableSecret, SharedSecret, StaticSecret
+        PublicKey, ReusableSecret, SharedSecret, StaticSecret
     };
 }

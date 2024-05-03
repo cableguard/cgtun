@@ -17,7 +17,9 @@ use std::process::exit;
 use std::fs::{File, OpenOptions};
 use std::io::{self, ErrorKind,Read};
 use std::env;
-use tracing::Level;
+use tracing::{Level};
+// use tracing::{Level, error, trace};
+// use tracing_subscriber::FmtSubscriber;
 
 fn main() {
     let matches = Command::new("cableguard")
@@ -82,6 +84,14 @@ fn main() {
 
     let background = !matches.is_present("foreground");
 
+    // Enable for tracing in main
+    /* let subscriber = FmtSubscriber::builder()
+    .with_max_level(Level::TRACE)
+    .finish();
+    tracing::subscriber::set_global_default(subscriber)
+    .expect("Error: Failed to set subscriber");
+    */
+
     #[cfg(target_os = "linux")]
     let uapi_fd: i32 = matches.value_of_t("uapi-fd").unwrap_or_else(|e| e.exit());
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
@@ -89,7 +99,6 @@ fn main() {
 
     // Obtain the public key from the file with the accountId
     let accountfile_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
-
     let accountfile_path = accountfile_name;
     let mut accountfile = match File::open(&accountfile_path) {
         Ok(accountfile) => accountfile,
@@ -232,7 +241,7 @@ fn main() {
                 }
             }
 
-        /* Create a daemon process and configure it
+        /* Create a daemon 0.4.1 process and configure it
         let daemonize = Daemonize::new()
             .working_directory("/tmp")
             .exit_action(move || {

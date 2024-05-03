@@ -300,8 +300,8 @@ impl Drop for DeviceHandle {
 
 impl Device {
     
-    const XNET:&str= BLOCKCHAIN_NETWORK;
-    const SMART_CONTRACT:&str = SMART_CONTRACT;
+    const XNET:&'static str= BLOCKCHAIN_NETWORK;
+    const SMART_CONTRACT:&'static str = SMART_CONTRACT;
 
     fn next_peer_index(&mut self) -> u32 {
         self.next_peer_index.next()
