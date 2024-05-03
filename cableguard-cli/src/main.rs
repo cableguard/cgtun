@@ -17,7 +17,9 @@ use std::process::exit;
 use std::fs::{File, OpenOptions};
 use std::io::{self, ErrorKind,Read};
 use std::env;
-use tracing::Level;
+// use tracing::Level;
+use tracing::{Level, error, trace};
+use tracing_subscriber::FmtSubscriber;
 
 fn main() {
     let matches = Command::new("cableguard")
@@ -81,6 +83,14 @@ fn main() {
         .get_matches();
 
     let background = !matches.is_present("foreground");
+
+    // Enable for tracing in main
+    /*let subscriber = FmtSubscriber::builder()
+    .with_max_level(Level::TRACE)
+    .finish();
+    tracing::subscriber::set_global_default(subscriber)
+    .expect("Error: Failed to set subscriber");
+    */
 
     #[cfg(target_os = "linux")]
     let uapi_fd: i32 = matches.value_of_t("uapi-fd").unwrap_or_else(|e| e.exit());
