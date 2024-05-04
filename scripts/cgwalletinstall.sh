@@ -3,24 +3,26 @@
 #SPDX-License-Identifier: GPL-2.0
 #Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
+VERSION="1.0.0"
+#export NFTCONTRACTID=$(cat ./walletsh/account)
+echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV " "
+
 #Step 1: Add environment variables to .bashrc
 
 # If no command-line arguments provided, set to "mainnet"
 if [ $# -eq 0 ]; then
-    BLOCKCHAIN_ENV=mainnet
-    NEAR_ENV=mainnet
+	export BLOCKCHAIN_ENV="mainnet"
+	export NEAR_ENV="mainnet"
 else
-    BLOCKCHAIN_ENV="$1"
-    NEAR_ENV="$1"
+	export BLOCKCHAIN_ENV="$1"
+    	export NEAR_ENV="$1"
 fi
 
-# Export the variables
-export BLOCKCHAIN_ENV=\"$BLOCKCHAIN_ENV\"
-export NEAR_ENV=\"$NEAR_ENV\"
-
 # Append the export commands to ~/.bashrc
-echo "export BLOCKCHAIN_ENV=\"$BLOCKCHAIN_ENV\"" >> ~/.bashrc
-echo "export NEAR_ENV=\"$NEAR_ENV\"" >> ~/.bashrc
+echo "export BLOCKCHAIN_ENV="$BLOCKCHAIN_ENV"" >> ~/.bashrc
+echo "export NEAR_ENV="$NEAR_ENV"" >> ~/.bashrc
+
+exit
 
 # Display a message
 #!/bin/bash

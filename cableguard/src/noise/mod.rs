@@ -57,7 +57,7 @@ const KEY_LEN: usize = 32;
 pub mod constants {
     // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
     pub const SMART_CONTRACT: &str = "cableguard-org.near";
-    pub const BLOCKCHAIN_NETWORK: &str = "."; // IMPORTANT: Values here must be either ".testnet." for tesnet or "." for mainnet;
+    pub const BLOCKCHAIN_NETWORK: &str = "."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -1166,7 +1166,7 @@ pub fn verify_rodt_smartcontract_istrusted(
 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
 
 let smart_contract = SMART_CONTRACT;
-let smart_contract_nonear = smart_contract.replace(".near", "");
+let smart_contract_nonear = smart_contract.replace(".testnet", "");
 let smart_contract_url = smart_contract_nonear.replace("-", ".");
 
 let domainandextension = Regex::new(r"(\w+\.\w+)$").unwrap();
