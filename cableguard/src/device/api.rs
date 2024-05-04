@@ -315,7 +315,9 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
     }
 
     if BLOCKCHAIN_NETWORK == "." {
-        writeln!(writerbufferdevice, "bcnetwork={}", "mainnet");
+        writeln!(writerbufferdevice, "bcnetwork={}", "mainnet as a dot");
+    } else if BLOCKCHAIN_NETWORK == "mainnet" {
+        writeln!(writerbufferdevice, "bcnetwork=={}", "mainnet");
     } else if BLOCKCHAIN_NETWORK == "testnet" {
         writeln!(writerbufferdevice, "bcnetwork=={}", "testnet");
     }

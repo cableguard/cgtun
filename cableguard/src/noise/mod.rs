@@ -1099,7 +1099,6 @@ let string_timenow = nearorg_rpc_timestamp(BLOCKCHAIN_NETWORK);
 
 // Convert the timestamp string into an i64
 // Try to parse the timestamp, and if successful, create a NaiveDateTime from it
-// Try to parse the timestamp, and if successful, create a NaiveDateTime from it
 if let Ok(string_timenow) = string_timenow {
     if let Ok(i64_timestamp) = string_timenow.parse::<i64>() {
         let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp / 1000000000, 0);
