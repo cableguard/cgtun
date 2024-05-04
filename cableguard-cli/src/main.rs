@@ -17,7 +17,9 @@ use std::process::exit;
 use std::fs::{File, OpenOptions};
 use std::io::{self, ErrorKind,Read};
 use std::env;
-use tracing::{Level};
+// use tracing::{Level};
+use tracing::{Level, error, trace};
+use tracing_subscriber::FmtSubscriber;
 
 fn main() {
     let matches = Command::new("cableguard")
