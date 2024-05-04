@@ -9,15 +9,15 @@ use cableguard::noise::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use cableguard::device::drop_privileges::drop_privileges;
 // use daemonize::Daemonize;
 use daemonize::{Daemonize, Outcome};
-// use base64::encode as encode_base64;
-// use hex::{FromHex};
+use base64::encode as encode_base64;
+use hex::{FromHex};
 use serde_json::Value;
 use std::os::unix::net::UnixDatagram;
 use std::process::exit;
 use std::fs::{File, OpenOptions};
 use std::io::{self, ErrorKind,Read};
 use std::env;
-use tracing::Level;
+use tracing::{Level};
 
 fn main() {
     let matches = Command::new("cableguard")
@@ -82,6 +82,15 @@ fn main() {
 
     let background = !matches.is_present("foreground");
 
+    // Enable for tracing in main
+    /*
+    let subscriber = FmtSubscriber::builder()
+    .with_max_level(Level::TRACE)
+    .finish();
+    tracing::subscriber::set_global_default(subscriber)
+    .expect("Error: Failed to set subscriber");
+    */
+    
     #[cfg(target_os = "linux")]
     let uapi_fd: i32 = matches.value_of_t("uapi-fd").unwrap_or_else(|e| e.exit());
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
@@ -89,26 +98,25 @@ fn main() {
 
     // Obtain the public key from the file with the accountId
     let accountfile_name = matches.value_of("FILE_WITH_ACCOUNT").unwrap();
-
     let accountfile_path = accountfile_name;
     let mut accountfile = match File::open(&accountfile_path) {
         Ok(accountfile) => accountfile,
         Err(err) => {
-            tracing::error!("Error: Failed to open the file with the accountId: {}", err);
+            println!("Error: Failed to open the file with the accountId: {}", err);
             return; // Terminate the program or handle the Error accordingly
         }
     };
 
     let mut accountfile_contents = String::new();
     if let Err(err) = accountfile.read_to_string(&mut accountfile_contents) {
-        tracing::error!("Error: Failed to read the file with the accountId: {}", err);
+        println!("Error: Failed to read the file with the accountId: {}", err);
         return; // Terminate the program or handle the Error accordingly
     }
 
     let json: Value = match serde_json::from_str(&accountfile_contents) {
         Ok(contents) => contents,
         Err(err) => {
-            tracing::error!("Error: Failed to parse JSON of the file with the accountId: {}", err);
+            println!("Error: Failed to parse JSON of the file with the accountId: {}", err);
             // Add any additional Error handling logic if needed
             return; // Terminate the program
         }
@@ -132,7 +140,7 @@ fn main() {
         }
         Err(err) => {
             // CG: Show a warning if the account is not primed or the account has not RODiT
-            tracing::error!("Error: Account has no NEAR balance): {}", err);
+            println!("Error: Account has no NEAR balance): {}", err);
             std::process::exit(1);
         }
     }
@@ -179,7 +187,7 @@ fn main() {
     if background {
         // Running in background mode
         let log = matches.value_of("log").unwrap();
-
+    
         // Check if the log file exists, open it in append mode if it does
         // Otherwise, create a new log file
         let log_file = if let Ok(metadata) = std::fs::metadata(&log) {
@@ -195,66 +203,65 @@ fn main() {
             File::create(&log)
         }
         .unwrap_or_else(|err| panic!("Error: Failed to open log file {}: {}", log, err));
-
+    
         // Create a non-blocking log writer and get a guard to prevent dropping it
         let (non_blocking, guard) = tracing_appender::non_blocking(log_file);
         _guard = guard;
-
+    
         // Initialize the logging system with the configured log level and writer
         tracing_subscriber::fmt()
             .with_max_level(log_level)
             .with_writer(non_blocking)
             .with_ansi(false)
             .init();
+    
+        // daemonize 0.5.0 version
+            // Create a daemon process and configure it
+            let daemonize = Daemonize::new().working_directory("/tmp");
+            match daemonize.execute() {
+                Outcome::Parent(Ok(_)) => {
+                    // In parent process, child forked ok
+                    let mut b = [0u8; 1];
+                    if sock2.recv(&mut b).is_ok() && b[0] == 1 {
+                        println!("Info: CableGuard started successfully");
+                        exit(0);
+                    } else {
+                         println!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                        exit(1);
+                    }
+                }
+                Outcome::Parent(Err(_e)) => {
+                    println!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                    exit(1);
+                 }
+                Outcome::Child(_) => {
+                    // In child process, we'll continue below with code that is common with foreground exec
+                    println!("Info: CableGuard started successfully");
+                }
+            }
 
-        /* daemonize 0.4.1 version
-        // Create a daemon process and configure it
+        /* Create a daemon 0.4.1 process and configure it
         let daemonize = Daemonize::new()
             .working_directory("/tmp")
             .exit_action(move || {
                 // Perform an action when the daemon process exits
                 let mut b = [0u8; 1];
                 if sock2.recv(&mut b).is_ok() && b[0] == 1 {
-                    tracing::debug!("Info: CableGuard started successfully");
+                    println!("Info: CableGuard started successfully");
                 } else {
-                    tracing::error!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                    println!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
                     exit(1);
                 };
             });
-
+    
         // Start the daemon process
         match daemonize.start() {
-            Ok(_) => tracing::debug!("Info: CableGuard started successfully"),
+            Ok(_) => println!("Info: CableGuard started successfully"),
             Err(e) => {
-                tracing::debug!(error = ?e);
+                println!(error = ?e);
                 exit(1);
             }
         } */
-
-        // daemonize 0.5.0 version
-        // Create a daemon process and configure it
-        let daemonize = Daemonize::new().working_directory("/tmp");
-        match daemonize.execute() {
-            Outcome::Parent(Ok(_)) => {
-                // In parent process, child forked ok
-                let mut b = [0u8; 1];
-                if sock2.recv(&mut b).is_ok() && b[0] == 1 {
-                    tracing::debug!("Info: CableGuard started successfully");
-                    exit(0);
-                } else {
-                    tracing::error!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
-                    exit(1);
-                }
-            }
-            Outcome::Parent(Err(_e)) => {
-                tracing::error!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
-                exit(1);
-            }
-            Outcome::Child(_) => {
-                // In child process, we'll continue below with code that is common with foreground exec
-                tracing::debug!("Info: CableGuard started successfully");
-            }
-        }
     } else {
         // Running in foreground mode
         tracing_subscriber::fmt()
@@ -304,13 +311,12 @@ fn main() {
     sock1.send(&[1]).unwrap();
     drop(sock1);
     
-    tracing::debug!("Info: CableGuard will hand over to TUN handle");
+    println!("Info: CableGuard will hand over to TUN handle");
     
     // Wait for the device handle to finish processing
     device_handle.wait();    
 }
 
-/*
 fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
     let hex_string = hex_bytes.iter()
         .map(|byte| format!("{:02X}", byte))
@@ -320,4 +326,3 @@ fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
     let bytes = Vec::from_hex(&hex_string).expect("Error: Invalid Hex string");
     encode_base64(&bytes)
 }
-*/
