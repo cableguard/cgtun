@@ -443,6 +443,7 @@ impl Tunn {
         let (packet, session) = self.handshake.consume_received_handshake_initiation(peer_handshake_init,dst,peer_static_public)?;
 
         // Beginning of Peer RODiT verification
+        /*
         let peer_slice_rodtid: &[u8] = &peer_handshake_init.rodt_id[..];
         let _peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Error: Failed to convert byte slice to string")
@@ -450,13 +451,13 @@ impl Tunn {
         
         let evaluation = verify_hasrodt_getit(*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature);
         if let Ok((verification_result, rodt)) = evaluation {
-            if verification_result
+            if verification_result 
                 && verify_rodt_isamatch(self.own_serviceproviderid.clone(),
                     rodt.metadata.serviceprovidersignature.clone(),
                     *peer_handshake_init.rodt_id)
                 && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-                && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
+                && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
                     tracing::info!("Info Peer is trusted in handshake initiation");
             }
             else {
@@ -464,6 +465,8 @@ impl Tunn {
                     return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
             }            
         }
+        */
+
         let index = session.local_index();
         self.sessions[index % N_SESSIONS] = Some(session);
         self.timer_tick(TimerName::TimeLastPacketReceived);
@@ -487,6 +490,7 @@ impl Tunn {
         let session = self.handshake.consume_received_handshake_response(peer_handshake_response)?;
 
         // Beginning of Peer RODiT verification
+        /*
         let peer_slice_rodtid: &[u8] = &peer_handshake_response.rodt_id[..];
         let _peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Error: Failed to convert byte slice to string")
@@ -510,7 +514,8 @@ impl Tunn {
         } else {
             tracing::error!("Error: Fetching RODiT with verify_hasrodt_getit in handshake response");
         }
-        
+        */
+
         let keepalive_packet = session.produce_packet_data(&[], dst);
         // Store new session in ring buffer
         let local_index = session.local_index();
