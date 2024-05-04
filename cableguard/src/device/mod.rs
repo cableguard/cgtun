@@ -496,7 +496,8 @@ impl Device {
                     .as_slice()
                     .try_into()
                     .expect("Invalid public key length");
-                // Not adding the server peer if WE are the server peer, running postup instead           
+                // Not adding the server peer if WE are the server peer, running postup instead
+                println!("Own public key {:?} / Peer public key {:?}", device.config.x25519_public_key, peer_u832_pk);
                 if device.config.x25519_public_key != peer_u832_pk {
                         // It is ok to add a peer without checks as they are performed during handshake
                         device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
