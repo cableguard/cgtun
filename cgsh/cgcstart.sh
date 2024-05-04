@@ -1,11 +1,24 @@
 #!/bin/bash
 
-VERSION="1.0.0"
+VERSION="1.0.testnet"
 #export NFTCONTRACTID=$(cat /home/icarus24/cgwallet/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
+# Check if there are no entry parameters
+if [ $# -eq 0 ]; then
+    echo "Error: No entry parameter provided. Usage: $0 <json_file_name>"
+    exit 1
+fi
+
+# Check if the JSON file exists
+json_file=~/.near-credentials/$BLOCKCHAIN_ENV/$1.json
+if [ ! -f "$json_file" ]; then
+    echo "Error: JSON file $json_file does not exist."
+    exit 1
+fi
+
 # Run cableguard and start the tunnel
-if /usr/bin/sudo /home/icarus24/cgtun/target/release/cableguard-cli /home/icarus24/.near-credentials/mainnet/3b251bcc1985e34c7fb8bb0f20304dd4f20c673e7977fe72f00c6eda81b60da6.json >> /var/log/cableguard.log 2>&1; then
+if /usr/bin/sudo /usr/bin/cableguard-cli -f -v trace "$json_file" >> ~/cableguard.$1.log 2>&1; then
     echo "cableguard-cli: Started and created the tunnel."
 else
     echo "Error: cableguard-cli failed to start."

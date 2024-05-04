@@ -1,9 +1,12 @@
 #!/bin/bash
 
-VERSION="1.4.0"
+#SPDX-License-Identifier: GPL-2.0
+#Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
+
+VERSION="1.5.0"
 
 # Print script information
-echo "Version $VERSION running on $BLOCKCHAIN_ENV at Smart Contract $NFTCONTRACTID. Get help with: $0 help"
+echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
 # Check if there are no entry parameters
 if [ $# -eq 0 ]; then
@@ -12,14 +15,14 @@ if [ $# -eq 0 ]; then
 fi
 
 # Check if the JSON file exists
-json_file=~/.near-credentials/mainnet/$1.json
+json_file=~/.near-credentials/$BLOCKCHAIN_ENV/$1.json
 if [ ! -f "$json_file" ]; then
     echo "Error: JSON file $json_file does not exist."
     exit 1
 fi
 
 # Run cableguard and start the tunnel
-if /usr/bin/sudo /usr/bin/cableguard-cli -f -v trace "$json_file" >> ~/cableguard.$1.log 2>&1; then
+if /usr/bin/sudo ~/cgtun.testnet/target/release/cableguard-cli -f -v trace "$json_file" >> ~/cableguard.$1.log 2>&1; then
     echo "cableguard-cli: Started and created the tunnel."
 else
     echo "Error: cableguard-cli failed to start."
