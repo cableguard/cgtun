@@ -7,7 +7,8 @@ use cableguard::noise::Rodt;
 use cableguard::device::api::{nearorg_rpc_tokens_for_owner,nearorg_rpc_state};
 use cableguard::noise::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use cableguard::device::drop_privileges::drop_privileges;
-// use daemonize::Daemonize;
+// // use daemonize::Daemonize;
+use daemonize::{Daemonize, Outcome};
 use daemonize::{Daemonize, Outcome};
 use base64::encode as encode_base64;
 use hex::{FromHex};
@@ -217,6 +218,7 @@ fn main() {
             .init();
     
         // daemonize 0.5.0 version
+            // daemonize 0.5.0 version
             // Create a daemon process and configure it
             let daemonize = Daemonize::new().working_directory("/tmp");
             match daemonize.execute() {
@@ -242,6 +244,30 @@ fn main() {
             }
 
         /* Create a daemon 0.4.1 process and configure it
+            let daemonize = Daemonize::new().working_directory("/tmp");
+            match daemonize.execute() {
+                Outcome::Parent(Ok(_)) => {
+                    // In parent process, child forked ok
+                    let mut b = [0u8; 1];
+                    if sock2.recv(&mut b).is_ok() && b[0] == 1 {
+                        tracing::debug!("Info: CableGuard started successfully");
+                        exit(0);
+                    } else {
+                         tracing::error!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                        exit(1);
+                    }
+                }
+                Outcome::Parent(Err(_e)) => {
+                    tracing::error!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
+                    exit(1);
+                 }
+                Outcome::Child(_) => {
+                    // In child process, we'll continue below with code that is common with foreground exec
+                    tracing::debug!("Info: CableGuard started successfully");
+                }
+            }
+
+        /* Create a daemon process and configure it
         let daemonize = Daemonize::new()
             .working_directory("/tmp")
             .exit_action(move || {
