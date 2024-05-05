@@ -4,7 +4,7 @@
 #Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
 #minor version is odd for testnet, even for mainnet
-VERSION="1.5.1"
+VERSION="1.5.2"
 
 # Print script information
 #export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
@@ -46,7 +46,7 @@ interface_name=$(sudo wg show | awk '/^interface:/ {print $2}')
 # Check if the interface name is not empty
 if [ -n "$interface_name" ]; then
     # Update to bring the interface up
-    if /usr/bin/sudo ip link set "$interface_name" up >> ~/cableguard.$1.log 2>&1; then
+    if sudo ip link set "$interface_name" up >> ~/cableguard.$1.log 2>&1; then
         echo "Bringing up interface: '$interface_name'."
     else
         echo "Error: Could not bring interface up."
@@ -54,35 +54,35 @@ if [ -n "$interface_name" ]; then
     fi
 
     # Update iptables rules
-    if /usr/bin/sudo iptables -A FORWARD -i "$interface_name" -j ACCEPT >> ~/cableguard.$1.log 2>&1; then
+    if sudo iptables -A FORWARD -i "$interface_name" -j ACCEPT >> ~/cableguard.$1.log 2>&1; then
         echo "iptables FORWARD rule: Added for interface '$interface_name'."
     else
         echo "Error: Failed to add iptables FORWARD rule."
         exit 1
     fi
 
-    if /usr/bin/sudo iptables -t nat -A POSTROUTING -s 192.168.0.2/24 -o eth0 -j MASQUERADE >> ~/cableguard.$1.log 2>&1; then
+    if sudo iptables -t nat -A POSTROUTING -s 192.168.0.2/24 -o eth0 -j MASQUERADE >> ~/cableguard.$1.log 2>&1; then
         echo "iptables NAT rule: Added for interface '$interface_name' to eth0."
     else
         echo "Error: Failed to add iptables NAT rule."
         exit 1
     fi
 
-    if /usr/bin/sudo resolvectl dns "$interface_name" 4.4.4.4 >> ~/cableguard.$1.log 2>&1; then
+    if sudo resolvectl dns "$interface_name" 4.4.4.4 >> ~/cableguard.$1.log 2>&1; then
         echo "resolvectl DNS configuration: Set for interface '$interface_name'."
     else
         echo "Error: Failed to set resolvectl DNS configuration."
         exit 1
     fi
 
-    if /usr/bin/sudo ip link set mtu 1420 up dev "$interface_name" >> ~/cableguard.$1.log 2>&1; then
+    if sudo ip link set mtu 1420 up dev "$interface_name" >> ~/cableguard.$1.log 2>&1; then
         echo "Interface MTU: Set to 1420 for '$interface_name'."
     else
         echo "Error: Failed to set interface MTU."
         exit 1
     fi
 
-    if /usr/bin/sudo ufw route allow in on "$interface_name" out on eth0 >> ~/cableguard.$1.log 2>&1; then
+    if sudo ufw route allow in on "$interface_name" out on eth0 >> ~/cableguard.$1.log 2>&1; then
         echo "UFW route: Allowed incoming on '$interface_name' out on eth0."
     else
         echo "Error: Failed to allow UFW route."
