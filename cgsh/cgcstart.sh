@@ -1,7 +1,12 @@
 #!/bin/bash
 
+#SPDX-License-Identifier: GPL-2.0
+#Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
+
 #minor version is odd for testnet, even for mainnet
 VERSION="1.0.5"
+
+# Print script information
 #export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
@@ -37,7 +42,6 @@ fi
 
 # Run `sudo wg show` and capture the interface name
 interface_name=$(sudo wg show | awk '/^interface:/ {print $2}')
-echo $interface_name
 
 # Check if the interface name is not empty
 if [ -n "$interface_name" ]; then

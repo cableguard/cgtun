@@ -3,15 +3,26 @@
 #SPDX-License-Identifier: GPL-2.0
 #Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
-VERSION="1.5.0"
+#minor version is odd for testnet, even for mainnet
+VERSION="1.5.1"
 
 # Print script information
+#export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
 # Check if there are no entry parameters
 if [ $# -eq 0 ]; then
     echo "Error: No entry parameter provided. Usage: $0 <json_file_name>"
     exit 1
+fi
+
+if [ "$1" == "help" ]; then
+    echo "Usage: "$0" [account_id] [Options]"
+    echo "Works best when called from the cgtun directory"
+    echo ""
+    echo "Options:"
+    echo "  "$0" <json_file_name> (without extension)"
+    exit 0
 fi
 
 # Check if the JSON file exists
@@ -22,7 +33,7 @@ if [ ! -f "$json_file" ]; then
 fi
 
 # Run cableguard and start the tunnel
-if /usr/bin/sudo ~/cgtun.testnet/target/release/cableguard-cli -f -v trace "$json_file" >> ~/cableguard.$1.log 2>&1; then
+if sudo ./target/release/cableguard-cli -v trace $json_file >> ~/cableguard.$1.log 2>&1; then
     echo "cableguard-cli: Started and created the tunnel."
 else
     echo "Error: cableguard-cli failed to start."
