@@ -442,7 +442,8 @@ impl Device {
 
         // We are adding here addtional device building:
         // add IPs, set private key, add initial peer
-        let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ tunname;
+        // "/24" for a maximum of 254 client addresses
+        let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +"/24 dev "+ tunname;
         let output = Command::new("bash")
             .arg("-c")
             .arg(command)
