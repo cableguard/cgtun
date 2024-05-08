@@ -4,7 +4,7 @@
 #Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
 #minor version is odd for testnet, even for mainnet
-VERSION="1.5.2"
+VERSION="1.5.3"
 
 # Print script information
 #export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
