@@ -4,7 +4,7 @@
 #Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
 #minor version is odd for testnet, even for mainnet
-VERSION="1.5.5"
+VERSION="1.5.7"
 
 # Print script information
 #export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
@@ -68,6 +68,17 @@ if [ -n "$interface_name" ]; then
         exit 1
     fi
 
+# Retrieve the IP address of the specified network interface
+ip_address=$(ip -o -4 addr show $interface_name | awk '{print $4}' | cut -d'/' -f1)
+
+# Check if the IP address is empty
+if [ -z "$ip_address" ]; then
+    echo "Failed to retrieve IP address for interface $interface_name"
+    exit 1
+fi
+
+echo "IP address configured on $interface_name: $ip_address"
+
     # Update iptables rules
     if sudo iptables -A FORWARD -i "$interface_name" -j ACCEPT >> ~/cableguard.$1.log 2>&1; then
         echo "iptables FORWARD rule: Added for interface '$interface_name'."
@@ -76,7 +87,7 @@ if [ -n "$interface_name" ]; then
         exit 1
     fi
 
-    if sudo iptables -t nat -A POSTROUTING -s 192.168.0.2/24 -o eth0 -j MASQUERADE >> ~/cableguard.$1.log 2>&1; then
+    if sudo iptables -t nat -A POSTROUTING -s $ip_address -o eth0 -j MASQUERADE >> ~/cableguard.$1.log 2>&1; then
         echo "iptables NAT rule: Added for interface '$interface_name' to eth0."
     else
         echo "Error: Failed to add iptables NAT rule."
