@@ -71,7 +71,25 @@ impl TunSocket {
                 name: name.to_string(),
             });
         }
+        // This TUN creation is NOT tested but would be namespace compatible
+        /*
+        use nix::unistd::open;
+        use nix::sys::if_tun::TUNSETIFF;
+        use nix::sys::if_tun::ifreq;
+        use nix::sys::if_tun::IFF_TUN;
+        use nix::sys::if_tun::IFF_NO_PI;
 
+            let fd = open("/dev/net/tun", nix::unistd::O_RDWR).unwrap();
+            let mut ifr = ifreq {
+                ifr_name: "tun0".to_string(),
+                ifr_flags: IFF_TUN | IFF_NO_PI,
+            };
+            if TUNSETIFF(fd, &ifr).is_err() {
+                // Handle error
+            }
+        */
+
+        // This TUN creation is not compatible with namespaces
         let fd = match unsafe { open(b"/dev/net/tun\0".as_ptr() as _, O_RDWR) } {
             -1 => return Err(Error::Socket(io::Error::last_os_error())),
             fd => fd,
