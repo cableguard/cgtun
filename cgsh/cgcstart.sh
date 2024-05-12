@@ -4,7 +4,7 @@
 # Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
 # minor version is odd for testnet, even for mainnet
-VERSION="1.0.17"
+VERSION="1.1.19"
 
 # Print script information
 # export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
@@ -63,7 +63,7 @@ if [ -n "$interface_name" ]; then
     PHYSICAL_DEVICE_NAME=$(ip -4 route show default | awk '/default via/ {print $5}')
 
     # Fetching the server IP address
-    SERVER_IP=$(wg show YOUR_WG_INTERFACE_NAME allowed-ips | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}/32\b")
+    SERVER_IP=$(sudo wg show YOUR_WG_INTERFACE_NAME allowed-ips | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}/32\b")
 
     # Adding route using obtained values
     echo "sudo ip route add $SERVER_IP via $DEFAULT_GATEWAY dev $PHYSICAL_DEVICE_NAME"
