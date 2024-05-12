@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SPDX-License-Identifier: GPL-2.0
-#Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
-#minor version is odd for testnet, even for mainnet
-VERSION="1.0.9"
+# minor version is odd for testnet, even for mainnet
+VERSION="1.0.17"
 
 # Print script information
-#export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
+# export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
 echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
 
 # Check if there are no entry parameters
@@ -33,6 +33,7 @@ if [ ! -f "$json_file" ]; then
 fi
 
 # Run cableguard and start the tunnel
+echo "sudo ./target/release/cableguard-cli -v trace $json_file >> ~/cableguard.$1.log 2>&1"
 if sudo ./target/release/cableguard-cli -v trace $json_file >> ~/cableguard.$1.log 2>&1; then
     echo "cableguard-cli: Started and created the tunnel."
 else
@@ -41,19 +42,37 @@ else
 fi
 
 # Run `sudo wg show` and capture the interface name
+echo "sudo wg show"
 interface_name=$(sudo wg show | awk '/^interface:/ {print $2}')
 
 # Check if the interface name is not empty
 if [ -n "$interface_name" ]; then
     # Update bring the interface up
-    if sudo ip link set "$interface_name" up  >> ~/cableguard.$1.log 2>&1; then
+    echo "sudo ip link set "$interface_name" up"
+    if sudo ip link set "$interface_name" up >> ~/cableguard.$1.log 2>&1; then
         echo "Bringing up interface: '$interface_name'."
     else
         echo "Error: Could not bring interface up"
         exit 1
     fi
 
+    # Fetching the default gateway IP address
+    DEFAULT_GATEWAY=$(ip route | awk '/default/ {print $3}')
+
+    # Fetching the physical device IP address
+    PHYSICAL_DEVICE_NAME=$(ip -4 route show default | awk '/default via/ {print $5}')
+
+    # Fetching the server IP address
+    SERVER_IP=$(wg show YOUR_WG_INTERFACE_NAME allowed-ips | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}/32\b")
+
+    # Adding route using obtained values
+    echo "sudo ip route add $SERVER_IP via $DEFAULT_GATEWAY dev $PHYSICAL_DEVICE_NAME"
+    sudo ip route add $SERVER_IP via $DEFAULT_GATEWAY dev $PHYSICAL_DEVICE_NAME
+    # sudo ip route del default via 0.0.0.0 dev wlo1
+    # sudo ip route add 134.209.232.255 via 192.168.18.1 dev wlo1
+
     # Update iptables rules
+    echo "sudo ip route add 0.0.0.0/1 dev "$interface_name""
     if sudo ip route add 0.0.0.0/1 dev "$interface_name" >> ~/cableguard.$1.log 2>&1; then
         echo "Default Gateway 0.0.0.0/1 rule: Added for interface '$interface_name'."
     else
@@ -61,6 +80,7 @@ if [ -n "$interface_name" ]; then
         exit 1
     fi
 
+    echo "sudo ip route add 128.0.0.0/1 dev "$interface_name""
     if sudo ip route add 128.0.0.0/1 dev "$interface_name" >> ~/cableguard.$1.log 2>&1; then
         echo "Default Gateway 128.0.0.0/1 rule: Added for interface '$interface_name'."
     else
