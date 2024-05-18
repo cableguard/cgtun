@@ -9,7 +9,7 @@ use cableguard::noise::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use cableguard::device::drop_privileges::drop_privileges;
 // use daemonize::Daemonize;
 use daemonize::{Daemonize, Outcome};
-use base64::encode as encode_base64;
+use base64::encode as base64;
 use hex::{FromHex};
 use serde_json::Value;
 use std::os::unix::net::UnixDatagram;
@@ -324,5 +324,5 @@ fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
         .join("");
     
     let bytes = Vec::from_hex(&hex_string).expect("Error: Invalid Hex string");
-    encode_base64(&bytes)
+    base64(&bytes)
 }
