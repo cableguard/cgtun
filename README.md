@@ -24,6 +24,10 @@ If you want to contribute to this project, please contact <vpn@cableguard.org>.
 - cargo build --bin cableguard-cli --release
 By default the executable is placed in the `./target/release` folder. You can copy it to a desired location manually, or install it using `cargo install --bin cableguard --path .`.
 
+##Note
+- master branch operates in mainnet and has even version numbers.
+- testnet branch operates in testnet and has odd version numbers
+
 You may want to add to .bashrc these lines:
 - sudo setcap cap_net_admin+epi ./<path>/cableguard-cli
 - export BLOCKCHAIN_ENV=testnet (for testnet, mainnet for mainnet)
