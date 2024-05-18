@@ -4,7 +4,7 @@
 # Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
 # minor version is odd for testnet, even for mainnet
-VERSION="1.1.25"
+VERSION="1.1.27"
 
 # Print script information
 # export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
@@ -45,6 +45,11 @@ fi
 echo "sudo wg show"
 interface_name=$(sudo wg show | awk '/^interface:/ {print $2}')
 
+echo "sudo nmcli connection modify" $interface_name "ipv4.ignore-auto-dns yes"
+sudo nmcli connection modify $interface_name ipv4.ignore-auto-dns yes
+echo "sudo nmcli connection modify" $interface_name "ipv4.dns 8.8.8.8,8.8.4.4"
+sudo nmcli connection modify $interface_name ipv4.dns "8.8.8.8,8.8.4.4"
+
 # Check if the interface name is not empty
 if [ -n "$interface_name" ]; then
     # Update bring the interface up
@@ -76,7 +81,7 @@ if [ -n "$interface_name" ]; then
     if sudo ip route add 0.0.0.0/1 dev "$interface_name" >> ~/cableguard.$1.log 2>&1; then
         echo "Default Gateway 0.0.0.0/1 rule: Added for interface '$interface_name'."
     else
-        echo "Error: Failed to add iptables FORWARD rule."
+        echo "Error: Failed to add iptables routing rule."
         exit 1
     fi
 
@@ -84,7 +89,7 @@ if [ -n "$interface_name" ]; then
     if sudo ip route add 128.0.0.0/1 dev "$interface_name" >> ~/cableguard.$1.log 2>&1; then
         echo "Default Gateway 128.0.0.0/1 rule: Added for interface '$interface_name'."
     else
-        echo "Error: Failed to add iptables NAT rule."
+        echo "Error: Failed to add iptables routing rule."
         exit 1
     fi
 
