@@ -4,11 +4,11 @@
 # Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
 # minor version is odd for testnet, even for mainnet
-VERSION="1.5.15"
+VERSION="1.5.21"
 
 # Print script information
 # export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
-echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID " Get help with: "$0" help"
+echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID "thru eth0,  Get help with: "$0" help"
 
 # Check if there are no entry parameters
 if [ $# -eq 0 ]; then
@@ -72,8 +72,8 @@ if [ -n "$interface_name" ]; then
         exit 1
     fi
 
-    # Retrieve the IP address of the specified network interface
-    ip_address=$(ip -o -4 addr show $interface_name | awk '{print $4}' | cut -d'/' -f1)
+    # Retrieve the IP address and class of the specified network interface
+    ip_address=$(ip -o -4 addr show $interface_name | awk '{print $4}')
 
     # Check if the IP address is empty
     if [ -z "$ip_address" ]; then
@@ -92,7 +92,7 @@ if [ -n "$interface_name" ]; then
         exit 1
     fi
 
-    echo "sudo iptables -t nat -A POSTROUTING -s $ip_address -o eth0 -j MASQUERADE"
+    echo "sudo iptables -t nat -A POSTROUTING -s "$ip_address" -o eth0 -j MASQUERADE"
     if sudo iptables -t nat -A POSTROUTING -s $ip_address -o eth0 -j MASQUERADE >> ~/cableguard.$1.log 2>&1; then
         echo "iptables NAT rule: Added for interface '$interface_name' to eth0."
     else
@@ -100,8 +100,8 @@ if [ -n "$interface_name" ]; then
         exit 1
     fi
 
-    echo "sudo resolvectl dns "$interface_name" 4.4.4.4"
-    if sudo resolvectl dns "$interface_name" 4.4.4.4 >> ~/cableguard.$1.log 2>&1; then
+    echo "sudo resolvectl dns "$interface_name" "$dns_server_ip4""
+    if sudo resolvectl dns "$interface_name" "$dns_server_ip4"  >> ~/cableguard.$1.log 2>&1; then
         echo "resolvectl DNS configuration: Set for interface '$interface_name'."
     else
         echo "Error: Failed to set resolvectl DNS configuration."
