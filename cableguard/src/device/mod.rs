@@ -504,6 +504,8 @@ impl Device {
                             x25519::PublicKey::from(peer_u832_pk));
                 } else {
                     // CG: We have to uses namespaces, We are harcoding here that exits is via eth0
+                    
+                    /* Removing postup commands
                     let postupcommand = "iptables -A FORWARD -i ".to_owned() + tunname + " -j ACCEPT";
                     // CG: Second half of the postup command
                     // let postupcommand = "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE";
@@ -518,7 +520,7 @@ impl Device {
                     } else {
                         let stderr = String::from_utf8_lossy(&output.stderr);
                         tracing::trace!("Error: Failed to execute Postup command {}", stderr);
-                    }
+                    Removing postup commands */
                 }
             }
             Err(_) => {tracing::trace!("Error: There is no Own RODiT associated with the account");  }

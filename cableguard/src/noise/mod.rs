@@ -56,7 +56,7 @@ const KEY_LEN: usize = 32;
 
 pub mod constants {
     // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
-    pub const SMART_CONTRACT: &str = "cableguard-org.testnet";
+    pub const SMART_CONTRACT: &str = "frankevych-com.testnet";
     pub const BLOCKCHAIN_NETWORK: &str = ".testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
 }
 
@@ -91,8 +91,8 @@ pub struct RodtMetadata {
     pub cidrblock: String,
     pub listenport: String,
     pub dns: String,
-    pub postup: String,
-    pub postdown: String,
+    // pub postup: String,
+    // pub postdown: String,
     pub allowedips: String,
     pub subjectuniqueidentifierurl: String,
     pub serviceproviderid: String,
@@ -110,8 +110,8 @@ impl Default for RodtMetadata {
             cidrblock: String::default(),
             listenport: String::default(),
             dns: String::default(),
-            postup: String::default(),
-            postdown: String::default(),
+            // postup: String::default(),
+            // postdown: String::default(),
             allowedips: String::default(),
             subjectuniqueidentifierurl: String::default(),
             serviceproviderid: String::default(),
@@ -141,7 +141,8 @@ pub struct Tunn {
     /// The handshake currently in progress
     handshake: handshake::Handshake,
     /// The Own serviceprovider ID to check if it matches upon handshake
-    own_serviceproviderid: String,
+    // CG: The following variable is necessary if mutual checks are performed for every handshake and not only the initial one
+    // own_serviceproviderid: String,
     /// The N_SESSIONS most recent sessions, index is session id modulo N_SESSIONS
     sessions: [Option<session::Session>; N_SESSIONS],
     /// Index of most recently used session

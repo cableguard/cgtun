@@ -4,7 +4,7 @@
 # Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
 # minor version is odd for testnet, even for mainnet
-VERSION="1.1.27"
+VERSION="1.1.29"
 
 # Print script information
 # export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
@@ -67,7 +67,8 @@ if [ -n "$interface_name" ]; then
     # Fetching the physical device IP address
     PHYSICAL_DEVICE_NAME=$(ip -4 route show default | awk '/default via/ {print $5}')
 
-    # Fetching the server IP address
+    # Fetching the server IP address, This is read from the A entry of the vpn server of the RODiT
+    # or read again when running wg subdomain-peer to change server
     SERVER_IP=$(sudo wg show $interface_name | grep "endpoint:" | awk '{print $2}' | cut -d ':' -f 1)
 
     # Adding route using obtained values

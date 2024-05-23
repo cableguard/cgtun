@@ -98,7 +98,7 @@ impl RateLimiter {
             IpAddr::V6(a) => addr_bytes[..].copy_from_slice(&a.octets()[..]),
         }
 
-        // The current cookie for a given IP is the MAC(responder.changing_secret_every_two_minutes, initiator.ip_address)
+        // The current cookie for a given IP is the MAC(responder.changing_secret_every_two_minutes, initiator.ip_addres)
         // First we derive the secret from the current time, the value of cur_counter would change with time.
         let cur_counter = Instant::now().duration_since(self.start_time).as_secs() / COOKIE_REFRESH;
 

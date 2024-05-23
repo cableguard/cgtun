@@ -104,11 +104,11 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::info!("Info: description: {}", rodt.metadata.description);
             tracing::info!("Info: notafter: {}", rodt.metadata.notafter);
             tracing::info!("Info: notbefore: {}", rodt.metadata.notbefore);
-            tracing::info!("Info: notbefore: {}", rodt.metadata.listenport);
+            tracing::info!("Info: listenport: {}", rodt.metadata.listenport);
             tracing::info!("Info: cidrblock: {}", rodt.metadata.cidrblock);
             tracing::info!("Info: dns: {}", rodt.metadata.dns);
-            tracing::info!("Info: postup: {}", rodt.metadata.postup);
-            tracing::info!("Info: postdown: {}", rodt.metadata.postdown);
+            // tracing::info!("Info: postup: {}", rodt.metadata.postup);
+            // tracing::info!("Info: postdown: {}", rodt.metadata.postdown);
             tracing::info!("Info: allowedips: {}", rodt.metadata.allowedips);
             tracing::info!("Info: subjectuniqueidentifierurl {}", rodt.metadata.subjectuniqueidentifierurl);
             tracing::info!("Info: serviceproviderid: {}", rodt.metadata.serviceproviderid);

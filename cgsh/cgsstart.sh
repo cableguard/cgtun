@@ -4,11 +4,11 @@
 # Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
 # minor version is odd for testnet, even for mainnet
-VERSION="1.5.21"
+VERSION="1.5.23"
 
 # Print script information
 # export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
-echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID "thru eth0,  Get help with: "$0" help"
+echo "Version" $VERSION "running on " $BLOCKCHAIN_ENV "at Smart Contract" $NFTCONTRACTID "thru the eth0 interface, Get help with: "$0" help"
 
 # Check if there are no entry parameters
 if [ $# -eq 0 ]; then
@@ -73,15 +73,15 @@ if [ -n "$interface_name" ]; then
     fi
 
     # Retrieve the IP address and class of the specified network interface
-    ip_address=$(ip -o -4 addr show $interface_name | awk '{print $4}')
+    cidr=$(ip -o -4 addr show $interface_name | awk '{print $4}')
 
     # Check if the IP address is empty
-    if [ -z "$ip_address" ]; then
+    if [ -z "$cidr" ]; then
         echo "Failed to retrieve IP address for interface $interface_name"
         exit 1
     fi
 
-    echo "IP address configured on $interface_name: $ip_address"
+    echo "IP address configured on $interface_name: $cidr"
 
     # Update iptables rules
     echo "sudo iptables -A FORWARD -i "$interface_name" -j ACCEPT"
@@ -92,8 +92,8 @@ if [ -n "$interface_name" ]; then
         exit 1
     fi
 
-    echo "sudo iptables -t nat -A POSTROUTING -s "$ip_address" -o eth0 -j MASQUERADE"
-    if sudo iptables -t nat -A POSTROUTING -s $ip_address -o eth0 -j MASQUERADE >> ~/cableguard.$1.log 2>&1; then
+    echo "sudo iptables -t nat -A POSTROUTING -s "$cidr" -o eth0 -j MASQUERADE"
+    if sudo iptables -t nat -A POSTROUTING -s $cidr -o eth0 -j MASQUERADE >> ~/cableguard.$1.log 2>&1; then
         echo "iptables NAT rule: Added for interface '$interface_name' to eth0."
     else
         echo "Error: Failed to add iptables NAT rule."
