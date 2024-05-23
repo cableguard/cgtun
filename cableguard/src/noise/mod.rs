@@ -142,7 +142,7 @@ pub struct Tunn {
     handshake: handshake::Handshake,
     /// The Own serviceprovider ID to check if it matches upon handshake
     // CG: The following variable is necessary if mutual checks are performed for every handshake and not only the initial one
-    // own_serviceproviderid: String,
+    own_serviceproviderid: String,
     /// The N_SESSIONS most recent sessions, index is session id modulo N_SESSIONS
     sessions: [Option<session::Session>; N_SESSIONS],
     /// Index of most recently used session
