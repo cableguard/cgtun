@@ -1090,7 +1090,8 @@ pub fn verify_rodt_islive(
     peer_rodt_notbefore: String,
 ) -> bool {
 
-let naivedatetime_nul = NaiveDateTime::parse_from_str("0000-00-00", "%Y-%m-%d")
+// 1970-01-01 chosen as nul date considering Unix and X.509 standards for timekeeping
+let naivedatetime_nul = NaiveDateTime::parse_from_str("1970-01-01", "%Y-%m-%d")
     .unwrap_or_default(); // Use a default value if parsing fails
 // naivedatetime_nul value is 1970-01-01 00:00:00 
 let naivedate_notafter = NaiveDate::parse_from_str(&peer_rodt_notafter, "%Y-%m-%d")
