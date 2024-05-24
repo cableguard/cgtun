@@ -460,6 +460,12 @@ impl Device {
         // Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
+        if device.config.rodt.token_id.contains(&device.config.rodt.metadata.serviceproviderid) {
+            // Display error message and exit
+            tracing::trace!("Error: root RODiT can´t be used as an endpoint RODiT");
+            std::process::exit(1);
+        }
+
         let account_idargs = "{\"token_id\": \"".to_owned() 
             + &device.config.rodt.metadata.serviceproviderid + "\"}";
         match nearorg_rpc_token(Self::XNET,
