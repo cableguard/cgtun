@@ -469,10 +469,10 @@ impl Device {
                 let mut peer_port: u16 = 0;
                 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
                 let ipresponse = dnssecresolver.lookup_ip(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".").expect("Error: VPN DNS entry not found.
-                    A DNS entry with the IP address of the VPN server {?} in the RODiT must be accessible",serviceprovider_rodt.metadata.subjectuniqueidentifierurl);
+                    A DNS entry with the IP address of the VPN server {} in the RODiT must be accessible",serviceprovider_rodt.metadata.subjectuniqueidentifierurl);
                 let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");   
                 let cfgresponse = dnssecresolver.txt_lookup(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".");
-                cfgresponse.iter().next().expect("Error: No VPN Server Public Key found for {:?} !", serviceprovider_rodt.metadata.subjectuniqueidentifierurl);
+                cfgresponse.iter().next().expect("Error: No VPN Server Public Key found for {} !", serviceprovider_rodt.metadata.subjectuniqueidentifierurl);
                 let mut peer_base64_pk:String="=".to_string();
                 for configs in cfgresponse.iter() {
                     let txt_strings: Vec<String> = configs
