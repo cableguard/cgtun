@@ -468,7 +468,7 @@ impl Device {
             Ok(serviceprovider_rodt) => {
                 let mut peer_port: u16 = 0;
                 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
-                let ipresponse = dnssecresolver.lookup_ip(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".").unwrap();
+                let ipresponse = dnssecresolver.lookup_ip(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+"."); //.unwrap();
                 ipresponse.iter().next().expect("Error: No VPN Server IP address found in DNS entry");
                 let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");   
                 let cfgresponse = dnssecresolver.txt_lookup(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".");
