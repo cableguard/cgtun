@@ -352,10 +352,10 @@ impl Device {
         .expect("Error: Self private key must be set before adding peers");
     
         // Creating the own signature of the rodt_id, this is used to validate posession of the RODiT
-        let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
+        let own_signingkey_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Error: Invalid private key bytes");
 
-        let rodt_id_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
+        let rodt_id_signature = own_signingkey_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
         
         tracing::info!("Info: Own RODiT ID signature {}",rodt_id_signature);
 
@@ -799,9 +799,9 @@ impl Device {
                                                             .expect("Error: Self private key must be set before adding peers")
                                                             .clone();
                                                         let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);
-                                                        let own_keypair_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
+                                                        let own_signingkey_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
                                                             .expect("Error: Invalid private key bytes");
-                                                        let rodt_id_signature = own_keypair_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
+                                                        let rodt_id_signature = own_signingkey_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
                                                         let next_peer_index = device.next_peer_index().clone();
                                                         let tunn = Tunn::new(
                                                             device_key_pair.0.clone(), // Own X25519 private key
