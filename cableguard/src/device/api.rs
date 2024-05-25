@@ -304,7 +304,6 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
     // get command requires an empty line, but there is no reason to be religious about it
     if let Some(ref own_static_key_pair) = thisnetworkdevice.key_pair {
         writeln!(writerbufferdevice, "own_public_key={}", encode_hex(own_static_key_pair.1.as_bytes()));
-        // writeln!(writerbufferdevice, "own_private_key={}", encode_hex(own_static_key_pair.0.as_bytes()));
     }
 
     if thisnetworkdevice.listen_port != 0 {
@@ -317,9 +316,9 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
 
     if BLOCKCHAIN_NETWORK == "." {
         writeln!(writerbufferdevice, "bcnetwork={}", "mainnet as a dot");
-    } else if BLOCKCHAIN_NETWORK == "mainnet" {
+    } else if BLOCKCHAIN_NETWORK == ".mainnet." {
         writeln!(writerbufferdevice, "bcnetwork=={}", "mainnet");
-    } else if BLOCKCHAIN_NETWORK == "testnet" {
+    } else if BLOCKCHAIN_NETWORK == ".testnet." {
         writeln!(writerbufferdevice, "bcnetwork=={}", "testnet");
     }
     writeln!(writerbufferdevice, "rodtaccountid={}", thisnetworkdevice.config.rodt.owner_id);
