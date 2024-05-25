@@ -22,7 +22,7 @@ use trust_dns_resolver::config::*;
 use ed25519_dalek::{PublicKey,Verifier,Signature};
 use hex::FromHex;
 use regex::Regex;
-use base64::{decode};
+use base64::decode as base64decode;
 use chrono::{NaiveDate,NaiveDateTime,NaiveTime};
 // Moving timestamp function
 use reqwest::blocking::Client;
@@ -1046,7 +1046,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
             .try_into()
             .expect("Error: Invalid byte array length");
         
-        let peer_serviceprovider_bytes_signature = decode(&peer_serviceprovidersignature).expect("Error: Failed Base64 decoding");
+        let peer_serviceprovider_bytes_signature = base64decode(&peer_serviceprovidersignature).expect("Error: Failed Base64 decoding");
 
         let peer_serviceprovider_u864_signature: [u8; RODT_ID_SIGNATURE_SZ] = peer_serviceprovider_bytes_signature
             .as_slice()

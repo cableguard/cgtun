@@ -198,7 +198,7 @@ checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
 
 [[package]]
 name = "cableguard"
-version = "0.90.35"
+version = "0.90.47"
 dependencies = [
  "aead",
  "base64 0.13.1",
@@ -238,7 +238,7 @@ dependencies = [
 
 [[package]]
 name = "cableguard-cli"
-version = "0.90.35"
+version = "0.90.47"
 dependencies = [
  "base64 0.13.1",
  "bs58",

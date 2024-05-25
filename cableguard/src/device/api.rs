@@ -17,7 +17,8 @@ use crate::device::IpAddr;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::convert::TryInto;
-use base64::{decode,URL_SAFE_NO_PAD};
+use base64::decode as base64decode;
+use base64::URL_SAFE_NO_PAD;
 use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use reqwest::blocking::Client;
@@ -442,7 +443,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
 
                                 // Take the subdomain_endpoint as endpoint of a new peer
                                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Failed Base64 decoding");
+                                let peer_bytes_pk = base64decode(peer_base64_pk).expect("Error: Failed Base64 decoding");
                                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
                                     .as_slice()
                                     .try_into()

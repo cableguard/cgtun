@@ -16,7 +16,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
-use base64::{decode};
+use base64::decode as base64decode;
 use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use zeroize::Zeroize;
@@ -499,7 +499,7 @@ impl Device {
                     peer_port = peer_str_port.parse().unwrap_or(0);
                     }
                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Failed Base64 decoding");
+                let peer_bytes_pk = base64decode(peer_base64_pk).expect("Error: Failed Base64 decoding");
                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
                     .as_slice()
                     .try_into()
@@ -1202,8 +1202,6 @@ impl Default for IndexLfsr {
 
 // This function takes a Ed25519 public key in Hex of 32 bytes and creates a matching X25519 public key
 pub fn ed2x_public_key_bytes(ed25519_pub_bytes: [u8; 32]) -> [u8; 32] {
-    // Parse the input key string as a hex-encoded Ed25519 public key
-    // let ed25519_pub_bytes = hex::decode(key).expect("Error: Invalid hexadecimal string");
 
     // Convert the Ed25519 public key bytes to Montgomery form
     let ed25519_pub_array: [u8; 32] = ed25519_pub_bytes.as_slice().try_into().expect("Error: Invalid length");
@@ -1215,16 +1213,6 @@ pub fn ed2x_public_key_bytes(ed25519_pub_bytes: [u8; 32]) -> [u8; 32] {
 
    x25519_pub_key
 }
-
-/*   fn from_ed25519(pk: &ed25519::PublicKey) -> Self {
-        PublicKey(X25519(
-            CompressedEdwardsY(pk.encode())
- 
-    /// Encode the public key into a byte array in compressed form, i.e.
-    /// where one coordinate is represented by a single bit.
-    pub fn encode(&self) -> [u8; 32] {
-        self.0.to_bytes()
-    }*/
 
 // This function takes a Ed25519 private key of 64 bytes and creates a matching X25519 private key
 pub fn ed2x_private_key_bytes(some_bytes_ed25519_private_key: [u8; 64]) -> x25519::StaticSecret {
