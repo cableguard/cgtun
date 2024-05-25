@@ -315,12 +315,13 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
     }
 
     if BLOCKCHAIN_NETWORK == "." {
-        writeln!(writerbufferdevice, "bcnetwork={}", "mainnet as a dot");
+        writeln!(writerbufferdevice, "bcnetwork={}", "mainnet");
     } else if BLOCKCHAIN_NETWORK == ".mainnet." {
-        writeln!(writerbufferdevice, "bcnetwork=={}", "mainnet");
+        writeln!(writerbufferdevice, "bcnetwork={}", "mainnet");
     } else if BLOCKCHAIN_NETWORK == ".testnet." {
-        writeln!(writerbufferdevice, "bcnetwork=={}", "testnet");
+        writeln!(writerbufferdevice, "bcnetwork={}", "testnet");
     }
+    writeln!(writerbufferdevice, "dnsresolver={}", thisnetworkdevice.config.rodt.metadata.dns);
     writeln!(writerbufferdevice, "rodtaccountid={}", thisnetworkdevice.config.rodt.owner_id);
     writeln!(writerbufferdevice, "rodtpublickeybase64={}", base64encode(thisnetworkdevice.config.x25519_public_key));
 
