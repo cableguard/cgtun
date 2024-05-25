@@ -72,7 +72,7 @@ impl TunSocket {
             });
         }
 
-        // This TUN creation is not compatible with namespaces
+        // This TUN creation is compatible with namespaces with the O_CLOEXEC) flag
         let fd = match unsafe { open(b"/dev/net/tun\0".as_ptr() as _, O_RDWR | O_CLOEXEC) } {
             -1 => return Err(Error::Socket(io::Error::last_os_error())),
             fd => fd,
