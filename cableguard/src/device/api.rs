@@ -160,8 +160,8 @@ pub fn nearorg_rpc_state(
     let response_text: String = response.text()?; // Convert the ASCII array to the String type
     let parsed_json: Value = serde_json::from_str(&response_text).unwrap(); // Deserialize the string into a JSON
     if parsed_json.to_string().contains("does not exist while viewing") {
-        tracing::trace!("Error: The account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR");
-        return Err("Error: The account does not exist in the blockchain".into());
+        tracing::trace!("Error: The account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network");
+        return Err("Error: The account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network".into());
     }
     Ok(()) // This function returns the RODT in the parsed_json variable but we are not currently doing anything with it in the main function
 }

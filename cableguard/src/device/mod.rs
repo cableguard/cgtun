@@ -366,7 +366,6 @@ impl Device {
             self.config.rodt.token_id.clone(), // Own RODiT ID
             self.config.rodt.metadata.serviceproviderid.clone(),
             rodt_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
-            // CG: Own declared RODiT ID Signature with own Ed25519 private key
             keepalive,
             next_peer_index,
             None,
@@ -485,7 +484,7 @@ impl Device {
                         .iter()
                         .map(|txt_data| txt_data.to_string())
                         .collect();
-                    // CG: Fix: Only 1 Public Key per server should be accepted
+                    // Only 1 Public Key per server should be accepted
                     let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
                     // Obtain the public key
                     let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="
@@ -510,24 +509,6 @@ impl Device {
                         device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
                             x25519::PublicKey::from(peer_u832_pk));
                 } else {
-                    // CG: We have to uses namespaces, We are harcoding here that exits is via eth0
-                    
-                    /* Removing postup commands
-                    let postupcommand = "iptables -A FORWARD -i ".to_owned() + tunname + " -j ACCEPT";
-                    // CG: Second half of the postup command
-                    // let postupcommand = "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE";
-                    let output = Command::new("bash")
-                        .arg("-c")
-                        .arg(postupcommand)
-                        .output()
-                        .expect("Error: Failed to execute postup command");
-                    if output.status.success() {
-                        let stdout = String::from_utf8_lossy(&output.stdout);
-                        tracing::info!("Info: Postup command executed successfully {}", stdout);
-                    } else {
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        tracing::trace!("Error: Failed to execute Postup command {}", stderr);
-                    Removing postup commands */
                 }
             }
             Err(_) => {tracing::trace!("Error: There is no Own RODiT associated with the account");  }
@@ -792,9 +773,6 @@ impl Device {
                                                     && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
                                                     && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                                                     && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
-                                                        // CG: Self configuring the DNS
-                                                        // CG: Not taking connections out of the bandwith, network or location limits
-                                                        // Adding the new peer here
                                                         let device_key_pair = device.key_pair.as_ref()
                                                             .expect("Error: Self private key must be set before adding peers")
                                                             .clone();
@@ -809,8 +787,7 @@ impl Device {
                                                             None,
                                                             device.config.rodt.token_id.clone(), // Own RODiT ID
                                                             device.config.rodt.metadata.serviceproviderid.clone(),
-                                                            rodt_id_signature.to_bytes(), // Own RODiT ID Signature with own Ed25519 private key
-                                                            // CG: Own declared RODiT ID Signature with own Ed25519 private key
+                                                            rodt_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
                                                             None,
                                                             next_peer_index,
                                                             None,

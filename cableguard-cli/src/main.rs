@@ -139,8 +139,7 @@ fn main() {
         Ok(result) => { result
         }
         Err(err) => {
-            // CG: Show a warning if the account is not primed or the account has not RODiT
-            println!("Error: Account has no NEAR balance): {}", err);
+            println!("Error: Account has no NEAR balance in {}, error {}", BLOCKCHAIN_NETWORK, err);
             std::process::exit(1);
         }
     }
