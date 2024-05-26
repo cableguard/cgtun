@@ -139,7 +139,7 @@ fn main() {
         Ok(result) => { result
         }
         Err(err) => {
-            println!("Error: Account has no NEAR balance in {}, error {}", BLOCKCHAIN_NETWORK, err);
+            println!("Error: The NEAR account has no balance in {}, {}", BLOCKCHAIN_NETWORK, err);
             std::process::exit(1);
         }
     }

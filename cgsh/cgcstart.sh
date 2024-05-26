@@ -4,7 +4,7 @@
 # Copyright (C) 2023 Vicente Aceituno Canal vpn@cableguard.org All Rights Reserved.
 
 # minor version is odd for testnet, even for mainnet
-VERSION="1.1.29"
+VERSION="1.1.31"
 
 # Print script information
 # export NFTCONTRACTID=$(cat ~/cgtun/cgsh/account)
@@ -47,6 +47,20 @@ interface_name=$(sudo wg show | awk '/^interface:/ {print $2}')
 
 echo "sudo nmcli connection modify" $interface_name "ipv4.ignore-auto-dns yes"
 sudo nmcli connection modify $interface_name ipv4.ignore-auto-dns yes
+
+# Extract the DNS resolver from the wg show command output
+dns_resolver=$(sudo wg show | grep "DNS Resolver" | awk '{print $NF}')
+
+# Check if the DNS resolver was found
+if [ -z "$dns_resolver" ]; then
+    echo "DNS Resolver not found in wg show output"
+    exit 1
+fi
+
+# Modify the nmcli connection with the extracted DNS resolver
+echo "sudo nmcli connection modify $interface_name ipv4.dns $dns_resolver"
+sudo nmcli connection modify $interface_name ipv4.dns "$dns_resolver"
+
 echo "sudo nmcli connection modify" $interface_name "ipv4.dns 8.8.8.8,8.8.4.4"
 sudo nmcli connection modify $interface_name ipv4.dns "8.8.8.8,8.8.4.4"
 

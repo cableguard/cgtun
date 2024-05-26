@@ -32,7 +32,7 @@ if [ "$1" == "genaccount" ]; then
     near_state=$(near state "$1")
     balance=$(echo "$near_state" | awk -F ': ' '/formattedAmount/ {print $2}')
     if [ -z "$balance" ]; then
-        echo "The account does not exist in the blockchain as it has no balance. You need to initialize it with at least 0.01 NEAR."
+        echo "The NEAR account does not exist in the blockchain as it has no balance. You need to initialize it with at least 0.01 NEAR."
     else
         echo "Account $1"
         echo "Balance: '$balance'"
@@ -82,7 +82,7 @@ if [ -n "$1" ]; then
     near_state=$(near state "$1")
     balance=$(echo "$near_state" | awk -F ': ' '/formattedAmount/ {print $2}')
     if [ -z "$balance" ]; then
-        echo "The account does not exist in the blockchain as it has no balance. You need to initialize it with at least 0.01 NEAR."
+        echo "The NEAR account does not exist in the blockchain as it has no balance. You need to initialize it with at least 0.01 NEAR."
     else
         echo "Account $1"
         echo "Balance: '$balance'"
