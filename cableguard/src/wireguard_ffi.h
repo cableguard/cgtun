@@ -30,7 +30,7 @@ struct wireguard_result
 
 struct stats
 {
-    int64_t time_since_last_handshake;
+    int64_t duration_since_last_handshake;
     size_t tx_bytes;
     size_t rx_bytes;
     float estimated_loss;

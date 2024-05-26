@@ -345,7 +345,7 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
             writeln!(writerbufferdevice, "allowed_ip={}/{}", ip, cidr);
         }
 
-        if let Some(time) = peer.time_since_last_handshake() {
+        if let Some(time) = peer.duration_since_last_handshake() {
             writeln!(writerbufferdevice, "last_handshake_time_sec={}", time.as_secs());
             writeln!(writerbufferdevice, "last_handshake_time_nsec={}", time.subsec_nanos());
         }

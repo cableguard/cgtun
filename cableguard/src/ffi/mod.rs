@@ -55,7 +55,7 @@ pub struct wireguard_result {
 
 #[repr(C)]
 pub struct stats {
-    pub time_since_last_handshake: i64,
+    pub duration_since_last_handshake: i64,
     pub tx_bytes: usize,
     pub rx_bytes: usize,
     pub estimated_loss: f32,
@@ -390,7 +390,7 @@ pub unsafe extern "C" fn wireguard_stats(tunnel: *const Mutex<Tunn>) -> stats {
     let tunnel = tunnel.as_ref().unwrap().lock();
     let (time, tx_bytes, rx_bytes, estimated_loss, estimated_rtt) = tunnel.stats();
     stats {
-        time_since_last_handshake: time.map(|t| t.as_secs() as i64).unwrap_or(-1),
+        duration_since_last_handshake: time.map(|t| t.as_secs() as i64).unwrap_or(-1),
         tx_bytes,
         rx_bytes,
         estimated_loss,

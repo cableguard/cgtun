@@ -153,8 +153,8 @@ impl Peer {
         self.allowed_ips_listed.iter().map(|(_, ip, cidr)| (ip, cidr))
     }
 
-    pub fn time_since_last_handshake(&self) -> Option<std::time::Duration> {
-        self.tunnel.time_since_last_handshake()
+    pub fn duration_since_last_handshake(&self) -> Option<std::time::Duration> {
+        self.tunnel.duration_since_last_handshake()
     }
 
     pub fn persistent_keepalive(&self) -> Option<u16> {
