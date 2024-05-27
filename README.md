@@ -30,7 +30,7 @@ You may want to add to .bashrc these lines:
 
 ## How to Install from .deb package
 wget https://cableguard.fra1.digitaloceanspaces.com/cableguard-cli_0.89.99_amd64.deb
-sudo apt install ./cableguard-cli_0.90.51_amd64.deb
+sudo apt install ./cableguard-cli_0.90.53_amd64.deb
 
 ## How to Use
 To start a tunnel use:

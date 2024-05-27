@@ -239,28 +239,6 @@ fn main() {
                 }
             }
 
-        /* Create a daemon 0.4.1 process and configure it
-        let daemonize = Daemonize::new()
-            .working_directory("/tmp")
-            .exit_action(move || {
-                // Perform an action when the daemon process exits
-                let mut b = [0u8; 1];
-                if sock2.recv(&mut b).is_ok() && b[0] == 1 {
-                    println!("Info: CableGuard started successfully");
-                } else {
-                    println!("Error: CableGuard Failed to start. Check if the capabilities are set and you are running with enough privileges.");
-                    exit(1);
-                };
-            });
-    
-        // Start the daemon process
-        match daemonize.start() {
-            Ok(_) => println!("Info: CableGuard started successfully"),
-            Err(e) => {
-                println!(error = ?e);
-                exit(1);
-            }
-        } */
     } else {
         // Running in foreground mode
         tracing_subscriber::fmt()

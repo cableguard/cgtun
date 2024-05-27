@@ -561,7 +561,6 @@ impl Device {
     }
 
     fn set_key_pair(&mut self, own_staticsecret_private_key: x25519::StaticSecret) {
-        let mut bad_peers = vec![];
 
         let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
 
@@ -577,30 +576,16 @@ impl Device {
         let rate_limiter = Arc::new(RateLimiter::new(&own_publickey_public_key, HANDSHAKE_RATE_LIMIT));
 
         for peer in self.peers.values_mut() {
-            let mut peer_mut = peer.lock();
-        
-            if peer_mut
-                .tunnel
-                .set_static_private(
-                    own_staticsecret_private_key.clone(),
-                    own_publickey_public_key,
-                    Some(Arc::clone(&rate_limiter)),
-                )
-                .is_err()
-            {        
-                // In case we encounter an Error, we will remove that peer
-                // An Error will be a result of a bad public key/secret key combination
-                bad_peers.push(Arc::clone(peer));
-            }
+            peer.lock().tunnel.set_static_private(
+                own_staticsecret_private_key.clone(),
+                own_publickey_public_key,
+                Some(Arc::clone(&rate_limiter)),
+            )
         }
 
         self.key_pair = own_key_pair;
         self.rate_limiter = Some(rate_limiter);
 
-        // Remove all the bad peers
-        for _ in bad_peers {
-            unimplemented!();
-        }
     }
 
     #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]

@@ -8,7 +8,7 @@
 //! C bindings for the CableGuard library
 use super::noise::{Tunn, TunnResult};
 use crate::x25519::{PublicKey, StaticSecret};
-use base64::decode as base64decode,
+use base64::decode as base64decode;
 use base64::encode as base64encode;
 use hex::encode as encode_hex;
 use libc::{raise, SIGSEGV};
