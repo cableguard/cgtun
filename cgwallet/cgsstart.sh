@@ -50,7 +50,7 @@ fi
 
 # Run cableguard and start the tunnel
 echo "sudo ./target/release/cableguard-cli -v trace $json_file >> ~/cableguard.$1.log 2>&1"
-if sudo ./target/release/cableguard-cli -v trace $json_file >> ~/cableguard.$1.log 2>&1; then
+if sudo ~/cgtun/target/release/cableguard-cli -v trace $json_file >> ~/cableguard.$1.log 2>&1; then
     echo "cableguard-cli: Started and created the tunnel."
 else
     echo "Error: cableguard-cli failed to start."
