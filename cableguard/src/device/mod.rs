@@ -1075,7 +1075,7 @@ impl Device {
                 // CG: This bit is not tested
                 Ok(peer_keybytes_key) => {
                     let peer_hex_public_key = encode_hex(peer_keybytes_key.0);
-                    tracing::info!("Info: Peer Public Key api_set_internal {:?}", peer_hex_public_key);
+                    tracing::info!("Info: Peer Public Key api_set_internal {}", peer_hex_public_key);
                         self.api_set_subdomain_peer_internal(Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080)),x25519::PublicKey::from(peer_keybytes_key.0));
                         return;
                     }
