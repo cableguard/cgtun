@@ -90,7 +90,7 @@ fn main() {
     tracing::subscriber::set_global_default(subscriber)
     .expect("Error: Failed to set subscriber");
     */
-    
+
     #[cfg(target_os = "linux")]
     let uapi_fd: i32 = matches.value_of_t("uapi-fd").unwrap_or_else(|e| e.exit());
     let n_threads: usize = matches.value_of_t("threads").unwrap_or_else(|e| e.exit());
@@ -123,10 +123,10 @@ fn main() {
     };
 
     // Obtain the value of the "account_id" field, include it in a json string
-    let account_id = json["account_id"].as_str().expect("Error: Invalid account_id value");
+    let account_id = json["implicit_account_id"].as_str().expect("Error: Invalid account_id value");
 
     // Obtain the value of the "private_key" field, include it in a json string and encode it as Base58
-    let own_static_base58_private_ed25519_key = json["private_key"].as_str().expect("Error: Invalid Private_key value");   
+    let own_static_base58_private_ed25519_key = json["private_key"].as_str().expect("Error: Invalid Private_key value");
     let own_static_base58_private_ed25519_key = own_static_base58_private_ed25519_key.trim_start_matches("ed25519:");
 
     // Initialize a RODiT object
@@ -158,7 +158,7 @@ fn main() {
     }
 
     // Create an Interface Name derived from the token_id ULID,
-    // with a max length of 15 characters, by default utun+last 11 of ULID for operating systems compatibility, 
+    // with a max length of 15 characters, by default utun+last 11 of ULID for operating systems compatibility,
     let tun_name = format!("utun{}", &rodt.token_id[rodt.token_id.len() - 11..]).to_lowercase();
 
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
@@ -169,24 +169,24 @@ fn main() {
 
     // Create a X25519 private key from a Private Key Ed25519 of 64 bytes
     let own_staticsecret_private_x25519_key = ed2x_private_key_bytes(own_static_bytes_private_ed25519_key.clone().try_into().unwrap());
-    let own_static_bytes_private_x25519_key = own_staticsecret_private_x25519_key.as_bytes();  
+    let own_static_bytes_private_x25519_key = own_staticsecret_private_x25519_key.as_bytes();
 
     // Generate the X25519 public key from the X25519 private key of 32 bytes
     let own_static_bytes_public_x25519_key = skx2pkx(own_staticsecret_private_x25519_key.clone());
     // let own_static_b64_public_x25519_key = hex_to_base64(&own_static_bytes_public_x25519_key);
-    
+
     // Create a socketpair to communicate between forked processes
     let (sock1, sock2) = UnixDatagram::pair().unwrap();
     let _ = sock1.set_nonblocking(true);
-    
+
     let _guard;
-    
+
     tracing::trace!("Info: To create or display available RODiT Blockchain Directory accounts use: \"rodtwallet.sh\"");
 
     if background {
         // Running in background mode
         let log = matches.value_of("log").unwrap();
-    
+
         // Check if the log file exists, open it in append mode if it does
         // Otherwise, create a new log file
         let log_file = if let Ok(metadata) = std::fs::metadata(&log) {
@@ -202,18 +202,18 @@ fn main() {
             File::create(&log)
         }
         .unwrap_or_else(|err| panic!("Error: Failed to open log file {}: {}", log, err));
-    
+
         // Create a non-blocking log writer and get a guard to prevent dropping it
         let (non_blocking, guard) = tracing_appender::non_blocking(log_file);
         _guard = guard;
-    
+
         // Initialize the logging system with the configured log level and writer
         tracing_subscriber::fmt()
             .with_max_level(log_level)
             .with_writer(non_blocking)
             .with_ansi(false)
             .init();
-    
+
         // daemonize 0.5.0 version
             // Create a daemon process and configure it
             let daemonize = Daemonize::new().working_directory("/tmp");
@@ -263,7 +263,7 @@ fn main() {
         x25519_private_key: *own_static_bytes_private_x25519_key,
         x25519_public_key: own_static_bytes_public_x25519_key,
     };
-    
+
     // Initialize the device handle with the specified tunnel name and configuration
     let mut device_handle: DeviceHandle = match DeviceHandle::new(&tun_name, &config) {
         Ok(d) => d,
@@ -274,7 +274,7 @@ fn main() {
             exit(1);
         }
     };
-    
+
     if !matches.is_present("disable-drop-privileges") {
         // Drop privileges if not disabled
         if let Err(e) = drop_privileges() {
@@ -283,15 +283,15 @@ fn main() {
             exit(1);
         }
     }
-    
+
     // Notify parent that tunnel initiation success
     sock1.send(&[1]).unwrap();
     drop(sock1);
-    
+
     println!("Info: CableGuard will hand over to TUN handle");
-    
+
     // Wait for the device handle to finish processing
-    device_handle.wait();    
+    device_handle.wait();
 }
 
 fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
@@ -299,7 +299,7 @@ fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
         .map(|byte| format!("{:02X}", byte))
         .collect::<Vec<String>>()
         .join("");
-    
+
     let bytes = Vec::from_hex(&hex_string).expect("Error: Invalid Hex string");
     base64encode(&bytes)
 }
