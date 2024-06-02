@@ -16,7 +16,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
-use base64::{decode};
+use std::process::exit;
+use base64::decode as base64decode;
 use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use zeroize::Zeroize;
@@ -118,7 +119,7 @@ pub struct DeviceHandle {
     threads: Vec<JoinHandle<()>>,
 }
 
-//#[derive(Debug, Clone, Copy)] 
+//#[derive(Debug, Clone, Copy)]
 #[derive(Clone)]
 pub struct DeviceConfig {
     pub n_threads: usize,
@@ -299,7 +300,7 @@ impl Drop for DeviceHandle {
 }
 
 impl Device {
-    
+
     const XNET:&'static str= BLOCKCHAIN_NETWORK;
     const SMART_CONTRACT:&'static str = SMART_CONTRACT;
 
@@ -350,13 +351,13 @@ impl Device {
         .key_pair
         .as_ref()
         .expect("Error: Self private key must be set before adding peers");
-    
+
         // Creating the own signature of the rodt_id, this is used to validate posession of the RODiT
-        let own_keypair_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
+        let own_signingkey_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Error: Invalid private key bytes");
 
-        let rodt_id_signature = own_keypair_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
-        
+        let rodt_id_signature = own_signingkey_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
+
         tracing::info!("Info: Own RODiT ID signature {}",rodt_id_signature);
 
         let tunn = Tunn::new(
@@ -366,13 +367,12 @@ impl Device {
             self.config.rodt.token_id.clone(), // Own RODiT ID
             self.config.rodt.metadata.serviceproviderid.clone(),
             rodt_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
-            // CG: Own declared RODiT ID Signature with own Ed25519 private key
             keepalive,
             next_peer_index,
             None,
         )
         .unwrap();
-        
+
         // Creation and insertion of a peer
         let peer = Peer::new(tunn, next_peer_index, endpoint, allowed_ips_listed, preshared_key);
         let peer = Arc::new(Mutex::new(peer));
@@ -442,6 +442,7 @@ impl Device {
 
         // We are adding here addtional device building:
         // add IPs, set private key, add initial peer
+        // "/24" for a maximum of 254 client addresses
         let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ tunname;
         let output = Command::new("bash")
             .arg("-c")
@@ -459,7 +460,13 @@ impl Device {
         // Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
-        let account_idargs = "{\"token_id\": \"".to_owned() 
+        if device.config.rodt.token_id.contains(&device.config.rodt.metadata.serviceproviderid) {
+            // Display error message and exit
+            tracing::trace!("Error: root RODiT can´t be used as an endpoint RODiT");
+            std::process::exit(1);
+        }
+
+        let account_idargs = "{\"token_id\": \"".to_owned()
             + &device.config.rodt.metadata.serviceproviderid + "\"}";
         match nearorg_rpc_token(Self::XNET,
             Self::SMART_CONTRACT,
@@ -467,21 +474,33 @@ impl Device {
             Ok(serviceprovider_rodt) => {
                 let mut peer_port: u16 = 0;
                 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
-                let ipresponse = dnssecresolver.lookup_ip(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".").unwrap();
-                let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");   
+                let ipresponse = dnssecresolver.lookup_ip(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".")
+                    .expect(&format!("Error: VPN DNS entry not found. A DNS entry with the IP address of the VPN server {} in the RODiT must be accessible", serviceprovider_rodt.metadata.subjectuniqueidentifierurl));
+                let ipaddress = ipresponse.iter().next().expect(&format!("Error: No IP address found in the VPN Server DNS entry {}", serviceprovider_rodt.metadata.subjectuniqueidentifierurl));
                 let cfgresponse = dnssecresolver.txt_lookup(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".");
-                cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
+                cfgresponse.iter().next().expect(&format!("Error: No VPN Server Public Key found for {} !",serviceprovider_rodt.metadata.subjectuniqueidentifierurl));
                 let mut peer_base64_pk:String="=".to_string();
                 for configs in cfgresponse.iter() {
                     let txt_strings: Vec<String> = configs
                         .iter()
                         .map(|txt_data| txt_data.to_string())
                         .collect();
-                    // CG: Fix: Only 1 Public Key per server should be accepted
+                    // Only 1 Public Key per server should be accepted
                     let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
                     // Obtain the public key
-                    let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="
+                    let pk_start = match peer_configs.find("pk=") {
+                        Some(pos) => pos + 3, // Add 3 to skip "pk="
+                        None => {tracing::trace!("Error: No Public Key found in the default VPN Server");
+                            exit(1);
+                            }
+                    };
+
                     let pk_end = peer_configs.find(";").unwrap_or(peer_configs.len());
+
+                    if pk_start > pk_end {
+                        tracing::trace!("Error: Malformed public key string.");
+                        exit(1);
+                    }
                     peer_base64_pk = peer_configs[pk_start..pk_end].to_string();
                     // Obtain the port
                     let port_start = peer_configs.find("port=").unwrap_or(0) + 5; // Add 5 to skip "port="
@@ -491,34 +510,17 @@ impl Device {
                     peer_port = peer_str_port.parse().unwrap_or(0);
                     }
                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Failed Base64 decoding");
+                let peer_bytes_pk = base64decode(peer_base64_pk).expect("Error: Failed Base64 decoding");
                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
                     .as_slice()
                     .try_into()
                     .expect("Invalid public key length");
                 // Not adding the server peer if WE are the server peer, running postup instead
-                println!("Own public key {:?} / Peer public key {:?}", device.config.x25519_public_key, peer_u832_pk);
                 if device.config.x25519_public_key != peer_u832_pk {
                         // It is ok to add a peer without checks as they are performed during handshake
                         device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
                             x25519::PublicKey::from(peer_u832_pk));
                 } else {
-                    // CG: We have to uses namespaces, We are harcoding here that exits is via eth0
-                    let postupcommand = "iptables -A FORWARD -i ".to_owned() + tunname + " -j ACCEPT";
-                    // CG: Second half of the postup command
-                    // let postupcommand = "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE";
-                    let output = Command::new("bash")
-                        .arg("-c")
-                        .arg(postupcommand)
-                        .output()
-                        .expect("Error: Failed to execute postup command");
-                    if output.status.success() {
-                        let stdout = String::from_utf8_lossy(&output.stdout);
-                        tracing::info!("Info: Postup command executed successfully {}", stdout);
-                    } else {
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        tracing::trace!("Error: Failed to execute Postup command {}", stderr);
-                    }
                 }
             }
             Err(_) => {tracing::trace!("Error: There is no Own RODiT associated with the account");  }
@@ -571,7 +573,6 @@ impl Device {
     }
 
     fn set_key_pair(&mut self, own_staticsecret_private_key: x25519::StaticSecret) {
-        let mut bad_peers = vec![];
 
         let own_publickey_public_key = x25519::PublicKey::from(&own_staticsecret_private_key);
 
@@ -587,30 +588,16 @@ impl Device {
         let rate_limiter = Arc::new(RateLimiter::new(&own_publickey_public_key, HANDSHAKE_RATE_LIMIT));
 
         for peer in self.peers.values_mut() {
-            let mut peer_mut = peer.lock();
-        
-            if peer_mut
-                .tunnel
-                .set_static_private(
-                    own_staticsecret_private_key.clone(),
-                    own_publickey_public_key,
-                    Some(Arc::clone(&rate_limiter)),
-                )
-                .is_err()
-            {        
-                // In case we encounter an Error, we will remove that peer
-                // An Error will be a result of a bad public key/secret key combination
-                bad_peers.push(Arc::clone(peer));
-            }
+            peer.lock().tunnel.set_static_private(
+                own_staticsecret_private_key.clone(),
+                own_publickey_public_key,
+                Some(Arc::clone(&rate_limiter)),
+            )
         }
 
         self.key_pair = own_key_pair;
         self.rate_limiter = Some(rate_limiter);
 
-        // Remove all the bad peers
-        for _ in bad_peers {
-            unimplemented!();
-        }
     }
 
     #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))]
@@ -728,7 +715,7 @@ impl Device {
             .stop_notification(self.yield_notice.as_ref().unwrap())
     }
 
-    
+
     fn register_udp_handler(&self, udp: socket2::Socket) -> Result<(), Error> {
         self.queue.new_event(
         udp.as_raw_fd(),
@@ -763,7 +750,7 @@ impl Device {
                             }
                             Err(_) => continue,
                         };
-                        
+
                         let peer = match parsed_packet {
                             Packet::HandshakeInit(p) => {
                                 let own_copy_bytes_private_key = own_bytes_private_key.clone();
@@ -780,19 +767,16 @@ impl Device {
                                                     && verify_rodt_isamatch(device.config.rodt.metadata.serviceproviderid.clone(),
                                                         rodt.metadata.serviceprovidersignature.clone(),
                                                         *p.rodt_id)
-                                                    && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
+                                                    && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore)
                                                     && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                                                     && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
-                                                        // CG: Self configuring the DNS
-                                                        // CG: Not taking connections out of the bandwith, network or location limits
-                                                        // Adding the new peer here
                                                         let device_key_pair = device.key_pair.as_ref()
                                                             .expect("Error: Self private key must be set before adding peers")
                                                             .clone();
                                                         let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);
-                                                        let own_keypair_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
+                                                        let own_signingkey_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
                                                             .expect("Error: Invalid private key bytes");
-                                                        let rodt_id_signature = own_keypair_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
+                                                        let rodt_id_signature = own_signingkey_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
                                                         let next_peer_index = device.next_peer_index().clone();
                                                         let tunn = Tunn::new(
                                                             device_key_pair.0.clone(), // Own X25519 private key
@@ -800,8 +784,7 @@ impl Device {
                                                             None,
                                                             device.config.rodt.token_id.clone(), // Own RODiT ID
                                                             device.config.rodt.metadata.serviceproviderid.clone(),
-                                                            rodt_id_signature.to_bytes(), // Own RODiT ID Signature with own Ed25519 private key
-                                                            // CG: Own declared RODiT ID Signature with own Ed25519 private key
+                                                            rodt_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
                                                             None,
                                                             next_peer_index,
                                                             None,
@@ -821,7 +804,7 @@ impl Device {
                                                             device.listbyip_peer_index.insert(*addr, *cidr as _, Arc::clone(&peermutex));
                                                         }
                                                         allowed_ips_listed.clear();
-                                                        if let Some(peer) = device.peers.get(&peer_publickey_public_key) {                                                    
+                                                        if let Some(peer) = device.peers.get(&peer_publickey_public_key) {
                                                             tracing::info!("Info: Peer is trusted in half handshake init");
                                                             Some(peer)
                                                         } else {
@@ -832,21 +815,21 @@ impl Device {
                                                     tracing::error!("Error: Failed verification in half handshake init");
                                                     None
                                                 }
-                                                
+
                                             } else {
                                                 tracing::error!("Error: Failed possession check in half handshake init");
                                                 None
-                                            } 
+                                            }
                                         }
                                     }
                                     Err(_) => None
-                                } 
+                                }
                             }
                             Packet::HandshakeResponse(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                             Packet::PacketCookieReply(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                             Packet::PacketData(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                         };
-                           
+
                         let peer = match peer {
                             None => continue,
                             Some(peer) => peer,
@@ -874,7 +857,7 @@ impl Device {
                                 if p.is_allowed_ip(addr) {
                                     threaddata.interface.write6(packet);
                                 }
-                            } 
+                            }
                         };
                         if flush {
                             // Flush pending queue
@@ -1092,13 +1075,13 @@ impl Device {
                 // CG: This bit is not tested
                 Ok(peer_keybytes_key) => {
                     let peer_hex_public_key = encode_hex(peer_keybytes_key.0);
-                    tracing::info!("Info: Peer Public Key api_set_internal {:?}", peer_hex_public_key);
+                    tracing::info!("Info: Peer Public Key api_set_internal {}", peer_hex_public_key);
                         self.api_set_subdomain_peer_internal(Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080)),x25519::PublicKey::from(peer_keybytes_key.0));
                         return;
                     }
                     Err(_) => return,
                 },
-              _ => return,     
+              _ => return,
             }
         }
 
@@ -1113,7 +1096,7 @@ impl Device {
         let clone_peer_publickey_public_key = peer_publickey_public_key;
         let preshared_key = None;
         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
-        tracing::info!("Info: Setting subdomain IP and port {:?}", endpoint_listenport);     
+        tracing::info!("Info: Setting subdomain IP and port {:?}", endpoint_listenport);
 
         let allowed_ip_str = &self.config.rodt.metadata.allowedips;
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid AllowedIPs");
@@ -1133,9 +1116,9 @@ impl Device {
             &allowed_ips_listed,
             keepalive,
             preshared_key,
-            );                    
+            );
         allowed_ips_listed.clear();
-        
+
         return 0;
     }
 
@@ -1193,8 +1176,6 @@ impl Default for IndexLfsr {
 
 // This function takes a Ed25519 public key in Hex of 32 bytes and creates a matching X25519 public key
 pub fn ed2x_public_key_bytes(ed25519_pub_bytes: [u8; 32]) -> [u8; 32] {
-    // Parse the input key string as a hex-encoded Ed25519 public key
-    // let ed25519_pub_bytes = hex::decode(key).expect("Error: Invalid hexadecimal string");
 
     // Convert the Ed25519 public key bytes to Montgomery form
     let ed25519_pub_array: [u8; 32] = ed25519_pub_bytes.as_slice().try_into().expect("Error: Invalid length");
@@ -1206,16 +1187,6 @@ pub fn ed2x_public_key_bytes(ed25519_pub_bytes: [u8; 32]) -> [u8; 32] {
 
    x25519_pub_key
 }
-
-/*   fn from_ed25519(pk: &ed25519::PublicKey) -> Self {
-        PublicKey(X25519(
-            CompressedEdwardsY(pk.encode())
- 
-    /// Encode the public key into a byte array in compressed form, i.e.
-    /// where one coordinate is represented by a single bit.
-    pub fn encode(&self) -> [u8; 32] {
-        self.0.to_bytes()
-    }*/
 
 // This function takes a Ed25519 private key of 64 bytes and creates a matching X25519 private key
 pub fn ed2x_private_key_bytes(some_bytes_ed25519_private_key: [u8; 64]) -> x25519::StaticSecret {

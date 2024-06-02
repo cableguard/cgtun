@@ -8,7 +8,8 @@
 //! C bindings for the CableGuard library
 use super::noise::{Tunn, TunnResult};
 use crate::x25519::{PublicKey, StaticSecret};
-use base64::{decode, encode};
+use base64::decode as base64decode;
+use base64::encode as base64encode;
 use hex::encode as encode_hex;
 use libc::{raise, SIGSEGV};
 use parking_lot::Mutex;
@@ -54,7 +55,7 @@ pub struct wireguard_result {
 
 #[repr(C)]
 pub struct stats {
-    pub time_since_last_handshake: i64,
+    pub duration_since_last_handshake: i64,
     pub tx_bytes: usize,
     pub rx_bytes: usize,
     pub estimated_loss: f32,
@@ -117,7 +118,7 @@ pub extern "C" fn x25519_public_key(private_key: x25519_key) -> x25519_key {
 /// The memory has to be freed by calling `x25519_key_to_str_free`
 #[no_mangle]
 pub extern "C" fn x25519_key_to_base64(key: x25519_key) -> *const c_char {
-    let encoded_key = encode(key.key);
+    let encoded_key = base64encode(key.key);
     CString::into_raw(CString::new(encoded_key).unwrap())
 }
 
@@ -146,7 +147,7 @@ pub unsafe extern "C" fn check_base64_encoded_x25519_key(key: *const c_char) -> 
         Ok(string) => string,
     };
 
-    if let Ok(key) = decode(utf8_key) {
+    if let Ok(key) = base64decode(utf8_key) {
         let len = key.len();
         let mut zero = 0u8;
         for b in key {
@@ -389,7 +390,7 @@ pub unsafe extern "C" fn wireguard_stats(tunnel: *const Mutex<Tunn>) -> stats {
     let tunnel = tunnel.as_ref().unwrap().lock();
     let (time, tx_bytes, rx_bytes, estimated_loss, estimated_rtt) = tunnel.stats();
     stats {
-        time_since_last_handshake: time.map(|t| t.as_secs() as i64).unwrap_or(-1),
+        duration_since_last_handshake: time.map(|t| t.as_secs() as i64).unwrap_or(-1),
         tx_bytes,
         rx_bytes,
         estimated_loss,

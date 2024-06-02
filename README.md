@@ -33,8 +33,8 @@ You may want to add to .bashrc these lines:
 - export BLOCKCHAIN_ENV=testnet (for testnet, mainnet for mainnet)
 
 ## How to Install from .deb package
-wget https://drive.google.com/file/d/17FCSKV3C3CGW7wG_eZ3y_qPUHbLo8cov/view?usp=drive_link
-sudo apt install ./cableguard-cli_0.90.11_amd64.deb
+wget https://cableguard.fra1.digitaloceanspaces.com/cableguard-cli_0.89.99_amd64.deb
+sudo apt install ./cableguard-cli_0.90.55_amd64.deb
 
 ## How to Use
 To start a tunnel use:

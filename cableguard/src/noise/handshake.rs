@@ -401,20 +401,15 @@ impl NoiseParams {
         &mut self,
         static_private: x25519::StaticSecret,
         static_public: x25519::PublicKey,
-    ) -> Result<(), WireGuardError> {
+    ) {
         // Check that the public key indeed matches the private key
         let check_key = x25519::PublicKey::from(&static_private);
         assert_eq!(check_key.as_bytes(), static_public.as_bytes());
-
-        // Convert static_private and static_public to strings
-        // let own_static_string_private_key = static_private.to_bytes().encode_hex::<String>();
-        // let own_static_string_public_key = static_public.as_bytes().encode_hex::<String>();
 
         self.static_private = static_private;
         self.static_public = static_public;
 
         self.static_shared = self.static_private.diffie_hellman(&self.peer_static_public);
-        Ok(())
     }
 
 }
@@ -490,7 +485,7 @@ impl Handshake {
         &mut self,
         private_key: x25519::StaticSecret,
         public_key: x25519::PublicKey,
-    ) -> Result<(), WireGuardError> {
+    ) {
     self.params.set_static_private(private_key, public_key)
     }
 

@@ -22,7 +22,7 @@ use trust_dns_resolver::config::*;
 use ed25519_dalek::{PublicKey,Verifier,Signature};
 use hex::FromHex;
 use regex::Regex;
-use base64::{decode};
+use base64::decode as base64decode;
 use chrono::{NaiveDate,NaiveDateTime,NaiveTime};
 // Moving timestamp function
 use reqwest::blocking::Client;
@@ -91,13 +91,13 @@ pub struct RodtMetadata {
     pub cidrblock: String,
     pub listenport: String,
     pub dns: String,
-    pub postup: String,
-    pub postdown: String,
+    // pub postup: String,
+    // pub postdown: String,
     pub allowedips: String,
     pub subjectuniqueidentifierurl: String,
     pub serviceproviderid: String,
     pub serviceprovidersignature: String,
-    pub kbpersecond: String,
+    // pub kbpersecond: String,
 }
 
 impl Default for RodtMetadata {
@@ -110,13 +110,13 @@ impl Default for RodtMetadata {
             cidrblock: String::default(),
             listenport: String::default(),
             dns: String::default(),
-            postup: String::default(),
-            postdown: String::default(),
+            // postup: String::default(),
+            // postdown: String::default(),
             allowedips: String::default(),
             subjectuniqueidentifierurl: String::default(),
             serviceproviderid: String::default(),
             serviceprovidersignature: String::default(),
-            kbpersecond: String::default(),
+            // kbpersecond: String::default(),
         }
     }
 }
@@ -141,6 +141,7 @@ pub struct Tunn {
     /// The handshake currently in progress
     handshake: handshake::Handshake,
     /// The Own serviceprovider ID to check if it matches upon handshake
+    // CG: The following variable is necessary if mutual checks are performed for every handshake and not only the initial one
     own_serviceproviderid: String,
     /// The N_SESSIONS most recent sessions, index is session id modulo N_SESSIONS
     sessions: [Option<session::Session>; N_SESSIONS],
@@ -236,7 +237,7 @@ impl Tunn {
                 rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[244..308])
                     .expect("Error: Failure checking packet field length"), // SIZE u8;64, 308-244 = 64 bytes
                 }),
-                (HANDSHAKE_RESP, HANDSHAKE_RESP_SZ) => Packet::HandshakeResponse(HandshakeResponse {  
+                (HANDSHAKE_RESP, HANDSHAKE_RESP_SZ) => Packet::HandshakeResponse(HandshakeResponse {
                 //} TOTAL SIZE WAS 92 (with MAC), now plus 128
                 sender_session_index: u32::from_le_bytes(src[4..8].try_into().unwrap()), // SIZE u32 = 4 times 8, 8-4 = 4 bytes
                 receiver_session_index: u32::from_le_bytes(src[8..12].try_into().unwrap()), // SIZE u32 = 4 times 8, 12-8 = 4 bytes
@@ -343,17 +344,16 @@ impl Tunn {
         own_staticsecret_private_key: x25519::StaticSecret,
         own_publickey_public_key: x25519::PublicKey,
         rate_limiter: Option<Arc<RateLimiter>>,
-    ) -> Result<(), WireGuardError> {
+    ) {
         self.timers.should_reset_rr = rate_limiter.is_none();
         self.rate_limiter = rate_limiter.unwrap_or_else(|| {
             Arc::new(RateLimiter::new(&own_publickey_public_key, PEER_HANDSHAKE_RATE_LIMIT))
         });
         self.handshake
-            .set_static_private(own_staticsecret_private_key, own_publickey_public_key)?;
+            .set_static_private(own_staticsecret_private_key, own_publickey_public_key);
         for s in &mut self.sessions {
             *s = None;
         }
-        Ok(())
     }
 
     /// Encapsulate a single packet from the tunnel interface.
@@ -443,27 +443,30 @@ impl Tunn {
         let (packet, session) = self.handshake.consume_received_handshake_initiation(peer_handshake_init,dst,peer_static_public)?;
 
         // Beginning of Peer RODiT verification
+        /*
         let peer_slice_rodtid: &[u8] = &peer_handshake_init.rodt_id[..];
         let _peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Error: Failed to convert byte slice to string")
         .trim_end_matches('\0');
-        
+
         let evaluation = verify_hasrodt_getit(*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature);
         if let Ok((verification_result, rodt)) = evaluation {
             if verification_result
                 && verify_rodt_isamatch(self.own_serviceproviderid.clone(),
                     rodt.metadata.serviceprovidersignature.clone(),
                     *peer_handshake_init.rodt_id)
-                && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
+                && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore)
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-                && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
+                && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
                     tracing::info!("Info Peer is trusted in handshake initiation");
             }
             else {
                     tracing::error!("Error: Peer is not trusted in handshake initiation");
                     return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
-            }            
+            }
         }
+        */
+
         let index = session.local_index();
         self.sessions[index % N_SESSIONS] = Some(session);
         self.timer_tick(TimerName::TimeLastPacketReceived);
@@ -487,6 +490,7 @@ impl Tunn {
         let session = self.handshake.consume_received_handshake_response(peer_handshake_response)?;
 
         // Beginning of Peer RODiT verification
+        /*
         let peer_slice_rodtid: &[u8] = &peer_handshake_response.rodt_id[..];
         let _peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
         .expect("Error: Failed to convert byte slice to string")
@@ -498,7 +502,7 @@ impl Tunn {
                 && verify_rodt_isamatch(self.own_serviceproviderid.clone(),
                     rodt.metadata.serviceprovidersignature.clone(),
                     *peer_handshake_response.rodt_id)
-                && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
+                && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore)
                 && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                 && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
                     tracing::info!("Info Peer is trusted in handshake response");
@@ -510,7 +514,8 @@ impl Tunn {
         } else {
             tracing::error!("Error: Fetching RODiT with verify_hasrodt_getit in handshake response");
         }
-        
+        */
+
         let keepalive_packet = session.produce_packet_data(&[], dst);
         // Store new session in ring buffer
         let local_index = session.local_index();
@@ -733,7 +738,7 @@ impl Tunn {
     /// * Data bytes sent
     /// * Data bytes received
     pub fn stats(&self) -> (Option<Duration>, usize, usize, f32, Option<u32>) {
-        let time = self.time_since_last_handshake();
+        let time = self.duration_since_last_handshake();
         let tx_bytes = self.tx_bytes;
         let rx_bytes = self.rx_bytes;
         let loss = self.estimate_loss();
@@ -761,11 +766,11 @@ mod tests {
         let their_index = OsRng.next_u32();
 
         let my_tun = Tunn::new(own_staticsecret_private_key, their_publickey_public_key, None, None, my_index, None).unwrap();
-        let their_tun = Tunn::new(their_staticsecret_private_key, own_publickey_public_key, None, None, their_index, None).unwrap();
+        let their_tun = Tunn::new(their_staticsecret_private_key, own_publickey_public_key, None, None, their_index, None);
 
         (my_tun, their_tun)
     }
-    
+
     fn test_send_handshake_init(tun: &mut Tunn) -> Vec<u8> {
         let mut dst = vec![0u8; 2048];
         let own_handshake_init = tun.produce_handshake_initiation(&mut dst, false);
@@ -961,7 +966,7 @@ let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
 .trim_end_matches('\0');
 
 // Obtain a Peer RODiT from its ID
-let account_idargs = "{\"token_id\": \"".to_owned() 
+let account_idargs = "{\"token_id\": \"".to_owned()
     + &string_rodtid+ "\"}";
 
 // CG: Return values need to be honed, probably false / true better than codes here
@@ -975,7 +980,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         let fetched_bytes_ed25519_public_key: [u8; RODT_ID_PK_SZ] = fetched_vec_ed25519_public_key
             .try_into()
             .expect("Error: Invalid byte array length");
-            
+
         // Parse the signature bytes from packet.rodt_id_signature
         // and assign it to the signature variable
         match Signature::from_bytes(&rodt_id_signature) {
@@ -997,7 +1002,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                     // If the public key parsing fails, handle the Error and propagate it
                     tracing::trace!("Error: Peer RODiT possession check failed - Parsing publick key");
                     return Err(WireGuardError::PeerEd25519PublicKeyParsingFailure)
-                }                    
+                }
             // Rest of the code if public key parsing is successful
             } Err(_) => {
                 // If the signature parsing fails, handle the Error and propagate it
@@ -1031,7 +1036,7 @@ let account_idargs = "{\"token_id\": \"".to_owned()
     + &own_serviceproviderid+ "\"}";
 match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
     Ok(own_serviceprovider_rodt) => {
-        // Convert the owner_id string to a Vec<u8> by decoding it from hex                
+        // Convert the owner_id string to a Vec<u8> by decoding it from hex
         let own_serviceprovider_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(own_serviceprovider_rodt.owner_id.clone())
         .expect("Error: Failed to decode hex string");
 
@@ -1039,21 +1044,21 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         let own_serviceprovider_bytes_ed25519_public_key: [u8; RODT_ID_PK_SZ] = own_serviceprovider_vec_ed25519_public_key
             .try_into()
             .expect("Error: Invalid byte array length");
-        
-        let peer_serviceprovider_bytes_signature = decode(&peer_serviceprovidersignature).expect("Error: Failed Base64 decoding");
+
+        let peer_serviceprovider_bytes_signature = base64decode(&peer_serviceprovidersignature).expect("Error: Failed Base64 decoding");
 
         let peer_serviceprovider_u864_signature: [u8; RODT_ID_SIGNATURE_SZ] = peer_serviceprovider_bytes_signature
             .as_slice()
             .try_into()
             .expect("Error: Invalid public key length");
-        
+
         match Signature::from_bytes(&peer_serviceprovider_u864_signature) {
             Ok(peer_signature) => {
-                if let Ok(own_serviceprovider_publickey_ed25519_public_key) = PublicKey::from_bytes(&own_serviceprovider_bytes_ed25519_public_key) {
+                if let Ok(own_serviceprovider_verifyingkey_ed25519_public_key) = PublicKey::from_bytes(&own_serviceprovider_bytes_ed25519_public_key) {
                     // Verify if the peer_serviceprovidersignature is valid when checked
                     // against the peer_token_id and the public key of the own_serviceproviderid
                     // In other words, if they have been signed with the same private key
-                    if own_serviceprovider_publickey_ed25519_public_key.verify(
+                    if own_serviceprovider_verifyingkey_ed25519_public_key.verify(
                         string_peer_token_id.as_bytes(),
                         &peer_signature
                         ).is_ok() {
@@ -1084,9 +1089,10 @@ pub fn verify_rodt_islive(
     peer_rodt_notbefore: String,
 ) -> bool {
 
-let naivedatetime_nul = NaiveDateTime::parse_from_str("0000-00-00", "%Y-%m-%d")
+// 1970-01-01 chosen as nul date considering Unix and X.509 standards for timekeeping
+let naivedatetime_nul = NaiveDateTime::parse_from_str("1970-01-01", "%Y-%m-%d")
     .unwrap_or_default(); // Use a default value if parsing fails
-// naivedatetime_nul value is 1970-01-01 00:00:00 
+// naivedatetime_nul value is 1970-01-01 00:00:00
 let naivedate_notafter = NaiveDate::parse_from_str(&peer_rodt_notafter, "%Y-%m-%d")
     .unwrap_or_default(); // Use a default value if parsing fails
 let naivedate_notbefore = NaiveDate::parse_from_str(&peer_rodt_notbefore, "%Y-%m-%d")
@@ -1098,8 +1104,7 @@ let naivedatetime_notbefore = NaiveDateTime::new(naivedate_notbefore, niltime);
 let string_timenow = nearorg_rpc_timestamp(BLOCKCHAIN_NETWORK);
 
 // Convert the timestamp string into an i64
-// Try to parse the timestamp, and if successful, create a NaiveDateTime
-// Try to parse the timestamp, and if successful, create a NaiveDateTime
+// Try to parse the timestamp, and if successful, create a NaiveDateTime from it
 if let Ok(string_timenow) = string_timenow {
     if let Ok(i64_timestamp) = string_timenow.parse::<i64>() {
         let naivedatetime_timestamp = NaiveDateTime::from_timestamp(i64_timestamp / 1000000000, 0);
@@ -1256,7 +1261,7 @@ pub fn nearorg_rpc_token(
     let response_text: String = response.text()?;
 
     let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
-    
+
     let result_array = parsed_json["result"]["result"].as_array().ok_or("Error: Result is not an array")?;
 
     let result_bytes: Vec<u8> = result_array
@@ -1264,10 +1269,10 @@ pub fn nearorg_rpc_token(
         .map(|v| v.as_u64().unwrap() as u8)
         .collect();
 
-    let result_slice: &[u8] = &result_bytes;    
+    let result_slice: &[u8] = &result_bytes;
 
     let result_string = String::from_utf8(result_slice.to_vec()).unwrap();
-    
+
     let rodt: Rodt = serde_json::from_str(&result_string).unwrap();
 
     Ok(rodt.clone())

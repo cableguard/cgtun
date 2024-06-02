@@ -117,7 +117,7 @@ impl Peer {
             .expect("Error: Attempt to connect to undefined endpoint");
 
         let udp_conn =
-            socket2::Socket::new(Domain::for_address(addr), Type::STREAM, Some(Protocol::UDP))?;
+            socket2::Socket::new(Domain::for_address(addr), Type::DGRAM, Some(Protocol::UDP))?;
         udp_conn.set_reuse_address(true)?;
         let bind_addr = if addr.is_ipv4() {
             SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port).into()
@@ -153,8 +153,8 @@ impl Peer {
         self.allowed_ips_listed.iter().map(|(_, ip, cidr)| (ip, cidr))
     }
 
-    pub fn time_since_last_handshake(&self) -> Option<std::time::Duration> {
-        self.tunnel.time_since_last_handshake()
+    pub fn duration_since_last_handshake(&self) -> Option<std::time::Duration> {
+        self.tunnel.duration_since_last_handshake()
     }
 
     pub fn persistent_keepalive(&self) -> Option<u16> {

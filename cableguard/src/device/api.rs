@@ -17,7 +17,8 @@ use crate::device::IpAddr;
 use std::str::FromStr;
 use std::sync::atomic::Ordering;
 use std::convert::TryInto;
-use base64::{decode,URL_SAFE_NO_PAD};
+use base64::decode as base64decode;
+use base64::URL_SAFE_NO_PAD;
 use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use reqwest::blocking::Client;
@@ -75,7 +76,7 @@ pub fn nearorg_rpc_tokens_for_owner(
         .collect();
 
     let result_slice: &[u8] = &result_bytes;
-        
+
     let result_string = core::str::from_utf8(&result_slice).unwrap();
 
     let result_struct: Vec<Rodt> = match serde_json::from_str(result_string) {
@@ -95,7 +96,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             return Err(Box::new(err));
         }
     };
-    
+
     if let Some(rodt) = result_iter.next() {
         for rodt in result_struct {
             tracing::info!("Info: token_id: {}", rodt.token_id);
@@ -104,16 +105,16 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::info!("Info: description: {}", rodt.metadata.description);
             tracing::info!("Info: notafter: {}", rodt.metadata.notafter);
             tracing::info!("Info: notbefore: {}", rodt.metadata.notbefore);
-            tracing::info!("Info: notbefore: {}", rodt.metadata.listenport);
+            tracing::info!("Info: listenport: {}", rodt.metadata.listenport);
             tracing::info!("Info: cidrblock: {}", rodt.metadata.cidrblock);
             tracing::info!("Info: dns: {}", rodt.metadata.dns);
-            tracing::info!("Info: postup: {}", rodt.metadata.postup);
-            tracing::info!("Info: postdown: {}", rodt.metadata.postdown);
+            // tracing::info!("Info: postup: {}", rodt.metadata.postup);
+            // tracing::info!("Info: postdown: {}", rodt.metadata.postdown);
             tracing::info!("Info: allowedips: {}", rodt.metadata.allowedips);
             tracing::info!("Info: subjectuniqueidentifierurl {}", rodt.metadata.subjectuniqueidentifierurl);
             tracing::info!("Info: serviceproviderid: {}", rodt.metadata.serviceproviderid);
             tracing::info!("Info: serviceprovidersignature: {}", rodt.metadata.serviceprovidersignature);
-            tracing::info!("Info: kbpersecond: {}", rodt.metadata.kbpersecond);
+            // tracing::info!("Info: kbpersecond: {}", rodt.metadata.kbpersecond);
         }
      // Return the first Rodt instance as the result
         tracing::info!("Info: Rodt instance found");
@@ -159,8 +160,8 @@ pub fn nearorg_rpc_state(
     let response_text: String = response.text()?; // Convert the ASCII array to the String type
     let parsed_json: Value = serde_json::from_str(&response_text).unwrap(); // Deserialize the string into a JSON
     if parsed_json.to_string().contains("does not exist while viewing") {
-        tracing::trace!("Error: The account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR");
-        return Err("Error: The account does not exist in the blockchain".into());
+        tracing::trace!("Error: The NEAR account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network");
+        return Err("Error: The NEAR account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network".into());
     }
     Ok(()) // This function returns the RODT in the parsed_json variable but we are not currently doing anything with it in the main function
 }
@@ -303,7 +304,6 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
     // get command requires an empty line, but there is no reason to be religious about it
     if let Some(ref own_static_key_pair) = thisnetworkdevice.key_pair {
         writeln!(writerbufferdevice, "own_public_key={}", encode_hex(own_static_key_pair.1.as_bytes()));
-        // writeln!(writerbufferdevice, "own_private_key={}", encode_hex(own_static_key_pair.0.as_bytes()));
     }
 
     if thisnetworkdevice.listen_port != 0 {
@@ -315,12 +315,13 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
     }
 
     if BLOCKCHAIN_NETWORK == "." {
-        writeln!(writerbufferdevice, "bcnetwork={}", "mainnet as a dot");
-    } else if BLOCKCHAIN_NETWORK == "mainnet" {
-        writeln!(writerbufferdevice, "bcnetwork=={}", "mainnet");
-    } else if BLOCKCHAIN_NETWORK == "testnet" {
-        writeln!(writerbufferdevice, "bcnetwork=={}", "testnet");
+        writeln!(writerbufferdevice, "bcnetwork={}", "mainnet");
+    } else if BLOCKCHAIN_NETWORK == ".mainnet." {
+        writeln!(writerbufferdevice, "bcnetwork={}", "mainnet");
+    } else if BLOCKCHAIN_NETWORK == ".testnet." {
+        writeln!(writerbufferdevice, "bcnetwork={}", "testnet");
     }
+    writeln!(writerbufferdevice, "dnsresolver={}", thisnetworkdevice.config.rodt.metadata.dns);
     writeln!(writerbufferdevice, "rodtaccountid={}", thisnetworkdevice.config.rodt.owner_id);
     writeln!(writerbufferdevice, "rodtpublickeybase64={}", base64encode(thisnetworkdevice.config.x25519_public_key));
 
@@ -344,7 +345,7 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
             writeln!(writerbufferdevice, "allowed_ip={}/{}", ip, cidr);
         }
 
-        if let Some(time) = peer.time_since_last_handshake() {
+        if let Some(time) = peer.duration_since_last_handshake() {
             writeln!(writerbufferdevice, "last_handshake_time_sec={}", time.as_secs());
             writeln!(writerbufferdevice, "last_handshake_time_nsec={}", time.subsec_nanos());
         }
@@ -398,7 +399,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                     }
                                 };
                                 let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
-                                tracing::info!("Info: IP address read from subdomain: {}", ipaddress);               
+                                tracing::info!("Info: IP address read from subdomain: {}", ipaddress);
                                 // Obtain the public key from the subdomain_peer
                                 let cfgresponse = dnssecresolver.txt_lookup(subdomain_peer);
                                 cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
@@ -442,7 +443,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
 
                                 // Take the subdomain_endpoint as endpoint of a new peer
                                 let endpoint_listenport = SocketAddr::new(ipaddress,peer_port);
-                                let peer_bytes_pk = decode(peer_base64_pk).expect("Error: Failed Base64 decoding");
+                                let peer_bytes_pk = base64decode(peer_base64_pk).expect("Error: Failed Base64 decoding");
                                 let peer_u832_pk: [u8; 32] = peer_bytes_pk
                                     .as_slice()
                                     .try_into()
@@ -451,7 +452,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                     x25519::PublicKey::from(peer_u832_pk));
                                 }
                             Err(_) => return EINVAL,
-                        },            
+                        },
                         "private_key" => match value.parse::<KeyBytes>() {
                             Ok(own_static_bytes_key_pair) => {
                                 device.set_key_pair(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
@@ -526,7 +527,7 @@ fn api_set_peer(
     let mut keepalive = None;
     let mut clone_peer_publickey_public_key = peer_publickey_public_key;
     let mut preshared_key = None;
-    
+
     let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
     while readerbufferdevice.read_line(&mut cmd).is_ok() {
         cmd.pop(); // remove newline if any

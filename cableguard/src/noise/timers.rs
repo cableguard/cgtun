@@ -49,7 +49,7 @@ use self::TimerName::*;
 
 #[derive(Debug)]
 pub struct Timers {
-    /// Is the owner of the timer the initiator or the responder for the last handshake?
+    /// CG: Is the owner of the timer the initiator or the responder for the last handshake?
     is_initiator: bool,
     /// Start time of the tunnel
     time_started: Instant,
@@ -310,12 +310,16 @@ impl Tunn {
         TunnResult::Done
     }
 
-    pub fn time_since_last_handshake(&self) -> Option<Duration> {
+    pub fn duration_since_last_handshake(&self) -> Option<Duration> {
+        // CG: Last handshake time is reported incorrectly because we
+        // report the values for the peer not the session
         let current_session = self.current;
+        // tracing::debug!("current_session {:?}",current_session);
         if self.sessions[current_session % super::N_SESSIONS].is_some() {
+            // CG: These durations are found not to reset when a new handshake is initiated
+            // So the last handshake time can´t be passed to cgtools / wg
             let duration_since_tun_start = Instant::now().duration_since(self.timers.time_started);
             let duration_since_session_established = self.timers[TimeSessionEstablished];
-
             Some(duration_since_tun_start - duration_since_session_established)
         } else {
             None

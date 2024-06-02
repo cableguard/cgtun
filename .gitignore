@@ -6,3 +6,7 @@ privatekey
 publickey
 dev-account
 Cargo.lock
+/cableguard/Cargo.lock
+/cableguard-cli/Cargo.lock
+output.txt
+

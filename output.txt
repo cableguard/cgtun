@@ -1,0 +1,336 @@
+  [2m2024-05-09T15:49:20.158708Z[0m [35mTRACE[0m [1;35mcableguard::device[0m[35m: [35mError: IP addr command Failed to execute Error: any valid prefix is expected rather than "172.16.0.3/12/24".
+[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:457
+
+  [2m2024-05-09T15:49:20.158931Z[0m [35mTRACE[0m [1;35mreqwest::blocking::wait[0m[35m: [35m(ThreadId(1)) park without timeout[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/wait.rs:49
+
+  [2m2024-05-09T15:49:20.159689Z[0m [35mTRACE[0m [1;35mreqwest::blocking::client[0m[35m: [35m(ThreadId(6)) start runtime::block_on[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/client.rs:1066
+
+  [2m2024-05-09T15:49:20.258484Z[0m [34mDEBUG[0m [1;34mcableguard::noise[0m[34m: [34mInfo: Blockchain Directory Network is .testnet. nearorg_rpc_token[0m
+    [2;3mat[0m cableguard/src/noise/mod.rs:1236
+
+  [2m2024-05-09T15:49:20.258569Z[0m [35mTRACE[0m [1;35mreqwest::blocking::wait[0m[35m: [35mwait at most 30s[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/wait.rs:16
+
+  [2m2024-05-09T15:49:20.258590Z[0m [35mTRACE[0m [1;35mreqwest::blocking::wait[0m[35m: [35m(ThreadId(1)) park timeout 29.99999829s[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/wait.rs:42
+
+  [2m2024-05-09T15:49:20.258648Z[0m [35mTRACE[0m [1;35mhyper::client::pool[0m[35m: [35mcheckout waiting for idle connection: ("https", rpc.testnet.near.org)[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/client/pool.rs:638
+
+  [2m2024-05-09T15:49:20.258709Z[0m [34mDEBUG[0m [1;34mreqwest::connect[0m[34m: [34mstarting new connection: https://rpc.testnet.near.org/[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/connect.rs:446
+
+  [2m2024-05-09T15:49:20.258736Z[0m [35mTRACE[0m [1;35mhyper::client::connect::http[0m[35m: [35mHttp::connect; scheme=Some("https"), host=Some("rpc.testnet.near.org"), port=None[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/client/connect/http.rs:278
+
+  [2m2024-05-09T15:49:20.258926Z[0m [34mDEBUG[0m [1;34mhyper::client::connect::dns[0m[34m: [34mresolving host="rpc.testnet.near.org"[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/client/connect/dns.rs:122
+
+  [2m2024-05-09T15:49:20.260463Z[0m [34mDEBUG[0m [1;34mhyper::client::connect::http[0m[34m: [34mconnecting to 35.244.177.127:443[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/client/connect/http.rs:537
+
+  [2m2024-05-09T15:49:20.261438Z[0m [34mDEBUG[0m [1;34mhyper::client::connect::http[0m[34m: [34mconnected to 35.244.177.127:443[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/client/connect/http.rs:540
+
+  [2m2024-05-09T15:49:20.267264Z[0m [35mTRACE[0m [1;35mhyper::client::conn[0m[35m: [35mclient handshake Http1[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/client/conn.rs:1009
+
+  [2m2024-05-09T15:49:20.267305Z[0m [35mTRACE[0m [1;35mhyper::client::client[0m[35m: [35mhandshake complete, spawning background dispatcher task[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/client/client.rs:499
+
+  [2m2024-05-09T15:49:20.267342Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::conn[0m[35m: [35mflushed({role=client}): State { reading: Init, writing: Init, keep_alive: Busy }[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/conn.rs:732
+
+  [2m2024-05-09T15:49:20.267365Z[0m [35mTRACE[0m [1;35mhyper::client::pool[0m[35m: [35mcheckout dropped for ("https", rpc.testnet.near.org)[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/client/pool.rs:680
+
+  [2m2024-05-09T15:49:20.267426Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::role[0m[35m: [35mClient::encode method=POST, body=Some(Known(485))[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/role.rs:1110
+    [2;3min[0m hyper::proto::h1::role::[1mencode_headers[0m
+
+  [2m2024-05-09T15:49:20.267453Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::encode[0m[35m: [35msized write, len = 485[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/encode.rs:159
+
+  [2m2024-05-09T15:49:20.267463Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::io[0m[35m: [35mbuffer.flatten, [1;35mself.len[0m[35m: 113, [1;35mbuf.len[0m[35m: 485[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/io.rs:577
+
+  [2m2024-05-09T15:49:20.267491Z[0m [34mDEBUG[0m [1;34mhyper::proto::h1::io[0m[34m: [34mflushed 598 bytes[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/io.rs:342
+
+  [2m2024-05-09T15:49:20.267498Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::conn[0m[35m: [35mflushed({role=client}): State { reading: Init, writing: KeepAlive, keep_alive: Busy }[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/conn.rs:732
+
+  [2m2024-05-09T15:49:20.293837Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::conn[0m[35m: [35mConn::read_head[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/conn.rs:191
+
+  [2m2024-05-09T15:49:20.294124Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::io[0m[35m: [35mreceived 1378 bytes[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/io.rs:269
+
+  [2m2024-05-09T15:49:20.294150Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::role[0m[35m: [35mResponse.parse, [1;35mbytes[0m[35m: 1378[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/role.rs:946
+    [2;3min[0m hyper::proto::h1::role::[1mparse_headers[0m
+
+  [2m2024-05-09T15:49:20.294170Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::role[0m[35m: [35mResponse.parse Complete(537)[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/role.rs:955
+    [2;3min[0m hyper::proto::h1::role::[1mparse_headers[0m
+
+  [2m2024-05-09T15:49:20.294191Z[0m [34mDEBUG[0m [1;34mhyper::proto::h1::io[0m[34m: [34mparsed 11 headers[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/io.rs:207
+
+  [2m2024-05-09T15:49:20.294197Z[0m [34mDEBUG[0m [1;34mhyper::proto::h1::conn[0m[34m: [34mincoming body is content-length (3045 bytes)[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/conn.rs:222
+
+  [2m2024-05-09T15:49:20.294219Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::decode[0m[35m: [35mdecode; state=Length(3045)[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/decode.rs:106
+
+  [2m2024-05-09T15:49:20.294238Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::conn[0m[35m: [35mflushed({role=client}): State { reading: Body(Length(2204)), writing: KeepAlive, keep_alive: Busy }[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/conn.rs:732
+
+  [2m2024-05-09T15:49:20.294286Z[0m [35mTRACE[0m [1;35mreqwest::blocking::wait[0m[35m: [35mwait at most 30s[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/wait.rs:16
+
+  [2m2024-05-09T15:49:20.294357Z[0m [35mTRACE[0m [1;35mreqwest::blocking::wait[0m[35m: [35m(ThreadId(1)) park timeout 29.999985829s[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/wait.rs:42
+
+  [2m2024-05-09T15:49:20.294407Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::decode[0m[35m: [35mdecode; state=Length(2204)[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/decode.rs:106
+
+  [2m2024-05-09T15:49:20.294442Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::io[0m[35m: [35mreceived 1378 bytes[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/io.rs:269
+
+  [2m2024-05-09T15:49:20.294471Z[0m [35mTRACE[0m [1;35mreqwest::blocking::wait[0m[35m: [35m(ThreadId(1)) park timeout 29.99987132s[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/wait.rs:42
+
+  [2m2024-05-09T15:49:20.294489Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::decode[0m[35m: [35mdecode; state=Length(826)[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/decode.rs:106
+
+  [2m2024-05-09T15:49:20.294515Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::io[0m[35m: [35mreceived 826 bytes[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/io.rs:269
+
+  [2m2024-05-09T15:49:20.294524Z[0m [34mDEBUG[0m [1;34mhyper::proto::h1::conn[0m[34m: [34mincoming body completed[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/conn.rs:298
+
+  [2m2024-05-09T15:49:20.294541Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::conn[0m[35m: [35mmaybe_notify; read_from_io blocked[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/conn.rs:472
+
+  [2m2024-05-09T15:49:20.294561Z[0m [35mTRACE[0m [1;35mreqwest::blocking::wait[0m[35m: [35m(ThreadId(1)) park timeout 29.999780859s[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/wait.rs:42
+
+  [2m2024-05-09T15:49:20.294586Z[0m [35mTRACE[0m [1;35mreqwest::blocking::wait[0m[35m: [35m(ThreadId(1)) park timeout 29.999756198s[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/wait.rs:42
+
+  [2m2024-05-09T15:49:20.294610Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::conn[0m[35m: [35mflushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/conn.rs:732
+
+  [2m2024-05-09T15:49:20.294621Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::conn[0m[35m: [35mflushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/conn.rs:732
+
+  [2m2024-05-09T15:49:20.294628Z[0m [35mTRACE[0m [1;35mhyper::client::pool[0m[35m: [35mput; add idle connection for ("https", rpc.testnet.near.org)[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/client/pool.rs:329
+
+  [2m2024-05-09T15:49:20.294637Z[0m [34mDEBUG[0m [1;34mhyper::client::pool[0m[34m: [34mpooling idle connection for ("https", rpc.testnet.near.org)[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/client/pool.rs:376
+
+  [2m2024-05-09T15:49:20.294760Z[0m [35mTRACE[0m [1;35mreqwest::blocking::client[0m[35m: [35mclosing runtime thread (ThreadId(6))[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/client.rs:1009
+
+  [2m2024-05-09T15:49:20.294784Z[0m [35mTRACE[0m [1;35mreqwest::blocking::client[0m[35m: [35msignaled close for runtime thread (ThreadId(6))[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/client.rs:1011
+
+  [2m2024-05-09T15:49:20.294809Z[0m [35mTRACE[0m [1;35mhyper::proto::h1::conn[0m[35m: [35mflushed({role=client}): State { reading: Init, writing: Init, keep_alive: Idle }[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/hyper-0.14.27/src/proto/h1/conn.rs:732
+
+  [2m2024-05-09T15:49:20.294829Z[0m [35mTRACE[0m [1;35mreqwest::blocking::client[0m[35m: [35m(ThreadId(6)) Receiver is shutdown[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/client.rs:1063
+
+  [2m2024-05-09T15:49:20.294843Z[0m [35mTRACE[0m [1;35mreqwest::blocking::client[0m[35m: [35m(ThreadId(6)) end runtime::block_on[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/client.rs:1068
+
+  [2m2024-05-09T15:49:20.296372Z[0m [35mTRACE[0m [1;35mreqwest::blocking::client[0m[35m: [35m(ThreadId(6)) finished[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/client.rs:1070
+
+  [2m2024-05-09T15:49:20.296774Z[0m [35mTRACE[0m [1;35mreqwest::blocking::client[0m[35m: [35mclosed runtime thread (ThreadId(6))[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/reqwest-0.11.22/src/blocking/client.rs:1013
+
+  [2m2024-05-09T15:49:20.296967Z[0m [35mTRACE[0m [1;35mtrust_dns_resolver::async_resolver[0m[35m: [35mhandle passed back[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/async_resolver.rs:221
+
+  [2m2024-05-09T15:49:20.297033Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::xfer::dns_handle[0m[34m: [34mquerying: vpn.zenobia.es. A[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/xfer/dns_handle.rs:67
+
+  [2m2024-05-09T15:49:20.297047Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::name_server::name_server_pool[0m[34m: [34msending request: [Query { name: Name("vpn.zenobia.es."), query_type: A, query_class: IN }][0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/name_server/name_server_pool.rs:258
+
+  [2m2024-05-09T15:49:20.297095Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::name_server::name_server[0m[34m: [34mreconnecting: NameServerConfig { socket_addr: 8.8.8.8:53, protocol: Udp, tls_dns_name: None, trust_negative_responses: true, bind_addr: None }[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/name_server/name_server.rs:105
+
+  [2m2024-05-09T15:49:20.297116Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::xfer[0m[34m: [34menqueueing message:QUERY:[Query { name: Name("vpn.zenobia.es."), query_type: A, query_class: IN }][0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/xfer/mod.rs:171
+
+  [2m2024-05-09T15:49:20.297125Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::name_server::name_server[0m[34m: [34mreconnecting: NameServerConfig { socket_addr: [2001:4860:4860::8844]:53, protocol: Udp, tls_dns_name: None, trust_negative_responses: true, bind_addr: None }[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/name_server/name_server.rs:105
+
+  [2m2024-05-09T15:49:20.297133Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::xfer[0m[34m: [34menqueueing message:QUERY:[Query { name: Name("vpn.zenobia.es."), query_type: A, query_class: IN }][0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/xfer/mod.rs:171
+
+  [2m2024-05-09T15:49:20.297164Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::udp::udp_client_stream[0m[34m: [34mfinal message: ; header 41952:QUERY:RD:NoError:QUERY:0/0/0
+; query
+;; vpn.zenobia.es. IN A
+[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_client_stream.rs:228
+
+  [2m2024-05-09T15:49:20.297189Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::udp::udp_client_stream[0m[34m: [34mfinal message: ; header 16965:QUERY:RD:NoError:QUERY:0/0/0
+; query
+;; vpn.zenobia.es. IN A
+[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_client_stream.rs:228
+
+  [2m2024-05-09T15:49:20.297262Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::udp::udp_stream[0m[34m: [34mcreated socket successfully[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_stream.rs:310
+
+  [2m2024-05-09T15:49:20.297307Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::udp::udp_stream[0m[34m: [34mcreated socket successfully[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_stream.rs:310
+
+  [2m2024-05-09T15:49:20.297386Z[0m [35mTRACE[0m [1;35mtrust_dns_proto::udp::udp_client_stream[0m[35m: [35mcreating UDP receive buffer with size 512[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_client_stream.rs:320
+
+  [2m2024-05-09T15:49:20.297444Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::name_server::name_server[0m[34m: [34mname_server connection failure: proto error: io error: Network is unreachable (os error 101)[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/name_server/name_server.rs:154
+
+  [2m2024-05-09T15:49:20.332385Z[0m [35mTRACE[0m [1;35mtrust_dns_proto::rr::record_data[0m[35m: [35mreading A[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/rr/record_data.rs:761
+
+  [2m2024-05-09T15:49:20.332457Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::udp::udp_client_stream[0m[34m: [34mreceived message id: 41952[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_client_stream.rs:348
+
+  [2m2024-05-09T15:49:20.332506Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::error[0m[34m: [34mResponse:; header 41952:RESPONSE:RD,RA:NoError:QUERY:1/0/0
+; query
+;; vpn.zenobia.es. IN A
+; answers 1
+vpn.zenobia.es. 3600 IN A 134.209.232.255
+; nameservers 0
+; additionals 0
+[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/error.rs:152
+
+  [2m2024-05-09T15:49:20.332569Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::error[0m[34m: [34mResponse:; header 41952:RESPONSE:RD,RA:NoError:QUERY:1/0/0
+; query
+;; vpn.zenobia.es. IN A
+; answers 1
+vpn.zenobia.es. 3600 IN A 134.209.232.255
+; nameservers 0
+; additionals 0
+[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/error.rs:152
+
+  [2m2024-05-09T15:49:20.332633Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::xfer::dns_handle[0m[34m: [34mquerying: vpn.zenobia.es. TXT[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/xfer/dns_handle.rs:67
+
+  [2m2024-05-09T15:49:20.332649Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::name_server::name_server_pool[0m[34m: [34msending request: [Query { name: Name("vpn.zenobia.es."), query_type: TXT, query_class: IN }][0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/name_server/name_server_pool.rs:258
+
+  [2m2024-05-09T15:49:20.332696Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::name_server::name_server[0m[34m: [34mreconnecting: NameServerConfig { socket_addr: [2001:4860:4860::8888]:53, protocol: Udp, tls_dns_name: None, trust_negative_responses: true, bind_addr: None }[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/name_server/name_server.rs:105
+
+  [2m2024-05-09T15:49:20.332740Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::xfer[0m[34m: [34menqueueing message:QUERY:[Query { name: Name("vpn.zenobia.es."), query_type: TXT, query_class: IN }][0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/xfer/mod.rs:171
+
+  [2m2024-05-09T15:49:20.332753Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::name_server::name_server[0m[34m: [34mreconnecting: NameServerConfig { socket_addr: 8.8.4.4:53, protocol: Udp, tls_dns_name: None, trust_negative_responses: true, bind_addr: None }[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/name_server/name_server.rs:105
+
+  [2m2024-05-09T15:49:20.332765Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::xfer[0m[34m: [34menqueueing message:QUERY:[Query { name: Name("vpn.zenobia.es."), query_type: TXT, query_class: IN }][0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/xfer/mod.rs:171
+
+  [2m2024-05-09T15:49:20.332788Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::udp::udp_client_stream[0m[34m: [34mfinal message: ; header 34607:QUERY:RD:NoError:QUERY:0/0/0
+; query
+;; vpn.zenobia.es. IN TXT
+[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_client_stream.rs:228
+
+  [2m2024-05-09T15:49:20.332804Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::udp::udp_client_stream[0m[34m: [34mfinal message: ; header 27060:QUERY:RD:NoError:QUERY:0/0/0
+; query
+;; vpn.zenobia.es. IN TXT
+[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_client_stream.rs:228
+
+  [2m2024-05-09T15:49:20.332862Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::udp::udp_stream[0m[34m: [34mcreated socket successfully[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_stream.rs:310
+
+  [2m2024-05-09T15:49:20.332899Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::udp::udp_stream[0m[34m: [34mcreated socket successfully[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_stream.rs:310
+
+  [2m2024-05-09T15:49:20.332954Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::name_server::name_server[0m[34m: [34mname_server connection failure: proto error: io error: Network is unreachable (os error 101)[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/name_server/name_server.rs:154
+
+  [2m2024-05-09T15:49:20.333021Z[0m [35mTRACE[0m [1;35mtrust_dns_proto::udp::udp_client_stream[0m[35m: [35mcreating UDP receive buffer with size 512[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_client_stream.rs:320
+
+  [2m2024-05-09T15:49:20.334576Z[0m [35mTRACE[0m [1;35mtrust_dns_proto::rr::record_data[0m[35m: [35mreading TXT[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/rr/record_data.rs:851
+
+  [2m2024-05-09T15:49:20.334601Z[0m [34mDEBUG[0m [1;34mtrust_dns_proto::udp::udp_client_stream[0m[34m: [34mreceived message id: 27060[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-proto-0.23.0/src/udp/udp_client_stream.rs:348
+
+  [2m2024-05-09T15:49:20.334630Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::error[0m[34m: [34mResponse:; header 27060:RESPONSE:RD,RA:NoError:QUERY:1/0/0
+; query
+;; vpn.zenobia.es. IN TXT
+; answers 1
+vpn.zenobia.es. 3291 IN TXT pk=9VfKPt7IZrE8OM8r8E47UBo5EUymTzRyOlhEAjwRe3M=;port=49194
+; nameservers 0
+; additionals 0
+[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/error.rs:152
+
+  [2m2024-05-09T15:49:20.334663Z[0m [34mDEBUG[0m [1;34mtrust_dns_resolver::error[0m[34m: [34mResponse:; header 27060:RESPONSE:RD,RA:NoError:QUERY:1/0/0
+; query
+;; vpn.zenobia.es. IN TXT
+; answers 1
+vpn.zenobia.es. 3291 IN TXT pk=9VfKPt7IZrE8OM8r8E47UBo5EUymTzRyOlhEAjwRe3M=;port=49194
+; nameservers 0
+; additionals 0
+[0m
+    [2;3mat[0m /home/icarus30/.cargo/registry/src/index.crates.io-6f17d22bba15001f/trust-dns-resolver-0.23.0/src/error.rs:152
+
+  [2m2024-05-09T15:49:20.339361Z[0m [32m INFO[0m [1;32mcableguard::device[0m[32m: [32mInfo: Postup command executed successfully [0m
+    [2;3mat[0m cableguard/src/device/mod.rs:517
+
+  [2m2024-05-09T15:49:20.343812Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+  [2m2024-05-09T15:49:20.345363Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+  [2m2024-05-09T15:49:20.345412Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+  [2m2024-05-09T15:49:20.345470Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+  [2m2024-05-09T15:49:20.345488Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+  [2m2024-05-09T15:49:20.345502Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+  [2m2024-05-09T15:49:20.345539Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+  [2m2024-05-09T15:49:20.345553Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+  [2m2024-05-09T15:49:20.345567Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+  [2m2024-05-09T15:49:20.345603Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+  [2m2024-05-09T15:49:20.345617Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+  [2m2024-05-09T15:49:20.345630Z[0m [34mDEBUG[0m [1;34mcableguard::device[0m[34m: [34mError: Poll Failed, [1;34merror[0m[34m: "Interrupted system call (os error 4)"[0m
+    [2;3mat[0m cableguard/src/device/mod.rs:287
+
+Info: CableGuard will hand over to TUN handle
