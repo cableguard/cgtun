@@ -97,7 +97,7 @@ pub struct RodtMetadata {
     pub subjectuniqueidentifierurl: String,
     pub serviceproviderid: String,
     pub serviceprovidersignature: String,
-    pub kbpersecond: String,
+    // pub kbpersecond: String,
 }
 
 impl Default for RodtMetadata {

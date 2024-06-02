@@ -76,7 +76,7 @@ pub fn nearorg_rpc_tokens_for_owner(
         .collect();
 
     let result_slice: &[u8] = &result_bytes;
-        
+
     let result_string = core::str::from_utf8(&result_slice).unwrap();
 
     let result_struct: Vec<Rodt> = match serde_json::from_str(result_string) {
@@ -96,7 +96,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             return Err(Box::new(err));
         }
     };
-    
+
     if let Some(rodt) = result_iter.next() {
         for rodt in result_struct {
             tracing::info!("Info: token_id: {}", rodt.token_id);
@@ -114,7 +114,7 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::info!("Info: subjectuniqueidentifierurl {}", rodt.metadata.subjectuniqueidentifierurl);
             tracing::info!("Info: serviceproviderid: {}", rodt.metadata.serviceproviderid);
             tracing::info!("Info: serviceprovidersignature: {}", rodt.metadata.serviceprovidersignature);
-            tracing::info!("Info: kbpersecond: {}", rodt.metadata.kbpersecond);
+            // tracing::info!("Info: kbpersecond: {}", rodt.metadata.kbpersecond);
         }
      // Return the first Rodt instance as the result
         tracing::info!("Info: Rodt instance found");
@@ -399,7 +399,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                     }
                                 };
                                 let ipaddress = ipresponse.iter().next().expect("Error: No IP address found for subdomain");
-                                tracing::info!("Info: IP address read from subdomain: {}", ipaddress);               
+                                tracing::info!("Info: IP address read from subdomain: {}", ipaddress);
                                 // Obtain the public key from the subdomain_peer
                                 let cfgresponse = dnssecresolver.txt_lookup(subdomain_peer);
                                 cfgresponse.iter().next().expect("Error: No VPN Server Public Key found!");
@@ -452,7 +452,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                     x25519::PublicKey::from(peer_u832_pk));
                                 }
                             Err(_) => return EINVAL,
-                        },            
+                        },
                         "private_key" => match value.parse::<KeyBytes>() {
                             Ok(own_static_bytes_key_pair) => {
                                 device.set_key_pair(x25519::StaticSecret::from(own_static_bytes_key_pair.0))
@@ -527,7 +527,7 @@ fn api_set_peer(
     let mut keepalive = None;
     let mut clone_peer_publickey_public_key = peer_publickey_public_key;
     let mut preshared_key = None;
-    
+
     let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
     while readerbufferdevice.read_line(&mut cmd).is_ok() {
         cmd.pop(); // remove newline if any
