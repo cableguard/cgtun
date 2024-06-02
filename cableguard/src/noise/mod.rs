@@ -116,7 +116,7 @@ impl Default for RodtMetadata {
             subjectuniqueidentifierurl: String::default(),
             serviceproviderid: String::default(),
             serviceprovidersignature: String::default(),
-            kbpersecond: String::default(),
+            // kbpersecond: String::default(),
         }
     }
 }
