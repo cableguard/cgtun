@@ -16,6 +16,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
+use std::process::exit;
 use base64::decode as base64decode;
 use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
@@ -118,7 +119,7 @@ pub struct DeviceHandle {
     threads: Vec<JoinHandle<()>>,
 }
 
-//#[derive(Debug, Clone, Copy)] 
+//#[derive(Debug, Clone, Copy)]
 #[derive(Clone)]
 pub struct DeviceConfig {
     pub n_threads: usize,
@@ -299,7 +300,7 @@ impl Drop for DeviceHandle {
 }
 
 impl Device {
-    
+
     const XNET:&'static str= BLOCKCHAIN_NETWORK;
     const SMART_CONTRACT:&'static str = SMART_CONTRACT;
 
@@ -350,13 +351,13 @@ impl Device {
         .key_pair
         .as_ref()
         .expect("Error: Self private key must be set before adding peers");
-    
+
         // Creating the own signature of the rodt_id, this is used to validate posession of the RODiT
         let own_signingkey_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Error: Invalid private key bytes");
 
         let rodt_id_signature = own_signingkey_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
-        
+
         tracing::info!("Info: Own RODiT ID signature {}",rodt_id_signature);
 
         let tunn = Tunn::new(
@@ -371,7 +372,7 @@ impl Device {
             None,
         )
         .unwrap();
-        
+
         // Creation and insertion of a peer
         let peer = Peer::new(tunn, next_peer_index, endpoint, allowed_ips_listed, preshared_key);
         let peer = Arc::new(Mutex::new(peer));
@@ -465,7 +466,7 @@ impl Device {
             std::process::exit(1);
         }
 
-        let account_idargs = "{\"token_id\": \"".to_owned() 
+        let account_idargs = "{\"token_id\": \"".to_owned()
             + &device.config.rodt.metadata.serviceproviderid + "\"}";
         match nearorg_rpc_token(Self::XNET,
             Self::SMART_CONTRACT,
@@ -475,7 +476,7 @@ impl Device {
                 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
                 let ipresponse = dnssecresolver.lookup_ip(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".")
                     .expect(&format!("Error: VPN DNS entry not found. A DNS entry with the IP address of the VPN server {} in the RODiT must be accessible", serviceprovider_rodt.metadata.subjectuniqueidentifierurl));
-                let ipaddress = ipresponse.iter().next().expect(&format!("Error: No IP address found in the VPN Server DNS entry {}", serviceprovider_rodt.metadata.subjectuniqueidentifierurl));   
+                let ipaddress = ipresponse.iter().next().expect(&format!("Error: No IP address found in the VPN Server DNS entry {}", serviceprovider_rodt.metadata.subjectuniqueidentifierurl));
                 let cfgresponse = dnssecresolver.txt_lookup(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".");
                 cfgresponse.iter().next().expect(&format!("Error: No VPN Server Public Key found for {} !",serviceprovider_rodt.metadata.subjectuniqueidentifierurl));
                 let mut peer_base64_pk:String="=".to_string();
@@ -487,8 +488,19 @@ impl Device {
                     // Only 1 Public Key per server should be accepted
                     let peer_configs = txt_strings.join(" "); // Join multiple strings with a space
                     // Obtain the public key
-                    let pk_start = peer_configs.find("pk=").unwrap_or(0) + 3; // Add 3 to skip "pk="
+                    let pk_start = match peer_configs.find("pk=") {
+                        Some(pos) => pos + 3, // Add 3 to skip "pk="
+                        None => {tracing::trace!("Error: No Public Key found in the default VPN Server");
+                            exit(1);
+                            }
+                    };
+
                     let pk_end = peer_configs.find(";").unwrap_or(peer_configs.len());
+
+                    if pk_start > pk_end {
+                        tracing::trace!("Error: Malformed public key string.");
+                        exit(1);
+                    }
                     peer_base64_pk = peer_configs[pk_start..pk_end].to_string();
                     // Obtain the port
                     let port_start = peer_configs.find("port=").unwrap_or(0) + 5; // Add 5 to skip "port="
@@ -503,7 +515,7 @@ impl Device {
                     .as_slice()
                     .try_into()
                     .expect("Invalid public key length");
-                // Not adding the server peer if WE are the server peer, running postup instead           
+                // Not adding the server peer if WE are the server peer, running postup instead
                 if device.config.x25519_public_key != peer_u832_pk {
                         // It is ok to add a peer without checks as they are performed during handshake
                         device.api_set_subdomain_peer_internal(Some(endpoint_listenport),
@@ -703,7 +715,7 @@ impl Device {
             .stop_notification(self.yield_notice.as_ref().unwrap())
     }
 
-    
+
     fn register_udp_handler(&self, udp: socket2::Socket) -> Result<(), Error> {
         self.queue.new_event(
         udp.as_raw_fd(),
@@ -738,7 +750,7 @@ impl Device {
                             }
                             Err(_) => continue,
                         };
-                        
+
                         let peer = match parsed_packet {
                             Packet::HandshakeInit(p) => {
                                 let own_copy_bytes_private_key = own_bytes_private_key.clone();
@@ -755,7 +767,7 @@ impl Device {
                                                     && verify_rodt_isamatch(device.config.rodt.metadata.serviceproviderid.clone(),
                                                         rodt.metadata.serviceprovidersignature.clone(),
                                                         *p.rodt_id)
-                                                    && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore) 
+                                                    && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore)
                                                     && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
                                                     && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
                                                         let device_key_pair = device.key_pair.as_ref()
@@ -792,7 +804,7 @@ impl Device {
                                                             device.listbyip_peer_index.insert(*addr, *cidr as _, Arc::clone(&peermutex));
                                                         }
                                                         allowed_ips_listed.clear();
-                                                        if let Some(peer) = device.peers.get(&peer_publickey_public_key) {                                                    
+                                                        if let Some(peer) = device.peers.get(&peer_publickey_public_key) {
                                                             tracing::info!("Info: Peer is trusted in half handshake init");
                                                             Some(peer)
                                                         } else {
@@ -803,21 +815,21 @@ impl Device {
                                                     tracing::error!("Error: Failed verification in half handshake init");
                                                     None
                                                 }
-                                                
+
                                             } else {
                                                 tracing::error!("Error: Failed possession check in half handshake init");
                                                 None
-                                            } 
+                                            }
                                         }
                                     }
                                     Err(_) => None
-                                } 
+                                }
                             }
                             Packet::HandshakeResponse(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                             Packet::PacketCookieReply(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                             Packet::PacketData(p) => device.listbysession_peer_index.get(&(p.receiver_session_index >> 8)),
                         };
-                           
+
                         let peer = match peer {
                             None => continue,
                             Some(peer) => peer,
@@ -845,7 +857,7 @@ impl Device {
                                 if p.is_allowed_ip(addr) {
                                     threaddata.interface.write6(packet);
                                 }
-                            } 
+                            }
                         };
                         if flush {
                             // Flush pending queue
@@ -1069,7 +1081,7 @@ impl Device {
                     }
                     Err(_) => return,
                 },
-              _ => return,     
+              _ => return,
             }
         }
 
@@ -1084,7 +1096,7 @@ impl Device {
         let clone_peer_publickey_public_key = peer_publickey_public_key;
         let preshared_key = None;
         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
-        tracing::info!("Info: Setting subdomain IP and port {:?}", endpoint_listenport);     
+        tracing::info!("Info: Setting subdomain IP and port {:?}", endpoint_listenport);
 
         let allowed_ip_str = &self.config.rodt.metadata.allowedips;
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid AllowedIPs");
@@ -1104,9 +1116,9 @@ impl Device {
             &allowed_ips_listed,
             keepalive,
             preshared_key,
-            );                    
+            );
         allowed_ips_listed.clear();
-        
+
         return 0;
     }
 
