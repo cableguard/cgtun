@@ -2,7 +2,7 @@
 
 # CableGuard TUN
 
-**CableGuard TUN** is an implementation of the [WireGuard<sup>®</sup>](https://www.wireguard.com/) protocol with Rich Online Digital Tokens (RODiT). RODiT are an implementation of non-fungible tokens that contain all the configuration, identity, and subscription information for Cableguard TUN endpoints. Cableguard TUN is based on Cloudflare's Borintung, a Rust implememtation of Wireguard. 
+**CableGuard TUN** is an implementation of the [WireGuard<sup>®</sup>](https://www.wireguard.com/) protocol with Rich Online Digital Tokens (RODiT). RODiT are an implementation of non-fungible tokens that contain all the configuration, identity, and subscription information for Cableguard TUN endpoints. Cableguard TUN is based on Cloudflare's Borintung, a Rust implememtation of Wireguard.
 This project is part of a large ecosystem (Cableguard FORGE, Cableguard TOOL, Cableguard WALLET, Cableguard FIND and Cableguard AUTH), and consists of three parts:
 
 * The executable `cableguard-cli`, a [userspace WireGuard](https://www.wireguard.com/xplatform/) implementation for Linux and macOS.
@@ -53,12 +53,10 @@ It may be possible to use with [wg-quick](https://git.zx2c4.com/WireGuard/about/
 - `x86-64` architecture is supported.
 
 # Cableguard Ecosystem
-- Cableguard TUN: VPN tunnels
+- Cableguard RODIVPN: RODiT and VPN manager
 - Cableguard TOOLS: local VPN tunnel configuration
+- Cableguard TUN: VPN tunnels
 - Cableguard FORGE: RODiT minter
-- Cableguard WALLET: RODiT manager
-- Cableguard AUTH: RODiT authentication for interoperability with implementation of the Triangle of Trust.
-- Cableguard FIND: Server and peer finder
 
 ---
 <sub><sub><sub><sub>WireGuard is a registered trademark of Jason A. Donenfeld. Cableguard is not sponsored or endorsed by Jason A. Donenfeld.</sub></sub></sub></sub>
