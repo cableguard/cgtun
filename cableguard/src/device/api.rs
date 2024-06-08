@@ -25,7 +25,7 @@ use reqwest::blocking::Client;
 use serde_json::{Value};
 use hex::encode as encode_hex;
 use base64::encode as base64encode;
-use crate::noise::Rodt;
+use crate::noise::Rodit;
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
 pub fn nearorg_rpc_tokens_for_owner(
@@ -34,7 +34,7 @@ pub fn nearorg_rpc_tokens_for_owner(
     account_id: &str, // Smart contract that controls the tokens
     method_name: &str, // Method name, for example "nft_tokens_for_owner"
     args: &str,  // Account ID in a json string followwin the format "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}"
-) -> Result<Rodt, Box<dyn std::error::Error>> {
+) -> Result<Rodit, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
     if xnet == "." {
@@ -79,7 +79,7 @@ pub fn nearorg_rpc_tokens_for_owner(
 
     let result_string = core::str::from_utf8(&result_slice).unwrap();
 
-    let result_struct: Vec<Rodt> = match serde_json::from_str(result_string) {
+    let result_struct: Vec<Rodit> = match serde_json::from_str(result_string) {
         Ok(value) => value,
         Err(err) => {
             tracing::trace!("Error: Invalid RODiT struct of owner {:?}",result_string);
@@ -88,7 +88,7 @@ pub fn nearorg_rpc_tokens_for_owner(
         }
     };
 
-    let mut result_iter = match serde_json::from_str::<Vec<Rodt>>(result_string) {
+    let mut result_iter = match serde_json::from_str::<Vec<Rodit>>(result_string) {
         Ok(value) => value.into_iter(),
         Err(err) => {
             tracing::trace!("Error: Invalid RODiT iter of owner {}",result_string);
@@ -116,12 +116,12 @@ pub fn nearorg_rpc_tokens_for_owner(
             tracing::info!("Info: serviceprovidersignature: {}", rodt.metadata.serviceprovidersignature);
             // tracing::info!("Info: kbpersecond: {}", rodt.metadata.kbpersecond);
         }
-     // Return the first Rodt instance as the result
-        tracing::info!("Info: Rodt instance found");
+     // Return the first Rodit instance as the result
+        tracing::info!("Info: Rodit instance found");
         return Ok(rodt.clone());
      } else {
-     // If no Rodt instance is available, return an Error
-        return Err("Error: No Rodt instance found".into());
+     // If no Rodit instance is available, return an Error
+        return Err("Error: No Rodit instance found".into());
     }
 }
 
@@ -163,7 +163,7 @@ pub fn nearorg_rpc_state(
         tracing::trace!("Error: The NEAR account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network");
         return Err("Error: The NEAR account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network".into());
     }
-    Ok(()) // This function returns the RODT in the parsed_json variable but we are not currently doing anything with it in the main function
+    Ok(()) // This function returns the RODiT in the parsed_json variable but we are not currently doing anything with it in the main function
 }
 
 fn produce_sock_dir() {

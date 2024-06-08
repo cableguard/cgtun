@@ -16,7 +16,7 @@ use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, CHACHA20_POLY1305};
 use std::convert::TryInto;
 use std::time::{Duration, SystemTime};
 use hex::ToHex;
-use crate::noise::{RODT_ID_SZ,RODT_ID_SIGNATURE_SZ};
+use crate::noise::{RODIT_ID_SZ,RODIT_ID_SIGNATURE_SZ};
 
 #[cfg(feature = "mock-instant")]
 use mock_instant::Instant;
@@ -239,9 +239,9 @@ struct NoiseParams {
     sending_mac1_key: [u8; KEY_LEN],
     preshared_key: Option<[u8; KEY_LEN]>,
     // Peer RODiT ID (Same blockchain and smart contract only, for the time being)
-    rodt_id: [u8; RODT_ID_SZ],
+    rodit_id: [u8; RODIT_ID_SZ],
     // Peer RODiT ID signed with the Public Ed25519 Key
-    rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
+    rodit_id_signature: [u8; RODIT_ID_SIGNATURE_SZ],
 }
 
 impl std::fmt::Debug for NoiseParams {
@@ -373,10 +373,10 @@ impl NoiseParams {
     fn new(
         static_private: x25519::StaticSecret,
         static_public: x25519::PublicKey,
-        peer_static_public: x25519::PublicKey, 
+        peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
-        rodt_id: [u8; RODT_ID_SZ],
-        rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
+        rodit_id: [u8; RODIT_ID_SZ],
+        rodit_id_signature: [u8; RODIT_ID_SIGNATURE_SZ],
     ) -> Result<NoiseParams, WireGuardError> {
 
         let static_shared = static_private.diffie_hellman(&peer_static_public);
@@ -390,8 +390,8 @@ impl NoiseParams {
             static_shared,
             sending_mac1_key: initial_sending_mac_key,
             preshared_key,
-            rodt_id,
-            rodt_id_signature,
+            rodit_id,
+            rodit_id_signature,
         })
     }
 
@@ -426,16 +426,16 @@ impl Handshake {
         peer_static_public: x25519::PublicKey,
         global_index: u32,
         preshared_key: Option<[u8; 32]>,
-        rodt_id: [u8; RODT_ID_SZ],
-        rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
+        rodit_id: [u8; RODIT_ID_SZ],
+        rodit_id_signature: [u8; RODIT_ID_SIGNATURE_SZ],
     ) -> Result<Handshake, WireGuardError> {
         let params = NoiseParams::new(
             static_private,
             static_public,
             peer_static_public,
             preshared_key,
-            rodt_id,
-            rodt_id_signature,
+            rodit_id,
+            rodit_id_signature,
         )?;
 
         Ok(Handshake {
@@ -734,58 +734,58 @@ impl Handshake {
     ) -> Result<&'a mut [u8], WireGuardError> {
         if dst.len() < super::HANDSHAKE_INIT_SZ {
             return Err(WireGuardError::DestinationBufferTooSmall);
-        }    
+        }
 
         let (message_type, rest) = dst.split_at_mut(4);
         let (sender_index, rest) = rest.split_at_mut(4);
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_static, rest) = rest.split_at_mut(32 + 16);
         let (encrypted_timestamp, rest) = rest.split_at_mut(12 + 16);
-        let (rodt_id, rest) = rest.split_at_mut(RODT_ID_SZ);
-        let (rodt_id_signature, _) = rest.split_at_mut(64);
+        let (rodit_id, rest) = rest.split_at_mut(RODIT_ID_SZ);
+        let (rodit_id_signature, _) = rest.split_at_mut(64);
 
         let local_index = self.inc_index();
 
         // initiator.chaining_key = HASH(CONSTRUCTION)
         let mut chaining_key = INITIAL_CHAIN_KEY;
-        
+
         // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         let mut hash = INITIAL_CHAIN_HASH;
 
         // As we don't know self.params.peer_static_public yet, we need to set it to a fix value
         hash = b2s_hash(&hash, self.params.peer_static_public.as_bytes());
-        
+
         // initiator.ephemeral_private = DH_GENERATE()
         let ephemeral_private = x25519::ReusableSecret::random_from_rng(OsRng);
-        
+
         // msg.message_type = 1
         // msg.reserved_zero = { 0, 0, 0 }
         message_type.copy_from_slice(&super::HANDSHAKE_INIT_CONSTANT.to_le_bytes());
-        
+
         // msg.sender_index = little_endian(initiator.sender_index)
         sender_index.copy_from_slice(&local_index.to_le_bytes());
-        
+
         // msg.unencrypted_ephemeral = DH_PUBKEY(initiator.ephemeral_private)
         unencrypted_ephemeral
             .copy_from_slice(x25519::PublicKey::from(&ephemeral_private).as_bytes());
-        
+
         // initiator.hash = HASH(initiator.hash || msg.unencrypted_ephemeral)
         hash = b2s_hash(&hash, unencrypted_ephemeral);
-        
+
         // temp = HMAC(initiator.chaining_key, msg.unencrypted_ephemeral)
         // initiator.chaining_key = HMAC(temp, 0x1)
         chaining_key = b2s_hmac(&b2s_hmac(&chaining_key, unencrypted_ephemeral), &[0x01]);
-        
+
         // temp = HMAC(initiator.chaining_key, DH(initiator.ephemeral_private, responder.static_public))
         let ephemeral_shared = ephemeral_private.diffie_hellman(&self.params.peer_static_public);
         let temp = b2s_hmac(&chaining_key, &ephemeral_shared.to_bytes());
-        
+
         // initiator.chaining_key = HMAC(temp, 0x1)
         chaining_key = b2s_hmac(&temp, &[0x01]);
-        
+
         // key = HMAC(temp, initiator.chaining_key || 0x2)
         let key = b2s_hmac2(&temp, &chaining_key, &[0x02]);
-        
+
         // msg.encrypted_static = AEAD(key, 0, initiator.static_public, initiator.hash)
         aead_chacha20_seal(
             encrypted_static,
@@ -794,19 +794,19 @@ impl Handshake {
             self.params.static_public.as_bytes(),
             &hash,
         );
-        
+
         // initiator.hash = HASH(initiator.hash || msg.encrypted_static)
         hash = b2s_hash(&hash, encrypted_static);
-        
+
         // temp = HMAC(initiator.chaining_key, DH(initiator.static_private, responder.static_public))
         let temp = b2s_hmac(&chaining_key, self.params.static_shared.as_bytes());
-        
+
         // initiator.chaining_key = HMAC(temp, 0x1)
         chaining_key = b2s_hmac(&temp, &[0x01]);
-        
+
         // key = HMAC(temp, initiator.chaining_key || 0x2)
         let key = b2s_hmac2(&temp, &chaining_key, &[0x02]);
-        
+
         // msg.encrypted_timestamp = AEAD(key, 0, TAI64N(), initiator.hash)
         let timestamp = self.stamper.stamp();
         aead_chacha20_seal(encrypted_timestamp, &key, 0, &timestamp, &hash);
@@ -814,13 +814,13 @@ impl Handshake {
         // initiator.hash = HASH(initiator.hash || msg.encrypted_timestamp)
         hash = b2s_hash(&hash, encrypted_timestamp);
 
-        // Our rodt_id values to transfer over the wire
-        rodt_id.copy_from_slice(&self.params.rodt_id);
-        rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
+        // Our rodit_id values to transfer over the wire
+        rodit_id.copy_from_slice(&self.params.rodit_id);
+        rodit_id_signature.copy_from_slice(&self.params.rodit_id_signature);
 
         // Check if the conversion was successful
-        let string_rodt_id = String::from_utf8(self.params.rodt_id.to_vec());
-        match string_rodt_id {
+        let string_rodit_id = String::from_utf8(self.params.rodit_id.to_vec());
+        match string_rodit_id {
             Ok(string) => {
                 // Conversion success, use the resulting string
                 tracing::info!("Info: Initiation Own RODiT ID sent {}",string);
@@ -873,8 +873,8 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_nothing, rest) = rest.split_at_mut(16);
         // The response also has 2 additional fields so both sides can authenticate each other
-        let (rodt_id, rest) = rest.split_at_mut(RODT_ID_SZ);
-        let (rodt_id_signature, _) = rest.split_at_mut(64);
+        let (rodit_id, rest) = rest.split_at_mut(RODIT_ID_SZ);
+        let (rodit_id_signature, _) = rest.split_at_mut(64);
 
         // responder.ephemeral_private = DH_GENERATE()
         let ephemeral_private = x25519::ReusableSecret::random_from_rng(OsRng);
@@ -937,8 +937,8 @@ impl Handshake {
         // initiator.sending_key_counter = 0
         // initiator.receiving_key_counter = 0
 
-        rodt_id.copy_from_slice(&self.params.rodt_id);
-        rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
+        rodit_id.copy_from_slice(&self.params.rodit_id);
+        rodit_id_signature.copy_from_slice(&self.params.rodit_id_signature);
 
         let dst = self.append_mac1_and_mac2(local_index, &mut dst[..super::HANDSHAKE_RESP_SZ])?;
 

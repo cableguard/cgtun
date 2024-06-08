@@ -3,7 +3,7 @@
 
 use clap::{Arg, Command};
 use cableguard::device::{DeviceConfig, DeviceHandle,ed2x_private_key_bytes,skx2pkx};
-use cableguard::noise::Rodt;
+use cableguard::noise::Rodit;
 use cableguard::device::api::{nearorg_rpc_tokens_for_owner,nearorg_rpc_state};
 use cableguard::noise::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use cableguard::device::drop_privileges::drop_privileges;
@@ -130,7 +130,7 @@ fn main() {
     let own_static_base58_private_ed25519_key = own_static_base58_private_ed25519_key.trim_start_matches("ed25519:");
 
     // Initialize a RODiT object
-    let rodt: Rodt;
+    let rodt: Rodit;
 
     tracing::trace!("Info: Smart Contract Account: {}", SMART_CONTRACT);
 

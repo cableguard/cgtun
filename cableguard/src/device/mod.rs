@@ -22,7 +22,7 @@ use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
-use crate::noise::{verify_hasrodt_getit,verify_rodt_islive,verify_rodt_isactive,verify_rodt_smartcontract_istrusted};
+use crate::noise::{verify_hasrodit_getit,verify_rodit_islive,verify_rodit_isactive,verify_rodit_smartcontract_istrusted};
 use crate::noise::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use hex::encode as encode_hex;
 use allowed_ips::AllowedIps;
@@ -41,8 +41,8 @@ use crate::noise::handshake::consume_received_handshake_peer_2blisted;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use ed25519_dalek::{Keypair,Signer};
-use crate::noise::verify_rodt_isamatch;
-use crate::noise::Rodt;
+use crate::noise::verify_rodit_isamatch;
+use crate::noise::Rodit;
 use crate::noise::nearorg_rpc_token;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
@@ -128,7 +128,7 @@ pub struct DeviceConfig {
     pub use_multi_queue: bool,
     #[cfg(target_os = "linux")]
     pub uapi_fd: i32,
-    pub rodt: Rodt,
+    pub rodt: Rodit,
     pub own_bytes_ed25519_private_key: [u8;64],
     pub x25519_private_key:[u8; 32],
     pub x25519_public_key:[u8; 32],
@@ -143,7 +143,7 @@ impl Default for DeviceConfig {
             use_multi_queue: true,
             #[cfg(target_os = "linux")]
             uapi_fd: -1,
-            rodt: Rodt::default(),
+            rodt: Rodit::default(),
             own_bytes_ed25519_private_key: [0;64],
             x25519_private_key:[0;32],
             x25519_public_key:[0;32],
@@ -352,13 +352,13 @@ impl Device {
         .as_ref()
         .expect("Error: Self private key must be set before adding peers");
 
-        // Creating the own signature of the rodt_id, this is used to validate posession of the RODiT
+        // Creating the own signature of the rodit_id, this is used to validate posession of the RODiT
         let own_signingkey_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Error: Invalid private key bytes");
 
-        let rodt_id_signature = own_signingkey_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
+        let rodit_id_signature = own_signingkey_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
 
-        tracing::info!("Info: Own RODiT ID signature {}",rodt_id_signature);
+        tracing::info!("Info: Own RODiT ID signature {}",rodit_id_signature);
 
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Own X25519 private key
@@ -366,7 +366,7 @@ impl Device {
             preshared_key,
             self.config.rodt.token_id.clone(), // Own RODiT ID
             self.config.rodt.metadata.serviceproviderid.clone(),
-            rodt_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
+            rodit_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
             keepalive,
             next_peer_index,
             None,
@@ -761,22 +761,22 @@ impl Device {
                                         if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
                                             Some(peer)
                                         } else {
-                                            let evaluation = verify_hasrodt_getit(*p.rodt_id ,*p.rodt_id_signature);
+                                            let evaluation = verify_hasrodit_getit(*p.rodit_id ,*p.rodit_id_signature);
                                             if let Ok((verification_result, rodt)) = evaluation {
                                                 if verification_result
-                                                    && verify_rodt_isamatch(device.config.rodt.metadata.serviceproviderid.clone(),
+                                                    && verify_rodit_isamatch(device.config.rodt.metadata.serviceproviderid.clone(),
                                                         rodt.metadata.serviceprovidersignature.clone(),
-                                                        *p.rodt_id)
-                                                    && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore)
-                                                    && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-                                                    && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
+                                                        *p.rodit_id)
+                                                    && verify_rodit_islive(rodt.metadata.notafter,rodt.metadata.notbefore)
+                                                    && verify_rodit_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
+                                                    && verify_rodit_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
                                                         let device_key_pair = device.key_pair.as_ref()
                                                             .expect("Error: Self private key must be set before adding peers")
                                                             .clone();
                                                         let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);
                                                         let own_signingkey_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
                                                             .expect("Error: Invalid private key bytes");
-                                                        let rodt_id_signature = own_signingkey_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
+                                                        let rodit_id_signature = own_signingkey_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
                                                         let next_peer_index = device.next_peer_index().clone();
                                                         let tunn = Tunn::new(
                                                             device_key_pair.0.clone(), // Own X25519 private key
@@ -784,7 +784,7 @@ impl Device {
                                                             None,
                                                             device.config.rodt.token_id.clone(), // Own RODiT ID
                                                             device.config.rodt.metadata.serviceproviderid.clone(),
-                                                            rodt_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
+                                                            rodit_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
                                                             None,
                                                             next_peer_index,
                                                             None,
