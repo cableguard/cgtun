@@ -57,7 +57,7 @@ const KEY_LEN: usize = 32;
 pub mod constants {
     // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
     pub const SMART_CONTRACT: &str = "rodit-org.near";
-    pub const BLOCKCHAIN_NETWORK: &str = "."; // IMPORTANT: Values here must be either ".testnet." for tesnet or "." for mainnet;
+    pub const BLOCKCHAIN_NETWORK: &str = "."; // IMPORTANT: Values here must be either ".testnet." for testnet or "." for mainnet;
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
