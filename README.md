@@ -24,32 +24,25 @@ If you want to contribute to this project, please contact <vpn@cableguard.org>.
 - cargo build --bin cableguard-cli --release
 By default the executable is placed in the `./target/release` folder. You can copy it to a desired location manually, or install it using `cargo install --bin cableguard --path .`.
 
-##Note
-- master branch operates in mainnet and has even version numbers.
-- testnet branch operates in testnet and has odd version numbers
-
 You may want to add to .bashrc these lines:
-- export RODITCONTRACTID="name of the NEAR PROTOCOL smartcontract"
-- export BLOCKCHAIN_ENV=testnet (or mainnet)
+- sudo setcap cap_net_admin+epi ./<path>/cableguard-cli
+- export BLOCKCHAIN_ENV=testnet (for testnet, mainnet for mainnet)
 
 ## How to Install from .deb package
-wget https://cableguard.fra1.digitaloceanspaces.com/cableguard-cli_0.90.55_amd64.deb
-sudo apt install ./cableguard-cli_0.90.55_amd64.deb
+wget https://cableguard.fra1.digitaloceanspaces.com/cableguard-cli_0.89.99_amd64.deb
+sudo apt install ./cableguard-cli_0.90.56_amd64.deb
 
 ## How to Use
 To start a tunnel use:
 `cableguard-cli [-f/--foreground] <filewithaccount.json>`
 
-Where <filewithaccount.json> is a NEAR implicit account created with wg genaccount, or with cgroditwallet.sh genaccount
-
-To connect the default VPN server listed in the RODiT use:
-`cgcvpn.sh <filewithaccount.json>`
-
-To start a VPN server that has a working eth0 interface use:
-`cgsvpn-eth0.sh <filewithaccount.json>`
+Where <filewithaccount.json> is a NEAR implicit account created with ./wallet/rodtwallet.sh genaccount
 
 `cableguard` will drop privileges when started. When privileges are dropped it is not possible to set `fwmark`. If `fwmark` is required, such as when using `wg-quick`, run with `--disable-drop-privileges` or set the environment variable `WG_SUDO=1`.
 You will need to give the executable the `CAP_NET_ADMIN` capability using: `sudo setcap cap_net_admin+epi cableguard`.
+
+It may be possible to use with [wg-quick](https://git.zx2c4.com/WireGuard/about/src/tools/man/wg-quick.8) by setting the environment variable `WG_QUICK_USERSPACE_IMPLEMENTATION` to `cableguard`. For example:
+`sudo WG_QUICK_USERSPACE_IMPLEMENTATION=cableguard-cli WG_SUDO=1 wg-quick up CONFIGURATION`
 
 ## Supported platforms
 - It has only been tested in AMD/Intel

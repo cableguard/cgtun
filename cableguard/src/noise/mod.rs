@@ -57,7 +57,7 @@ const KEY_LEN: usize = 32;
 pub mod constants {
     // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
     pub const SMART_CONTRACT: &str = "cableguard-org.near";
-    pub const BLOCKCHAIN_NETWORK: &str = "."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
+    pub const BLOCKCHAIN_NETWORK: &str = "."; // IMPORTANT: Values here must be either ".testnet." for tesnet or "." for mainnet;
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -1107,11 +1107,10 @@ let string_timenow = nearorg_rpc_timestamp(BLOCKCHAIN_NETWORK);
 // Try to parse the timestamp, and if successful, create a NaiveDateTime from it
 if let Ok(string_timenow) = string_timenow {
     if let Ok(i64_timestamp) = string_timenow.parse::<i64>() {
-        let naivedatetime_timestamp = NaiveDateTime::from_timestamp(i64_timestamp / 1000000000, 0);
-        // let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp / 1000000000, 0);
+        let naivedatetime_timestamp = NaiveDateTime::from_timestamp_opt(i64_timestamp / 1000000000, 0);
 
-        if ((naivedatetime_timestamp <= naivedatetime_notafter) || (naivedatetime_notafter == naivedatetime_nul))
-            && ((naivedatetime_timestamp >= naivedatetime_notbefore) || (naivedatetime_notbefore == naivedatetime_nul)) {
+        if ((naivedatetime_timestamp <= Some(naivedatetime_notafter)) || (naivedatetime_notafter == naivedatetime_nul))
+            && ((naivedatetime_timestamp >= Some(naivedatetime_notbefore)) || (naivedatetime_notbefore == naivedatetime_nul)) {
             tracing::info!("Info Peer RODiT is live");
             return true;
         } else {
