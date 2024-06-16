@@ -49,7 +49,7 @@ It may be possible to use with [wg-quick](https://git.zx2c4.com/WireGuard/about/
 - `x86-64` architecture is supported.
 
 # Cableguard Ecosystem
-- Cableguard RODIVPN: RODiT and VPN manager
+- Cableguard RODITVPN: RODiT and VPN manager
 - Cableguard TOOLS: local VPN tunnel configuration
 - Cableguard TUN: VPN tunnels
 - Cableguard FORGE: RODiT minter
