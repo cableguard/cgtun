@@ -141,8 +141,7 @@ pub struct Tunn {
     /// The handshake currently in progress
     handshake: handshake::Handshake,
     /// The Own serviceprovider ID to check if it matches upon handshake
-    // CG: The following variable is necessary if mutual checks are performed for every handshake and not only the initial one
-    own_serviceproviderid: String,
+    own_serviceproviderid: String, // CG: This is necessary if mutual checks are performed for every handshake and not only the initial one
     /// The N_SESSIONS most recent sessions, index is session id modulo N_SESSIONS
     sessions: [Option<session::Session>; N_SESSIONS],
     /// Index of most recently used session
@@ -969,7 +968,6 @@ let string_roditid: &str = std::str::from_utf8(slice_roditid)
 let account_idargs = "{\"token_id\": \"".to_owned()
     + &string_roditid+ "\"}";
 
-// CG: Return values need to be honed, probably false / true better than codes here
 match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
     Ok(fetched_rodit) => {
         tracing::info!("Info: Peer RODiT Owner Init Received: {:?}", fetched_rodit.owner_id);

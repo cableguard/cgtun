@@ -145,7 +145,7 @@ impl Peer {
     }
 
     pub fn is_allowed_ip<I: Into<IpAddr>>(&self, addr: I) -> bool {
-        // CG: Maybe a tracing error should be written somewhere if the IP is not allowed
+        // CG: A tracing error should be thrown if the IP is not allowed
         self.allowed_ips_listed.find(addr.into()).is_some()
     }
 

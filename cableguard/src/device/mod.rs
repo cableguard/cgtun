@@ -1088,7 +1088,6 @@ impl Device {
                       Err(_) => return,
                     },
             "set_peer_public_key" => match value.parse::<KeyBytes>() {
-                // CG: This bit is not tested
                 Ok(peer_keybytes_key) => {
                     let peer_hex_public_key = encode_hex(peer_keybytes_key.0);
                     tracing::info!("Info: Peer Public Key api_set_internal {}", peer_hex_public_key);
@@ -1118,7 +1117,7 @@ impl Device {
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid AllowedIPs");
         tracing::info!("Info: Setting own assigned IP {:?}", allowed_ip);
 
-        // CG: Add IPv6 support
+        // CG: Add IPv6 support in self.config.rodit.metadata.allowedips
         // let ipv6_allowed_ip_str = "2001:db8::1/64"; // Replace with your IPv6 AllowedIP string
         // let ipv6_allowed_ip: AllowedIP = ipv6_allowed_ip_str.parse().expect("Error: Invalid IPv6 AllowedIP");
 
