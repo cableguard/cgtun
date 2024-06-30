@@ -16,7 +16,7 @@ use ring::aead::{Aad, LessSafeKey, Nonce, UnboundKey, CHACHA20_POLY1305};
 use std::convert::TryInto;
 use std::time::{Duration, SystemTime};
 use hex::ToHex;
-use crate::noise::{RODiT_ID_SZ,RODiT_ID_SIGNATURE_SZ};
+use crate::noise::{RODIT_ID_SZ,RODIT_ID_SIGNATURE_SZ};
 
 #[cfg(feature = "mock-instant")]
 use mock_instant::Instant;
@@ -239,9 +239,9 @@ struct NoiseParams {
     sending_mac1_key: [u8; KEY_LEN],
     preshared_key: Option<[u8; KEY_LEN]>,
     // Peer RODiT ID (Same blockchain and smart contract only, for the time being)
-    rodit_id: [u8; RODiT_ID_SZ],
+    rodit_id: [u8; RODIT_ID_SZ],
     // Peer RODiT ID signed with the Public Ed25519 Key
-    rodit_id_signature: [u8; RODiT_ID_SIGNATURE_SZ],
+    rodit_id_signature: [u8; RODIT_ID_SIGNATURE_SZ],
 }
 
 impl std::fmt::Debug for NoiseParams {
@@ -375,8 +375,8 @@ impl NoiseParams {
         static_public: x25519::PublicKey,
         peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
-        rodit_id: [u8; RODiT_ID_SZ],
-        rodit_id_signature: [u8; RODiT_ID_SIGNATURE_SZ],
+        rodit_id: [u8; RODIT_ID_SZ],
+        rodit_id_signature: [u8; RODIT_ID_SIGNATURE_SZ],
     ) -> Result<NoiseParams, WireGuardError> {
 
         let static_shared = static_private.diffie_hellman(&peer_static_public);
@@ -426,8 +426,8 @@ impl Handshake {
         peer_static_public: x25519::PublicKey,
         global_index: u32,
         preshared_key: Option<[u8; 32]>,
-        rodit_id: [u8; RODiT_ID_SZ],
-        rodit_id_signature: [u8; RODiT_ID_SIGNATURE_SZ],
+        rodit_id: [u8; RODIT_ID_SZ],
+        rodit_id_signature: [u8; RODIT_ID_SIGNATURE_SZ],
     ) -> Result<Handshake, WireGuardError> {
         let params = NoiseParams::new(
             static_private,
@@ -741,7 +741,7 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_static, rest) = rest.split_at_mut(32 + 16);
         let (encrypted_timestamp, rest) = rest.split_at_mut(12 + 16);
-        let (rodit_id, rest) = rest.split_at_mut(RODiT_ID_SZ);
+        let (rodit_id, rest) = rest.split_at_mut(RODIT_ID_SZ);
         let (rodit_id_signature, _) = rest.split_at_mut(64);
 
         let local_index = self.inc_index();
@@ -873,7 +873,7 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_nothing, rest) = rest.split_at_mut(16);
         // The response also has 2 additional fields so both sides can authenticate each other
-        let (rodit_id, rest) = rest.split_at_mut(RODiT_ID_SZ);
+        let (rodit_id, rest) = rest.split_at_mut(RODIT_ID_SZ);
         let (rodit_id_signature, _) = rest.split_at_mut(64);
 
         // responder.ephemeral_private = DH_GENERATE()
