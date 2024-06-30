@@ -7,7 +7,7 @@ This project is part of a large ecosystem (Cableguard FORGE, Cableguard TOOL, Ca
 
 * The executable `cableguard-cli`, a [userspace WireGuard](https://www.wireguard.com/xplatform/) implementation for Linux and macOS.
 * The library `cableguard` that implements the underlying WireGuard protocol, without the network or tunnel stacks that need to be that need to be implemented in a platform idiomatic way.
-* The rodtwallet.sh scripts (temporary implementation of Cableguard WALLET) that works with the NEAR CLI interface. It provides barebones command line crytographic commands for the management of RODiT and NEAR implicit accounts.
+* The roditwallet.sh scripts (temporary implementation of Cableguard WALLET) that works with the NEAR CLI interface. It provides barebones command line crytographic commands for the management of RODiT and NEAR implicit accounts.
 
 ## License
 This project is released under the [GPLv2](COPYING).
@@ -30,13 +30,13 @@ You may want to add to .bashrc these lines:
 
 ## How to Install from .deb package
 wget https://cableguard.fra1.digitaloceanspaces.com/cableguard-cli_0.89.99_amd64.deb
-sudo apt install ./cableguard-cli_0.90.57_amd64.deb
+sudo apt install ./cableguard-cli_0.90.59_amd64.deb
 
 ## How to Use
 To start a tunnel use:
 `cableguard-cli [-f/--foreground] <filewithaccount.json>`
 
-Where <filewithaccount.json> is a NEAR implicit account created with ./wallet/rodtwallet.sh genaccount
+Where <filewithaccount.json> is a NEAR implicit account created with ./wallet/roditwallet.sh genaccount
 
 `cableguard` will drop privileges when started. When privileges are dropped it is not possible to set `fwmark`. If `fwmark` is required, such as when using `wg-quick`, run with `--disable-drop-privileges` or set the environment variable `WG_SUDO=1`.
 You will need to give the executable the `CAP_NET_ADMIN` capability using: `sudo setcap cap_net_admin+epi cableguard`.

@@ -61,21 +61,21 @@ pub mod constants {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Rodt {
+pub struct Rodit {
     pub token_id: String,
     pub owner_id: String,
-    pub metadata: RodtMetadata,
+    pub metadata: RoditMetadata,
     pub approved_account_ids: serde_json::Value,
     pub royalty: serde_json::Value,
 }
 
 
-impl Default for Rodt {
+impl Default for Rodit {
     fn default() -> Self {
-        Rodt {
+        Rodit {
             token_id: String::default(),
             owner_id: String::default(),
-            metadata: RodtMetadata::default(),
+            metadata: RoditMetadata::default(),
             approved_account_ids: serde_json::Value::Null,
             royalty: serde_json::Value::Null,
         }
@@ -83,7 +83,7 @@ impl Default for Rodt {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct RodtMetadata {
+pub struct RoditMetadata {
     pub issuername: String,
     pub description: String,
     pub notafter: String,
@@ -100,9 +100,9 @@ pub struct RodtMetadata {
     // pub kbpersecond: String,
 }
 
-impl Default for RodtMetadata {
+impl Default for RoditMetadata {
     fn default() -> Self {
-        RodtMetadata {
+        RoditMetadata {
             issuername: String::default(),
             description: String::default(),
             notafter: String::default(),
@@ -165,7 +165,7 @@ pub const RODT_ID_SZ:usize = 128;
 pub const RODT_ID_SIGNATURE_SZ:usize = 64;
 pub const RODT_ID_PK_SZ:usize = 32;
 
-// These sizes are increased by RODT_ID_SZ + 64 bytes to accommodate for the rodt_id and signature of the same
+// These sizes are increased by RODT_ID_SZ + 64 bytes to accommodate for the rodit_id and signature of the same
 const HANDSHAKE_INIT_SZ: usize = 148+RODT_ID_SZ+RODT_ID_SIGNATURE_SZ;
 const HANDSHAKE_RESP_SZ: usize = 92+RODT_ID_SZ+RODT_ID_SIGNATURE_SZ;
 const COOKIE_REPLY_SZ: usize = 64;
@@ -177,8 +177,8 @@ pub struct HandshakeInit<'a> {
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_static: &'a [u8],
     encrypted_timestamp: &'a [u8],
-    pub rodt_id: &'a [u8; RODT_ID_SZ],
-    pub rodt_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
+    pub rodit_id: &'a [u8; RODT_ID_SZ],
+    pub rodit_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
 }
 
 #[derive(Debug,Copy, Clone)]
@@ -187,8 +187,8 @@ pub struct HandshakeResponse<'a> {
     pub receiver_session_index: u32,
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_nothing: &'a [u8],
-    rodt_id: &'a [u8; RODT_ID_SZ],
-    rodt_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
+    pub rodit_id: &'a [u8; RODT_ID_SZ],
+    pub rodit_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
 }
 
 #[derive(Debug,Copy,Clone)]
@@ -232,9 +232,9 @@ impl Tunn {
                     .expect("Error: Failure checking packet field length"),
                 encrypted_static: &src[40..88], // SIZE u8;32, 88-40 = 48 bytes, seems too big for the spec u8 encrypted_static[AEAD_LEN(32)]
                 encrypted_timestamp: &src[88..116], // SIZE u8;12, 116-88 = 28 bytes, seems too big for the spec u8 encrypted_timestamp[AEAD_LEN(12)]
-                rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[116..244])
+                rodit_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[116..244])
                     .expect("Error: Failure checking packet field length"), // SIZE u8;128, 244-116 = 128 bytes
-                rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[244..308])
+                rodit_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[244..308])
                     .expect("Error: Failure checking packet field length"), // SIZE u8;64, 308-244 = 64 bytes
                 }),
                 (HANDSHAKE_RESP, HANDSHAKE_RESP_SZ) => Packet::HandshakeResponse(HandshakeResponse {
@@ -244,9 +244,9 @@ impl Tunn {
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("Error: Failure checking packet field length"),
                 encrypted_nothing: &src[44..60], // SIZE 60-44 = 16 bytes but u8 encrypted_nothing[AEAD_LEN(0)]
-                rodt_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[60..188])
+                rodit_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[60..188])
                     .expect("Error: Failure checking packet field length"), // SIZE u8;64, 188-60 = 128 bytes
-                rodt_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[188..252])
+                rodit_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[188..252])
                     .expect("Error: Failure checking packet field length"), // SIZE u8;64, 252-188 = 64 bytes
             }),
             (COOKIE_REPLY, COOKIE_REPLY_SZ) => Packet::PacketCookieReply(PacketCookieReply {
@@ -296,21 +296,21 @@ impl Tunn {
         static_private: x25519::StaticSecret,
         peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
-        string_rodt_id: String,
+        string_rodit_id: String,
         serviceproviderid: String,
-        rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
+        rodit_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
         persistent_keepalive: Option<u16>,
         session_index: u32,
         rate_limiter: Option<Arc<RateLimiter>>,
     ) -> Result<Self, &'static str> {
         let static_public = x25519::PublicKey::from(&static_private);
 
-        // Copying the rodt_id to the Tunn safely
-        let bytes_rodt_id = string_rodt_id.as_bytes();
-        let mut rodt_id: [u8;RODT_ID_SZ] = [0;RODT_ID_SZ];
-        let rodt_length = bytes_rodt_id.len().min(rodt_id.len()-1);
-        rodt_id[..rodt_length].copy_from_slice(&bytes_rodt_id[..rodt_length]);
-        rodt_id[rodt_length] = 0;
+        // Copying the rodit_id to the Tunn safely
+        let bytes_rodit_id = string_rodit_id.as_bytes();
+        let mut rodit_id: [u8;RODT_ID_SZ] = [0;RODT_ID_SZ];
+        let rodit_length = bytes_rodit_id.len().min(rodit_id.len()-1);
+        rodit_id[..rodit_length].copy_from_slice(&bytes_rodit_id[..rodit_length]);
+        rodit_id[rodit_length] = 0;
 
         let tunn = Tunn {
             handshake: Handshake::new(
@@ -319,8 +319,8 @@ impl Tunn {
                 peer_static_public,
                 session_index << 8,
                 preshared_key,
-                rodt_id,
-                rodt_id_signature,
+                rodit_id,
+                rodit_id_signature,
             )
             .map_err(|_| "Error: Invalid parameters")?,
             own_serviceproviderid: serviceproviderid,
@@ -444,20 +444,20 @@ impl Tunn {
 
         // Beginning of Peer RODiT verification
         /*
-        let peer_slice_rodtid: &[u8] = &peer_handshake_init.rodt_id[..];
-        let _peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
+        let peer_slice_roditid: &[u8] = &peer_handshake_init.rodit_id[..];
+        let _peer_string_roditid: &str = std::str::from_utf8(peer_slice_roditid)
         .expect("Error: Failed to convert byte slice to string")
         .trim_end_matches('\0');
 
-        let evaluation = verify_hasrodt_getit(*peer_handshake_init.rodt_id ,*peer_handshake_init.rodt_id_signature);
-        if let Ok((verification_result, rodt)) = evaluation {
+        let evaluation = verify_isthererodit_getit(*peer_handshake_init.rodit_id ,*peer_handshake_init.rodit_id_signature);
+        if let Ok((verification_result, rodit)) = evaluation {
             if verification_result
-                && verify_rodt_isamatch(self.own_serviceproviderid.clone(),
-                    rodt.metadata.serviceprovidersignature.clone(),
-                    *peer_handshake_init.rodt_id)
-                && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore)
-                && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-                && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
+                && verify_rodit_isamatch(self.own_serviceproviderid.clone(),
+                    rodit.metadata.serviceprovidersignature.clone(),
+                    *peer_handshake_init.rodit_id)
+                && verify_rodit_islive(rodit.metadata.notafter,rodit.metadata.notbefore)
+                && verify_rodit_isactive(rodit.token_id,rodit.metadata.subjectuniqueidentifierurl.clone())
+                && verify_rodit_istrusted_issuingsmartcontract(rodit.metadata.subjectuniqueidentifierurl.clone()) {
                     tracing::info!("Info Peer is trusted in handshake initiation");
             }
             else {
@@ -491,20 +491,20 @@ impl Tunn {
 
         // Beginning of Peer RODiT verification
         /*
-        let peer_slice_rodtid: &[u8] = &peer_handshake_response.rodt_id[..];
-        let _peer_string_rodtid: &str = std::str::from_utf8(peer_slice_rodtid)
+        let peer_slice_roditid: &[u8] = &peer_handshake_response.rodit_id[..];
+        let _peer_string_roditid: &str = std::str::from_utf8(peer_slice_roditid)
         .expect("Error: Failed to convert byte slice to string")
         .trim_end_matches('\0');
 
-        let evaluation = verify_hasrodt_getit(*peer_handshake_response.rodt_id ,*peer_handshake_response.rodt_id_signature);
-        if let Ok((verification_result, rodt)) = evaluation {
+        let evaluation = verify_isthererodit_getit(*peer_handshake_response.rodit_id ,*peer_handshake_response.rodit_id_signature);
+        if let Ok((verification_result, rodit)) = evaluation {
             if verification_result
-                && verify_rodt_isamatch(self.own_serviceproviderid.clone(),
-                    rodt.metadata.serviceprovidersignature.clone(),
-                    *peer_handshake_response.rodt_id)
-                && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore)
-                && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-                && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()){
+                && verify_rodit_isamatch(self.own_serviceproviderid.clone(),
+                    rodit.metadata.serviceprovidersignature.clone(),
+                    *peer_handshake_response.rodit_id)
+                && verify_rodit_islive(rodit.metadata.notafter,rodit.metadata.notbefore)
+                && verify_rodit_isactive(rodit.token_id,rodit.metadata.subjectuniqueidentifierurl.clone())
+                && verify_rodit_istrusted_issuingsmartcontract(rodit.metadata.subjectuniqueidentifierurl.clone()){
                     tracing::info!("Info Peer is trusted in handshake response");
             }
             else {
@@ -512,7 +512,7 @@ impl Tunn {
                 return Err(WireGuardError::PeerEd25519SignatureVerificationFailure);
             }
         } else {
-            tracing::error!("Error: Fetching RODiT with verify_hasrodt_getit in handshake response");
+            tracing::error!("Error: Fetching RODiT with verify_isthererodit_getit in handshake response");
         }
         */
 
@@ -955,41 +955,41 @@ mod tests {
     }
 }
 
-pub fn verify_hasrodt_getit(
-    rodt_id: [u8;RODT_ID_SZ],
-    rodt_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
-) -> Result<(bool,Rodt), WireGuardError> {
+pub fn verify_isthererodit_getit(
+    rodit_id: [u8;RODT_ID_SZ],
+    rodit_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
+) -> Result<(bool,Rodit), WireGuardError> {
 
-let slice_rodtid: &[u8] = &rodt_id[..];
-let string_rodtid: &str = std::str::from_utf8(slice_rodtid)
+let slice_roditid: &[u8] = &rodit_id[..];
+let string_roditid: &str = std::str::from_utf8(slice_roditid)
 .expect("Error: Failed to convert byte slice to string")
 .trim_end_matches('\0');
 
 // Obtain a Peer RODiT from its ID
 let account_idargs = "{\"token_id\": \"".to_owned()
-    + &string_rodtid+ "\"}";
+    + &string_roditid+ "\"}";
 
 // CG: Return values need to be honed, probably false / true better than codes here
 match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
-    Ok(fetched_rodt) => {
-        tracing::info!("Info: Peer RODiT Owner Init Received: {:?}", fetched_rodt.owner_id);
+    Ok(fetched_rodit) => {
+        tracing::info!("Info: Peer RODiT Owner Init Received: {:?}", fetched_rodit.owner_id);
         // Convert the owner_id string to a Vec<u8> by decoding it from hex
-        let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodt.owner_id.clone())
+        let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodit.owner_id.clone())
             .expect("Error: Failed to decode hex string");
         // Convert the bytes to a [u8; 32] array
         let fetched_bytes_ed25519_public_key: [u8; RODT_ID_PK_SZ] = fetched_vec_ed25519_public_key
             .try_into()
             .expect("Error: Invalid byte array length");
 
-        // Parse the signature bytes from packet.rodt_id_signature
+        // Parse the signature bytes from packet.rodit_id_signature
         // and assign it to the signature variable
-        match Signature::from_bytes(&rodt_id_signature) {
+        match Signature::from_bytes(&rodit_id_signature) {
             Ok(signature) => {
                 // If the signature parsing is successful, execute this block
                 if let Ok(fetched_publickey_ed25519_public_key) = PublicKey::from_bytes(&fetched_bytes_ed25519_public_key) {
                     // If the public key parsing is successful, execute this block
                     if fetched_publickey_ed25519_public_key.verify(
-                        string_rodtid.as_bytes(),
+                        string_roditid.as_bytes(),
                         &signature
                         ).is_ok() {
                         tracing::info!("Info: Peer RODiT possession check confirmed");
@@ -1010,7 +1010,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
                 return Err(WireGuardError::PeerEd25519SignatureParsingFailure);
             }
         };
-        Ok::<(bool,Rodt), WireGuardError>((true,fetched_rodt))
+        Ok::<(bool,Rodit), WireGuardError>((true,fetched_rodit))
     } Err(err) => {
         // If the nearorg_rpc_token function call returns an Error, execute this block
         tracing::trace!("Error: There is no Peer RODiT associated with the account: {}", err);
@@ -1020,7 +1020,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
 
 }
 
-pub fn verify_rodt_isamatch(
+pub fn verify_rodit_isamatch(
     own_serviceproviderid: String,
     peer_serviceprovidersignature: String,
     peer_token_id: [u8;RODT_ID_SZ],
@@ -1035,9 +1035,9 @@ let string_peer_token_id: &str = std::str::from_utf8(slice_peer_token_id)
 let account_idargs = "{\"token_id\": \"".to_owned()
     + &own_serviceproviderid+ "\"}";
 match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &account_idargs) {
-    Ok(own_serviceprovider_rodt) => {
+    Ok(own_serviceprovider_rodit) => {
         // Convert the owner_id string to a Vec<u8> by decoding it from hex
-        let own_serviceprovider_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(own_serviceprovider_rodt.owner_id.clone())
+        let own_serviceprovider_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(own_serviceprovider_rodit.owner_id.clone())
         .expect("Error: Failed to decode hex string");
 
         // Convert the bytes to a [u8; 32] array
@@ -1084,18 +1084,18 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
 }
 }
 
-pub fn verify_rodt_islive(
-    peer_rodt_notafter: String,
-    peer_rodt_notbefore: String,
+pub fn verify_rodit_islive(
+    peer_rodit_notafter: String,
+    peer_rodit_notbefore: String,
 ) -> bool {
 
 // 1970-01-01 chosen as nul date considering Unix and X.509 standards for timekeeping
 let naivedatetime_nul = NaiveDateTime::parse_from_str("1970-01-01", "%Y-%m-%d")
     .unwrap_or_default(); // Use a default value if parsing fails
 // naivedatetime_nul value is 1970-01-01 00:00:00
-let naivedate_notafter = NaiveDate::parse_from_str(&peer_rodt_notafter, "%Y-%m-%d")
+let naivedate_notafter = NaiveDate::parse_from_str(&peer_rodit_notafter, "%Y-%m-%d")
     .unwrap_or_default(); // Use a default value if parsing fails
-let naivedate_notbefore = NaiveDate::parse_from_str(&peer_rodt_notbefore, "%Y-%m-%d")
+let naivedate_notbefore = NaiveDate::parse_from_str(&peer_rodit_notbefore, "%Y-%m-%d")
     .unwrap_or_default(); // Use a default value if parsing fails
 let niltime = NaiveTime::from_hms_milli_opt(0, 0, 0, 0).unwrap();
 let naivedatetime_notafter = NaiveDateTime::new(naivedate_notafter, niltime);
@@ -1133,7 +1133,7 @@ if let Ok(string_timenow) = string_timenow {
 
 }
 
-pub fn verify_rodt_isactive(
+pub fn verify_rodit_isactive(
     token_id: String,
     own_subjectuniqueidentifierurl: String,
 ) -> bool {
@@ -1163,7 +1163,7 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
 
 }
 
-pub fn verify_rodt_smartcontract_istrusted(
+pub fn verify_rodit_istrusted_issuingsmartcontract(
     own_subjectuniqueidentifierurl: String,
 ) -> bool {
 
@@ -1188,7 +1188,7 @@ if let Some(maindomain) = domainandextension.captures(&own_subjectuniqueidentifi
         return false
     };
 } else {
-    tracing::error!("Error: Domain {} can't be parsed in verify_rodt_smartcontract_istrusted", domainandextension);
+    tracing::error!("Error: Domain {} can't be parsed in verify_rodit_istrusted_issuingsmartcontract", domainandextension);
     return false
 }
 
@@ -1228,7 +1228,7 @@ pub fn nearorg_rpc_token(
     id: &str,
     method_name: &str,
     args: &str,
-) -> Result<Rodt, Box<dyn std::error::Error>> {
+) -> Result<Rodit, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
     if xnet == "." {
@@ -1272,7 +1272,7 @@ pub fn nearorg_rpc_token(
 
     let result_string = String::from_utf8(result_slice.to_vec()).unwrap();
 
-    let rodt: Rodt = serde_json::from_str(&result_string).unwrap();
+    let rodit: Rodit = serde_json::from_str(&result_string).unwrap();
 
-    Ok(rodt.clone())
+    Ok(rodit.clone())
 }

@@ -4,12 +4,12 @@
 use clap::{Arg, Command};
 use cableguard::device::{DeviceConfig, DeviceHandle,ed2x_private_key_bytes,skx2pkx};
 use cableguard::device::drop_privileges::drop_privileges;
-use cableguard::noise::Rodt;
+use cableguard::noise::Rodit;
 use cableguard::device::api::{nearorg_rpc_tokens_for_owner,nearorg_rpc_state};
 use cableguard::noise::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use daemonize::{Daemonize, Outcome};
-use base64::encode as base64encode;
-use hex::{FromHex};
+// use base64::encode as base64encode;
+// use hex::{FromHex};
 use serde_json::Value;
 use std::os::unix::net::UnixDatagram;
 use std::process::exit;
@@ -129,7 +129,7 @@ fn main() {
     let own_static_base58_private_ed25519_key = own_static_base58_private_ed25519_key.trim_start_matches("ed25519:");
 
     // Initialize a RODiT object
-    let rodt: Rodt;
+    let rodit: Rodit;
 
     tracing::trace!("Info: Smart Contract Account: {}", SMART_CONTRACT);
 
@@ -147,7 +147,7 @@ fn main() {
     let account_idargs = "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}";
     match nearorg_rpc_tokens_for_owner(BLOCKCHAIN_NETWORK, SMART_CONTRACT, SMART_CONTRACT, "nft_tokens_for_owner", &account_idargs) {
         Ok(result) => {
-            rodt = result;
+            rodit = result;
         }
         Err(err) => {
             // Handle the Error
@@ -158,7 +158,7 @@ fn main() {
 
     // Create an Interface Name derived from the token_id ULID,
     // with a max length of 15 characters, by default utun+last 11 of ULID for operating systems compatibility,
-    let tun_name = format!("utun{}", &rodt.token_id[rodt.token_id.len() - 11..]).to_lowercase();
+    let tun_name = format!("utun{}", &rodit.token_id[rodit.token_id.len() - 11..]).to_lowercase();
 
     // We decode it to Hex format Private Key Ed25519 of 64 bytes
     let own_static_bytes_private_ed25519_key = bs58::decode(own_static_base58_private_ed25519_key)
@@ -180,7 +180,7 @@ fn main() {
 
     let _guard;
 
-    tracing::trace!("Info: To create or display available RODiT Blockchain Directory accounts use: \"rodtwallet.sh\"");
+    tracing::trace!("Info: To create or display available RODiT Blockchain Directory accounts use: \"roditwallet.sh\"");
 
     if background {
         // Running in background mode
@@ -257,7 +257,7 @@ fn main() {
         use_connected_socket: !matches.is_present("disable-connected-udp"),
         #[cfg(target_os = "linux")]
         use_multi_queue: !matches.is_present("disable-multi-queue"),
-        rodt,
+        rodit,
         own_bytes_ed25519_private_key,
         x25519_private_key: *own_static_bytes_private_x25519_key,
         x25519_public_key: own_static_bytes_public_x25519_key,

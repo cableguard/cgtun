@@ -25,7 +25,7 @@ use reqwest::blocking::Client;
 use serde_json::{Value};
 use hex::encode as encode_hex;
 use base64::encode as base64encode;
-use crate::noise::Rodt;
+use crate::noise::Rodit;
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
 fn produce_sock_dir() {
@@ -183,9 +183,9 @@ fn api_get(writerbufferdevice: &mut BufWriter<&UnixStream>, thisnetworkdevice: &
     } else if BLOCKCHAIN_NETWORK == ".testnet." {
         writeln!(writerbufferdevice, "bcnetwork={}", "testnet");
     }
-    writeln!(writerbufferdevice, "dnsresolver={}", thisnetworkdevice.config.rodt.metadata.dns);
-    writeln!(writerbufferdevice, "rodtaccountid={}", thisnetworkdevice.config.rodt.owner_id);
-    writeln!(writerbufferdevice, "rodtpublickeybase64={}", base64encode(thisnetworkdevice.config.x25519_public_key));
+    writeln!(writerbufferdevice, "dnsresolver={}", thisnetworkdevice.config.rodit.metadata.dns);
+    writeln!(writerbufferdevice, "roditaccountid={}", thisnetworkdevice.config.rodit.owner_id);
+    writeln!(writerbufferdevice, "roditpublickeybase64={}", base64encode(thisnetworkdevice.config.x25519_public_key));
 
     for (own_static_key_pair, peer) in thisnetworkdevice.peers.iter() {
         let peer = peer.lock();
@@ -286,7 +286,7 @@ fn api_set(readerbufferdevice: &mut BufReader<&UnixStream>, d: &mut LockReadGuar
                                     tracing::info!("Info: Subdmain Port: {:?}", peer_port);
                                 }
                                 // Don't add itself as a peer
-                                match IpAddr::from_str(&device.config.rodt.metadata.cidrblock) {
+                                match IpAddr::from_str(&device.config.rodit.metadata.cidrblock) {
                                     Ok(cidrip) => {
                                         // Successfully parsed, you can now compare it
                                         if cidrip == ipaddress {
@@ -475,7 +475,7 @@ pub fn nearorg_rpc_tokens_for_owner(
     account_id: &str, // Smart contract that controls the tokens
     method_name: &str, // Method name, for example "nft_tokens_for_owner"
     args: &str,  // Account ID in a json string followwin the format "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}"
-) -> Result<Rodt, Box<dyn std::error::Error>> {
+) -> Result<Rodit, Box<dyn std::error::Error>> {
     let client: Client = Client::new();
     let url: String = "https://rpc".to_string() + &xnet + "near.org";
     if xnet == "." {
@@ -520,7 +520,7 @@ pub fn nearorg_rpc_tokens_for_owner(
 
     let result_string = core::str::from_utf8(&result_slice).unwrap();
 
-    let result_struct: Vec<Rodt> = match serde_json::from_str(result_string) {
+    let result_struct: Vec<Rodit> = match serde_json::from_str(result_string) {
         Ok(value) => value,
         Err(err) => {
             tracing::trace!("Error: Invalid RODiT struct of owner {:?}",result_string);
@@ -529,7 +529,7 @@ pub fn nearorg_rpc_tokens_for_owner(
         }
     };
 
-    let mut result_iter = match serde_json::from_str::<Vec<Rodt>>(result_string) {
+    let mut result_iter = match serde_json::from_str::<Vec<Rodit>>(result_string) {
         Ok(value) => value.into_iter(),
         Err(err) => {
             tracing::trace!("Error: Invalid RODiT iter of owner {}",result_string);
@@ -538,31 +538,31 @@ pub fn nearorg_rpc_tokens_for_owner(
         }
     };
 
-    if let Some(rodt) = result_iter.next() {
-        for rodt in result_struct {
-            tracing::info!("Info: token_id: {}", rodt.token_id);
-            tracing::info!("Info: owner_id: {}", rodt.owner_id);
-            tracing::info!("Info: issuername: {}", rodt.metadata.issuername);
-            tracing::info!("Info: description: {}", rodt.metadata.description);
-            tracing::info!("Info: notafter: {}", rodt.metadata.notafter);
-            tracing::info!("Info: notbefore: {}", rodt.metadata.notbefore);
-            tracing::info!("Info: listenport: {}", rodt.metadata.listenport);
-            tracing::info!("Info: cidrblock: {}", rodt.metadata.cidrblock);
-            tracing::info!("Info: dns: {}", rodt.metadata.dns);
-            // tracing::info!("Info: postup: {}", rodt.metadata.postup);
-            // tracing::info!("Info: postdown: {}", rodt.metadata.postdown);
-            tracing::info!("Info: allowedips: {}", rodt.metadata.allowedips);
-            tracing::info!("Info: subjectuniqueidentifierurl {}", rodt.metadata.subjectuniqueidentifierurl);
-            tracing::info!("Info: serviceproviderid: {}", rodt.metadata.serviceproviderid);
-            tracing::info!("Info: serviceprovidersignature: {}", rodt.metadata.serviceprovidersignature);
-            // tracing::info!("Info: kbpersecond: {}", rodt.metadata.kbpersecond);
+    if let Some(rodit) = result_iter.next() {
+        for rodit in result_struct {
+            tracing::info!("Info: token_id: {}", rodit.token_id);
+            tracing::info!("Info: owner_id: {}", rodit.owner_id);
+            tracing::info!("Info: issuername: {}", rodit.metadata.issuername);
+            tracing::info!("Info: description: {}", rodit.metadata.description);
+            tracing::info!("Info: notafter: {}", rodit.metadata.notafter);
+            tracing::info!("Info: notbefore: {}", rodit.metadata.notbefore);
+            tracing::info!("Info: listenport: {}", rodit.metadata.listenport);
+            tracing::info!("Info: cidrblock: {}", rodit.metadata.cidrblock);
+            tracing::info!("Info: dns: {}", rodit.metadata.dns);
+            // tracing::info!("Info: postup: {}", rodit.metadata.postup);
+            // tracing::info!("Info: postdown: {}", rodit.metadata.postdown);
+            tracing::info!("Info: allowedips: {}", rodit.metadata.allowedips);
+            tracing::info!("Info: subjectuniqueidentifierurl {}", rodit.metadata.subjectuniqueidentifierurl);
+            tracing::info!("Info: serviceproviderid: {}", rodit.metadata.serviceproviderid);
+            tracing::info!("Info: serviceprovidersignature: {}", rodit.metadata.serviceprovidersignature);
+            // tracing::info!("Info: kbpersecond: {}", rodit.metadata.kbpersecond);
         }
-     // Return the first Rodt instance as the result
-        tracing::info!("Info: Rodt instance found");
-        return Ok(rodt.clone());
+     // Return the first Rodit instance as the result
+        tracing::info!("Info: Rodit instance found");
+        return Ok(rodit.clone());
      } else {
-     // If no Rodt instance is available, return an Error
-        return Err("Error: No Rodt instance found".into());
+     // If no Rodit instance is available, return an Error
+        return Err("Error: No Rodit instance found".into());
     }
 }
 

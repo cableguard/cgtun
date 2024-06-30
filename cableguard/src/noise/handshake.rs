@@ -239,9 +239,9 @@ struct NoiseParams {
     sending_mac1_key: [u8; KEY_LEN],
     preshared_key: Option<[u8; KEY_LEN]>,
     // Peer RODiT ID (Same blockchain and smart contract only, for the time being)
-    rodt_id: [u8; RODT_ID_SZ],
+    rodit_id: [u8; RODT_ID_SZ],
     // Peer RODiT ID signed with the Public Ed25519 Key
-    rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
+    rodit_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
 }
 
 impl std::fmt::Debug for NoiseParams {
@@ -375,8 +375,8 @@ impl NoiseParams {
         static_public: x25519::PublicKey,
         peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
-        rodt_id: [u8; RODT_ID_SZ],
-        rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
+        rodit_id: [u8; RODT_ID_SZ],
+        rodit_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
     ) -> Result<NoiseParams, WireGuardError> {
 
         let static_shared = static_private.diffie_hellman(&peer_static_public);
@@ -390,8 +390,8 @@ impl NoiseParams {
             static_shared,
             sending_mac1_key: initial_sending_mac_key,
             preshared_key,
-            rodt_id,
-            rodt_id_signature,
+            rodit_id,
+            rodit_id_signature,
         })
     }
 
@@ -421,16 +421,16 @@ impl Handshake {
         peer_static_public: x25519::PublicKey,
         global_index: u32,
         preshared_key: Option<[u8; 32]>,
-        rodt_id: [u8; RODT_ID_SZ],
-        rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
+        rodit_id: [u8; RODT_ID_SZ],
+        rodit_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
     ) -> Result<Handshake, WireGuardError> {
         let params = NoiseParams::new(
             static_private,
             static_public,
             peer_static_public,
             preshared_key,
-            rodt_id,
-            rodt_id_signature,
+            rodit_id,
+            rodit_id_signature,
         )?;
 
         Ok(Handshake {
@@ -735,8 +735,8 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_static, rest) = rest.split_at_mut(32 + 16);
         let (encrypted_timestamp, rest) = rest.split_at_mut(12 + 16);
-        let (rodt_id, rest) = rest.split_at_mut(RODT_ID_SZ);
-        let (rodt_id_signature, _) = rest.split_at_mut(64);
+        let (rodit_id, rest) = rest.split_at_mut(RODT_ID_SZ);
+        let (rodit_id_signature, _) = rest.split_at_mut(64);
 
         let local_index = self.inc_index();
 
@@ -808,13 +808,13 @@ impl Handshake {
         // initiator.hash = HASH(initiator.hash || msg.encrypted_timestamp)
         hash = b2s_hash(&hash, encrypted_timestamp);
 
-        // Our rodt_id values to transfer over the wire
-        rodt_id.copy_from_slice(&self.params.rodt_id);
-        rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
+        // Our rodit_id values to transfer over the wire
+        rodit_id.copy_from_slice(&self.params.rodit_id);
+        rodit_id_signature.copy_from_slice(&self.params.rodit_id_signature);
 
         // Check if the conversion was successful
-        let string_rodt_id = String::from_utf8(self.params.rodt_id.to_vec());
-        match string_rodt_id {
+        let string_rodit_id = String::from_utf8(self.params.rodit_id.to_vec());
+        match string_rodit_id {
             Ok(string) => {
                 // Conversion success, use the resulting string
                 tracing::info!("Info: Initiation Own RODiT ID sent {}",string);
@@ -867,8 +867,8 @@ impl Handshake {
         let (unencrypted_ephemeral, rest) = rest.split_at_mut(32);
         let (encrypted_nothing, rest) = rest.split_at_mut(16);
         // The response also has 2 additional fields so both sides can authenticate each other
-        let (rodt_id, rest) = rest.split_at_mut(RODT_ID_SZ);
-        let (rodt_id_signature, _) = rest.split_at_mut(64);
+        let (rodit_id, rest) = rest.split_at_mut(RODT_ID_SZ);
+        let (rodit_id_signature, _) = rest.split_at_mut(64);
 
         // responder.ephemeral_private = DH_GENERATE()
         let ephemeral_private = x25519::ReusableSecret::random_from_rng(OsRng);
@@ -931,8 +931,8 @@ impl Handshake {
         // initiator.sending_key_counter = 0
         // initiator.receiving_key_counter = 0
 
-        rodt_id.copy_from_slice(&self.params.rodt_id);
-        rodt_id_signature.copy_from_slice(&self.params.rodt_id_signature);
+        rodit_id.copy_from_slice(&self.params.rodit_id);
+        rodit_id_signature.copy_from_slice(&self.params.rodit_id_signature);
 
         let dst = self.append_mac1_and_mac2(local_index, &mut dst[..super::HANDSHAKE_RESP_SZ])?;
 

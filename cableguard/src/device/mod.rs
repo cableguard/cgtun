@@ -43,7 +43,7 @@ use trust_dns_resolver::Resolver;
 use trust_dns_resolver::config::*;
 use zeroize::Zeroize;
 use sha2::{Sha512,Digest};
-use crate::noise::{verify_hasrodt_getit,verify_rodt_islive,verify_rodt_isactive,verify_rodt_smartcontract_istrusted};
+use crate::noise::{verify_isthererodit_getit,verify_rodit_islive,verify_rodit_isactive,verify_rodit_istrusted_issuingsmartcontract};
 use crate::noise::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
 use hex::encode as encode_hex;
 use allowed_ips::AllowedIps;
@@ -62,8 +62,8 @@ use crate::noise::handshake::consume_received_handshake_peer_2blisted;
 use crate::noise::rate_limiter::RateLimiter;
 use crate::noise::{Packet, Tunn, TunnResult};
 use ed25519_dalek::{Keypair,Signer};
-use crate::noise::verify_rodt_isamatch;
-use crate::noise::Rodt;
+use crate::noise::verify_rodit_isamatch;
+use crate::noise::Rodit;
 use crate::noise::nearorg_rpc_token;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
@@ -129,7 +129,7 @@ pub struct DeviceConfig {
     pub use_multi_queue: bool,
     #[cfg(target_os = "linux")]
     pub uapi_fd: i32,
-    pub rodt: Rodt,
+    pub rodit: Rodit,
     pub own_bytes_ed25519_private_key: [u8;64],
     pub x25519_private_key:[u8; 32],
     pub x25519_public_key:[u8; 32],
@@ -144,7 +144,7 @@ impl Default for DeviceConfig {
             use_multi_queue: true,
             #[cfg(target_os = "linux")]
             uapi_fd: -1,
-            rodt: Rodt::default(),
+            rodit: Rodit::default(),
             own_bytes_ed25519_private_key: [0;64],
             x25519_private_key:[0;32],
             x25519_public_key:[0;32],
@@ -185,7 +185,7 @@ impl DeviceHandle {
     pub fn new(tunname: &str, config: &DeviceConfig) -> Result<DeviceHandle, Error> {
         let n_threads = config.n_threads;
         let mut wg_interface = Device::new(tunname, config.clone())?;
-        match config.rodt.metadata.listenport.parse::<u16>() {
+        match config.rodit.metadata.listenport.parse::<u16>() {
             // port = 0 when the it is a random choice of port
             Ok(port) => match wg_interface.open_listen_socket(port) {
                 Ok(()) => {
@@ -353,21 +353,21 @@ impl Device {
         .as_ref()
         .expect("Error: Self private key must be set before adding peers");
 
-        // Creating the own signature of the rodt_id, this is used to validate posession of the RODiT
+        // Creating the own signature of the rodit_id, this is used to validate posession of the RODiT
         let own_signingkey_ed25519_private_key = Keypair::from_bytes(&self.config.own_bytes_ed25519_private_key)
         .expect("Error: Invalid private key bytes");
 
-        let rodt_id_signature = own_signingkey_ed25519_private_key.sign(self.config.rodt.token_id.as_bytes());
+        let rodit_id_signature = own_signingkey_ed25519_private_key.sign(self.config.rodit.token_id.as_bytes());
 
-        tracing::info!("Info: Own RODiT ID signature {}",rodt_id_signature);
+        tracing::info!("Info: Own RODiT ID signature {}",rodit_id_signature);
 
         let tunn = Tunn::new(
             device_key_pair.0.clone(), // Own X25519 private key
             peer_publickey_public_key,
             preshared_key,
-            self.config.rodt.token_id.clone(), // Own RODiT ID
-            self.config.rodt.metadata.serviceproviderid.clone(),
-            rodt_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
+            self.config.rodit.token_id.clone(), // Own RODiT ID
+            self.config.rodit.metadata.serviceproviderid.clone(),
+            rodit_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
             keepalive,
             next_peer_index,
             None,
@@ -444,7 +444,7 @@ impl Device {
         // We are adding here addtional device building:
         // add IPs, set private key, add initial peer
         // "/24" for a maximum of 254 client addresses
-        let command = "ip addr add ".to_owned()+&device.config.rodt.metadata.cidrblock +" dev "+ tunname;
+        let command = "ip addr add ".to_owned()+&device.config.rodit.metadata.cidrblock +" dev "+ tunname;
         let output = Command::new("bash")
             .arg("-c")
             .arg(command)
@@ -452,7 +452,7 @@ impl Device {
             .expect("Error: Failed to execute command");
         if output.status.success() {
             let _stdout = String::from_utf8_lossy(&output.stdout);
-            tracing::info!("Info: IP addr add command executed successfully: {}",device.config.rodt.metadata.cidrblock);
+            tracing::info!("Info: IP addr add command executed successfully: {}",device.config.rodit.metadata.cidrblock);
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
             tracing::trace!("Error: IP addr command Failed to execute {}", stderr);
@@ -461,25 +461,25 @@ impl Device {
         // Proactively setting the Static Private Key for the device
         device.set_key_pair(x25519::StaticSecret::from(device.config.x25519_private_key));
 
-        if device.config.rodt.token_id.contains(&device.config.rodt.metadata.serviceproviderid) {
+        if device.config.rodit.token_id.contains(&device.config.rodit.metadata.serviceproviderid) {
             // Display error message and exit
             tracing::trace!("Error: root RODiT can´t be used as an endpoint RODiT");
             std::process::exit(1);
         }
 
         let account_idargs = "{\"token_id\": \"".to_owned()
-            + &device.config.rodt.metadata.serviceproviderid + "\"}";
+            + &device.config.rodit.metadata.serviceproviderid + "\"}";
         match nearorg_rpc_token(Self::XNET,
             Self::SMART_CONTRACT,
             "nft_token",&account_idargs) {
-            Ok(serviceprovider_rodt) => {
+            Ok(serviceprovider_rodit) => {
                 let mut peer_port: u16 = 0;
                 let dnssecresolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
-                let ipresponse = dnssecresolver.lookup_ip(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".")
-                    .expect(&format!("Error: VPN DNS entry not found. A DNS entry with the IP address of the VPN server {} in the RODiT must be accessible", serviceprovider_rodt.metadata.subjectuniqueidentifierurl));
-                let ipaddress = ipresponse.iter().next().expect(&format!("Error: No IP address found in the VPN Server DNS entry {}", serviceprovider_rodt.metadata.subjectuniqueidentifierurl));
-                let cfgresponse = dnssecresolver.txt_lookup(serviceprovider_rodt.metadata.subjectuniqueidentifierurl.clone()+".");
-                cfgresponse.iter().next().expect(&format!("Error: No VPN Server Public Key found for {} !",serviceprovider_rodt.metadata.subjectuniqueidentifierurl));
+                let ipresponse = dnssecresolver.lookup_ip(serviceprovider_rodit.metadata.subjectuniqueidentifierurl.clone()+".")
+                    .expect(&format!("Error: VPN DNS entry not found. A DNS entry with the IP address of the VPN server {} in the RODiT must be accessible", serviceprovider_rodit.metadata.subjectuniqueidentifierurl));
+                let ipaddress = ipresponse.iter().next().expect(&format!("Error: No IP address found in the VPN Server DNS entry {}", serviceprovider_rodit.metadata.subjectuniqueidentifierurl));
+                let cfgresponse = dnssecresolver.txt_lookup(serviceprovider_rodit.metadata.subjectuniqueidentifierurl.clone()+".");
+                cfgresponse.iter().next().expect(&format!("Error: No VPN Server Public Key found for {} !",serviceprovider_rodit.metadata.subjectuniqueidentifierurl));
                 let mut peer_base64_pk:String="=".to_string();
                 for configs in cfgresponse.iter() {
                     let txt_strings: Vec<String> = configs
@@ -516,6 +516,21 @@ impl Device {
                     .as_slice()
                     .try_into()
                     .expect("Invalid public key length");
+
+                // CG: Instead of adding a publick key via a DNS entry we could add a rodit_id via DNS entry and perform verify_rodt checks 
+                /* let evaluation = verify_isthererodit_getit(*p.rodit_id ,*p.rodit_id_signature);
+                if let Ok((verification_result, rodit)) = evaluation {
+                    if verification_result
+                        && verify_rodit_isamatch(device.config.rodit.metadata.serviceproviderid.clone(),
+                            rodit.metadata.serviceprovidersignature.clone(),
+                            *p.rodit_id)
+                        && verify_rodit_islive(rodit.metadata.notafter,rodit.metadata.notbefore)
+                        && verify_rodit_isactive(rodit.token_id,rodit.metadata.subjectuniqueidentifierurl.clone())
+                        && verify_rodit_istrusted_issuingsmartcontract(rodit.metadata.subjectuniqueidentifierurl.clone()) {
+                        }   
+                    }
+                */
+
                 // Not adding the server peer if WE are the server peer, running postup instead
                 if device.config.x25519_public_key != peer_u832_pk {
                         // It is ok to add a peer without checks as they are performed during handshake
@@ -762,30 +777,30 @@ impl Device {
                                         if let Some(peer) = device.peers.get(&x25519::PublicKey::from(half_handshake.peer_static_public)) {
                                             Some(peer)
                                         } else {
-                                            let evaluation = verify_hasrodt_getit(*p.rodt_id ,*p.rodt_id_signature);
-                                            if let Ok((verification_result, rodt)) = evaluation {
+                                            let evaluation = verify_isthererodit_getit(*p.rodit_id ,*p.rodit_id_signature);
+                                            if let Ok((verification_result, rodit)) = evaluation {
                                                 if verification_result
-                                                    && verify_rodt_isamatch(device.config.rodt.metadata.serviceproviderid.clone(),
-                                                        rodt.metadata.serviceprovidersignature.clone(),
-                                                        *p.rodt_id)
-                                                    && verify_rodt_islive(rodt.metadata.notafter,rodt.metadata.notbefore)
-                                                    && verify_rodt_isactive(rodt.token_id,rodt.metadata.subjectuniqueidentifierurl.clone())
-                                                    && verify_rodt_smartcontract_istrusted(rodt.metadata.subjectuniqueidentifierurl.clone()) {
+                                                    && verify_rodit_isamatch(device.config.rodit.metadata.serviceproviderid.clone(),
+                                                        rodit.metadata.serviceprovidersignature.clone(),
+                                                        *p.rodit_id)
+                                                    && verify_rodit_islive(rodit.metadata.notafter,rodit.metadata.notbefore)
+                                                    && verify_rodit_isactive(rodit.token_id,rodit.metadata.subjectuniqueidentifierurl.clone())
+                                                    && verify_rodit_istrusted_issuingsmartcontract(rodit.metadata.subjectuniqueidentifierurl.clone()) {
                                                         let device_key_pair = device.key_pair.as_ref()
                                                             .expect("Error: Self private key must be set before adding peers")
                                                             .clone();
                                                         let peer_publickey_public_key = x25519::PublicKey::from(half_handshake.peer_static_public);
                                                         let own_signingkey_ed25519_private_key = Keypair::from_bytes(&device.config.own_bytes_ed25519_private_key)
                                                             .expect("Error: Invalid private key bytes");
-                                                        let rodt_id_signature = own_signingkey_ed25519_private_key.sign(device.config.rodt.token_id.as_bytes());
+                                                        let rodit_id_signature = own_signingkey_ed25519_private_key.sign(device.config.rodit.token_id.as_bytes());
                                                         let next_peer_index = device.next_peer_index().clone();
                                                         let tunn = Tunn::new(
                                                             device_key_pair.0.clone(), // Own X25519 private key
                                                             peer_publickey_public_key,
                                                             None,
-                                                            device.config.rodt.token_id.clone(), // Own RODiT ID
-                                                            device.config.rodt.metadata.serviceproviderid.clone(),
-                                                            rodt_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
+                                                            device.config.rodit.token_id.clone(), // Own RODiT ID
+                                                            device.config.rodit.metadata.serviceproviderid.clone(),
+                                                            rodit_id_signature.to_bytes(), // Own declared RODiT ID Signature with own Ed25519 private key
                                                             None,
                                                             next_peer_index,
                                                             None,
@@ -793,7 +808,7 @@ impl Device {
                                                         .unwrap();
                                                         let endpoint_listenport = addr.as_socket().unwrap();
                                                         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
-                                                        let allowed_ip_str = rodt.metadata.allowedips;
+                                                        let allowed_ip_str = rodit.metadata.allowedips;
                                                         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid Allowed IP");
                                                         allowed_ips_listed.push(allowed_ip);
                                                         let peer = Peer::new(tunn, next_peer_index, Some(endpoint_listenport), &allowed_ips_listed, None);
@@ -1045,11 +1060,11 @@ impl Device {
                     }
                 Err(_) => return,
                 },
-            "listen_port" => match self.config.rodt.metadata.listenport.parse::<u16>() {
+            "listen_port" => match self.config.rodit.metadata.listenport.parse::<u16>() {
                 Ok(port) => match self.open_listen_socket(port) {
                     Ok(()) => {
                         tracing::info!("Info: Port api_set_internal: {}", port);
-                        tracing::info!("Info: Own RODiT Port api_set_internal: {}", self.config.rodt.metadata.listenport);
+                        tracing::info!("Info: Own RODiT Port api_set_internal: {}", self.config.rodit.metadata.listenport);
                     }
                     Err(_) => return,
                 },
@@ -1099,7 +1114,7 @@ impl Device {
         let mut allowed_ips_listed: Vec<AllowedIP> = vec![];
         tracing::info!("Info: Setting subdomain IP and port {:?}", endpoint_listenport);
 
-        let allowed_ip_str = &self.config.rodt.metadata.allowedips;
+        let allowed_ip_str = &self.config.rodit.metadata.allowedips;
         let allowed_ip: AllowedIP = allowed_ip_str.parse().expect("Error: Invalid AllowedIPs");
         tracing::info!("Info: Setting own assigned IP {:?}", allowed_ip);
 
