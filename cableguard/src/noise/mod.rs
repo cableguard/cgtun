@@ -160,13 +160,13 @@ const HANDSHAKE_INIT_CONSTANT: MessageType = 1;
 const HANDSHAKE_RESP: MessageType = 2;
 const COOKIE_REPLY: MessageType = 3;
 const DATA: MessageType = 4;
-pub const RODT_ID_SZ:usize = 128;
-pub const RODT_ID_SIGNATURE_SZ:usize = 64;
-pub const RODT_ID_PK_SZ:usize = 32;
+pub const RODiT_ID_SZ:usize = 128;
+pub const RODiT_ID_SIGNATURE_SZ:usize = 64;
+pub const RODiT_ID_PK_SZ:usize = 32;
 
-// These sizes are increased by RODT_ID_SZ + 64 bytes to accommodate for the rodit_id and signature of the same
-const HANDSHAKE_INIT_SZ: usize = 148+RODT_ID_SZ+RODT_ID_SIGNATURE_SZ;
-const HANDSHAKE_RESP_SZ: usize = 92+RODT_ID_SZ+RODT_ID_SIGNATURE_SZ;
+// These sizes are increased by RODiT_ID_SZ + 64 bytes to accommodate for the rodit_id and signature of the same
+const HANDSHAKE_INIT_SZ: usize = 148+RODiT_ID_SZ+RODiT_ID_SIGNATURE_SZ;
+const HANDSHAKE_RESP_SZ: usize = 92+RODiT_ID_SZ+RODiT_ID_SIGNATURE_SZ;
 const COOKIE_REPLY_SZ: usize = 64;
 const DATA_OVERHEAD_SZ: usize = 32;
 
@@ -176,8 +176,8 @@ pub struct HandshakeInit<'a> {
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_static: &'a [u8],
     encrypted_timestamp: &'a [u8],
-    pub rodit_id: &'a [u8; RODT_ID_SZ],
-    pub rodit_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
+    pub rodit_id: &'a [u8; RODiT_ID_SZ],
+    pub rodit_id_signature: &'a [u8; RODiT_ID_SIGNATURE_SZ],
 }
 
 #[derive(Debug,Copy, Clone)]
@@ -186,8 +186,8 @@ pub struct HandshakeResponse<'a> {
     pub receiver_session_index: u32,
     unencrypted_ephemeral: &'a [u8; 32],
     encrypted_nothing: &'a [u8],
-    pub rodit_id: &'a [u8; RODT_ID_SZ],
-    pub rodit_id_signature: &'a [u8; RODT_ID_SIGNATURE_SZ],
+    pub rodit_id: &'a [u8; RODiT_ID_SZ],
+    pub rodit_id_signature: &'a [u8; RODiT_ID_SIGNATURE_SZ],
 }
 
 #[derive(Debug,Copy,Clone)]
@@ -231,9 +231,9 @@ impl Tunn {
                     .expect("Error: Failure checking packet field length"),
                 encrypted_static: &src[40..88], // SIZE u8;32, 88-40 = 48 bytes, seems too big for the spec u8 encrypted_static[AEAD_LEN(32)]
                 encrypted_timestamp: &src[88..116], // SIZE u8;12, 116-88 = 28 bytes, seems too big for the spec u8 encrypted_timestamp[AEAD_LEN(12)]
-                rodit_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[116..244])
+                rodit_id: <&[u8; RODiT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[116..244])
                     .expect("Error: Failure checking packet field length"), // SIZE u8;128, 244-116 = 128 bytes
-                rodit_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[244..308])
+                rodit_id_signature: <&[u8; RODiT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[244..308])
                     .expect("Error: Failure checking packet field length"), // SIZE u8;64, 308-244 = 64 bytes
                 }),
                 (HANDSHAKE_RESP, HANDSHAKE_RESP_SZ) => Packet::HandshakeResponse(HandshakeResponse {
@@ -243,9 +243,9 @@ impl Tunn {
                 unencrypted_ephemeral: <&[u8; 32] as TryFrom<&[u8]>>::try_from(&src[12..44]) // SIZE u8;32, 40-8 = 32 bytes
                     .expect("Error: Failure checking packet field length"),
                 encrypted_nothing: &src[44..60], // SIZE 60-44 = 16 bytes but u8 encrypted_nothing[AEAD_LEN(0)]
-                rodit_id: <&[u8; RODT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[60..188])
+                rodit_id: <&[u8; RODiT_ID_SZ] as TryFrom<&[u8]>>::try_from(&src[60..188])
                     .expect("Error: Failure checking packet field length"), // SIZE u8;64, 188-60 = 128 bytes
-                rodit_id_signature: <&[u8; RODT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[188..252])
+                rodit_id_signature: <&[u8; RODiT_ID_SIGNATURE_SZ] as TryFrom<&[u8]>>::try_from(&src[188..252])
                     .expect("Error: Failure checking packet field length"), // SIZE u8;64, 252-188 = 64 bytes
             }),
             (COOKIE_REPLY, COOKIE_REPLY_SZ) => Packet::PacketCookieReply(PacketCookieReply {
@@ -297,7 +297,7 @@ impl Tunn {
         preshared_key: Option<[u8; 32]>,
         string_rodit_id: String,
         serviceproviderid: String,
-        rodit_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
+        rodit_id_signature: [u8;RODiT_ID_SIGNATURE_SZ],
         persistent_keepalive: Option<u16>,
         session_index: u32,
         rate_limiter: Option<Arc<RateLimiter>>,
@@ -306,7 +306,7 @@ impl Tunn {
 
         // Copying the rodit_id to the Tunn safely
         let bytes_rodit_id = string_rodit_id.as_bytes();
-        let mut rodit_id: [u8;RODT_ID_SZ] = [0;RODT_ID_SZ];
+        let mut rodit_id: [u8;RODiT_ID_SZ] = [0;RODiT_ID_SZ];
         let rodit_length = bytes_rodit_id.len().min(rodit_id.len()-1);
         rodit_id[..rodit_length].copy_from_slice(&bytes_rodit_id[..rodit_length]);
         rodit_id[rodit_length] = 0;
@@ -955,8 +955,8 @@ mod tests {
 }
 
 pub fn verify_isthererodit_getit(
-    rodit_id: [u8;RODT_ID_SZ],
-    rodit_id_signature: [u8;RODT_ID_SIGNATURE_SZ],
+    rodit_id: [u8;RODiT_ID_SZ],
+    rodit_id_signature: [u8;RODiT_ID_SIGNATURE_SZ],
 ) -> Result<(bool,Rodit), WireGuardError> {
 
 let slice_roditid: &[u8] = &rodit_id[..];
@@ -975,7 +975,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         let fetched_vec_ed25519_public_key: Vec<u8> = Vec::from_hex(fetched_rodit.owner_id.clone())
             .expect("Error: Failed to decode hex string");
         // Convert the bytes to a [u8; 32] array
-        let fetched_bytes_ed25519_public_key: [u8; RODT_ID_PK_SZ] = fetched_vec_ed25519_public_key
+        let fetched_bytes_ed25519_public_key: [u8; RODiT_ID_PK_SZ] = fetched_vec_ed25519_public_key
             .try_into()
             .expect("Error: Invalid byte array length");
 
@@ -1021,7 +1021,7 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
 pub fn verify_rodit_isamatch(
     own_serviceproviderid: String,
     peer_serviceprovidersignature: String,
-    peer_token_id: [u8;RODT_ID_SZ],
+    peer_token_id: [u8;RODiT_ID_SZ],
 ) -> bool {
 
 let slice_peer_token_id: &[u8] = &peer_token_id[..];
@@ -1039,13 +1039,13 @@ match nearorg_rpc_token(BLOCKCHAIN_NETWORK, SMART_CONTRACT, "nft_token", &accoun
         .expect("Error: Failed to decode hex string");
 
         // Convert the bytes to a [u8; 32] array
-        let own_serviceprovider_bytes_ed25519_public_key: [u8; RODT_ID_PK_SZ] = own_serviceprovider_vec_ed25519_public_key
+        let own_serviceprovider_bytes_ed25519_public_key: [u8; RODiT_ID_PK_SZ] = own_serviceprovider_vec_ed25519_public_key
             .try_into()
             .expect("Error: Invalid byte array length");
 
         let peer_serviceprovider_bytes_signature = base64decode(&peer_serviceprovidersignature).expect("Error: Failed Base64 decoding");
 
-        let peer_serviceprovider_u864_signature: [u8; RODT_ID_SIGNATURE_SZ] = peer_serviceprovider_bytes_signature
+        let peer_serviceprovider_u864_signature: [u8; RODiT_ID_SIGNATURE_SZ] = peer_serviceprovider_bytes_signature
             .as_slice()
             .try_into()
             .expect("Error: Invalid public key length");

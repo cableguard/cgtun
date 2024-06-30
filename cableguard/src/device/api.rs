@@ -604,5 +604,5 @@ pub fn nearorg_rpc_state(
         tracing::trace!("Error: The NEAR account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network");
         return Err("Error: The NEAR account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network".into());
     }
-    Ok(()) // This function returns the RODT in the parsed_json variable but we are not currently doing anything with it in the main function
+    Ok(()) // This function returns the RODiT in the parsed_json variable but we are not currently doing anything with it in the main function
 }
