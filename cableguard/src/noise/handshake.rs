@@ -373,7 +373,7 @@ impl NoiseParams {
     fn new(
         static_private: x25519::StaticSecret,
         static_public: x25519::PublicKey,
-        peer_static_public: x25519::PublicKey, 
+        peer_static_public: x25519::PublicKey,
         preshared_key: Option<[u8; 32]>,
         rodt_id: [u8; RODT_ID_SZ],
         rodt_id_signature: [u8; RODT_ID_SIGNATURE_SZ],
@@ -524,7 +524,6 @@ impl Handshake {
         // key = HMAC(temp, initiator.chaining_key || 0x2)
         let key = b2s_hmac2(&temp, &chaining_key, &[0x02]);
 
-        // let mut peer_static_public_decrypted = [0u8; KEY_LEN];
         // msg.encrypted_static = AEAD(key, 0, initiator.static_public, initiator.hash)
         aead_chacha20_open(
             &mut peer_static_public_decrypted,
@@ -729,7 +728,7 @@ impl Handshake {
     ) -> Result<&'a mut [u8], WireGuardError> {
         if dst.len() < super::HANDSHAKE_INIT_SZ {
             return Err(WireGuardError::DestinationBufferTooSmall);
-        }    
+        }
 
         let (message_type, rest) = dst.split_at_mut(4);
         let (sender_index, rest) = rest.split_at_mut(4);
@@ -743,44 +742,44 @@ impl Handshake {
 
         // initiator.chaining_key = HASH(CONSTRUCTION)
         let mut chaining_key = INITIAL_CHAIN_KEY;
-        
+
         // initiator.hash = HASH(HASH(initiator.chaining_key || IDENTIFIER) || responder.static_public)
         let mut hash = INITIAL_CHAIN_HASH;
 
         // As we don't know self.params.peer_static_public yet, we need to set it to a fix value
         hash = b2s_hash(&hash, self.params.peer_static_public.as_bytes());
-        
+
         // initiator.ephemeral_private = DH_GENERATE()
         let ephemeral_private = x25519::ReusableSecret::random_from_rng(OsRng);
-        
+
         // msg.message_type = 1
         // msg.reserved_zero = { 0, 0, 0 }
         message_type.copy_from_slice(&super::HANDSHAKE_INIT_CONSTANT.to_le_bytes());
-        
+
         // msg.sender_index = little_endian(initiator.sender_index)
         sender_index.copy_from_slice(&local_index.to_le_bytes());
-        
+
         // msg.unencrypted_ephemeral = DH_PUBKEY(initiator.ephemeral_private)
         unencrypted_ephemeral
             .copy_from_slice(x25519::PublicKey::from(&ephemeral_private).as_bytes());
-        
+
         // initiator.hash = HASH(initiator.hash || msg.unencrypted_ephemeral)
         hash = b2s_hash(&hash, unencrypted_ephemeral);
-        
+
         // temp = HMAC(initiator.chaining_key, msg.unencrypted_ephemeral)
         // initiator.chaining_key = HMAC(temp, 0x1)
         chaining_key = b2s_hmac(&b2s_hmac(&chaining_key, unencrypted_ephemeral), &[0x01]);
-        
+
         // temp = HMAC(initiator.chaining_key, DH(initiator.ephemeral_private, responder.static_public))
         let ephemeral_shared = ephemeral_private.diffie_hellman(&self.params.peer_static_public);
         let temp = b2s_hmac(&chaining_key, &ephemeral_shared.to_bytes());
-        
+
         // initiator.chaining_key = HMAC(temp, 0x1)
         chaining_key = b2s_hmac(&temp, &[0x01]);
-        
+
         // key = HMAC(temp, initiator.chaining_key || 0x2)
         let key = b2s_hmac2(&temp, &chaining_key, &[0x02]);
-        
+
         // msg.encrypted_static = AEAD(key, 0, initiator.static_public, initiator.hash)
         aead_chacha20_seal(
             encrypted_static,
@@ -789,19 +788,19 @@ impl Handshake {
             self.params.static_public.as_bytes(),
             &hash,
         );
-        
+
         // initiator.hash = HASH(initiator.hash || msg.encrypted_static)
         hash = b2s_hash(&hash, encrypted_static);
-        
+
         // temp = HMAC(initiator.chaining_key, DH(initiator.static_private, responder.static_public))
         let temp = b2s_hmac(&chaining_key, self.params.static_shared.as_bytes());
-        
+
         // initiator.chaining_key = HMAC(temp, 0x1)
         chaining_key = b2s_hmac(&temp, &[0x01]);
-        
+
         // key = HMAC(temp, initiator.chaining_key || 0x2)
         let key = b2s_hmac2(&temp, &chaining_key, &[0x02]);
-        
+
         // msg.encrypted_timestamp = AEAD(key, 0, TAI64N(), initiator.hash)
         let timestamp = self.stamper.stamp();
         aead_chacha20_seal(encrypted_timestamp, &key, 0, &timestamp, &hash);

@@ -2,8 +2,29 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pub mod allowed_ips;
 pub mod api;
-pub mod drop_privileges;
 mod dev_lock;
+pub mod drop_privileges;
+
+#[cfg(test)]
+mod integration_tests;
+pub mod peer;
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[path = "kqueue.rs"]
+pub mod poll;
+
+#[cfg(target_os = "linux")]
+#[path = "epoll.rs"]
+pub mod poll;
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+#[path = "tun_darwin.rs"]
+pub mod tun;
+
+#[cfg(target_os = "linux")]
+#[path = "tun_linux.rs"]
+pub mod tun;
+
 use tracing::error;
 use std::convert::TryInto;
 use std::process::Command;
@@ -47,26 +68,6 @@ use crate::noise::nearorg_rpc_token;
 const HANDSHAKE_RATE_LIMIT: u64 = 100; // The number of handshakes per second we can tolerate before using cookies
 const MAX_UDP_SIZE: usize = (1 << 16) - 1;
 const MAX_ITR: usize = 100; // Number of packets to handle per handler call
-
-#[cfg(test)]
-mod integration_tests;
-pub mod peer;
-
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-#[path = "kqueue.rs"]
-pub mod poll;
-
-#[cfg(target_os = "linux")]
-#[path = "epoll.rs"]
-pub mod poll;
-
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-#[path = "tun_darwin.rs"]
-pub mod tun;
-
-#[cfg(target_os = "linux")]
-#[path = "tun_linux.rs"]
-pub mod tun;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

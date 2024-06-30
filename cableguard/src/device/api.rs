@@ -28,144 +28,6 @@ use base64::encode as base64encode;
 use crate::noise::Rodt;
 const SOCK_DIR: &str = "/var/run/wireguard/";
 
-pub fn nearorg_rpc_tokens_for_owner(
-    xnet: &str, // Network that can be mainnet or testnet
-    id: &str, // Smart contract that controls the tokens
-    account_id: &str, // Smart contract that controls the tokens
-    method_name: &str, // Method name, for example "nft_tokens_for_owner"
-    args: &str,  // Account ID in a json string followwin the format "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}"
-) -> Result<Rodt, Box<dyn std::error::Error>> {
-    let client: Client = Client::new();
-    let url: String = "https://rpc".to_string() + &xnet + "near.org";
-    if xnet == "." {
-        tracing::debug!("Info: Blockchain Directory Network is mainnet (nearorg_rpc_tokens_for_owner)");
-    } else {
-        tracing::debug!("Info: Blockchain Directory Network is {} (nearorg_rpc_tokens_for_owner)",xnet);
-    }
-    let json_data: String = format!(
-        r#"{{
-            "jsonrpc": "2.0",
-            "id": "{}",
-            "method": "query",
-            "params": {{
-                "request_type": "call_function",
-                "finality": "optimistic",
-                "account_id": "{}",
-                "method_name": "{}",
-                "args_base64": "{}"
-            }}
-        }}"#,
-        id, account_id, method_name, base64::encode_config(args,URL_SAFE_NO_PAD)
-    );
-
-    let response: reqwest::blocking::Response = client
-        .post(&url)
-        .body(json_data)
-        .header("Content-Type", "application/json")
-        .send()?;
-
-    let response_text: String = response.text()?;
-
-    let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
-
-    let result_array = parsed_json["result"]["result"].as_array().ok_or("Result is not an array")?;
-
-    let result_bytes: Vec<u8> = result_array
-        .iter()
-        .map(|v| v.as_u64().unwrap() as u8)
-        .collect();
-
-    let result_slice: &[u8] = &result_bytes;
-
-    let result_string = core::str::from_utf8(&result_slice).unwrap();
-
-    let result_struct: Vec<Rodt> = match serde_json::from_str(result_string) {
-        Ok(value) => value,
-        Err(err) => {
-            tracing::trace!("Error: Invalid RODiT struct of owner {:?}",result_string);
-            // Handle the Error, such as logging or returning an Error
-            return Err(Box::new(err));
-        }
-    };
-
-    let mut result_iter = match serde_json::from_str::<Vec<Rodt>>(result_string) {
-        Ok(value) => value.into_iter(),
-        Err(err) => {
-            tracing::trace!("Error: Invalid RODiT iter of owner {}",result_string);
-            // Handle the Error, such as logging or returning an Error
-            return Err(Box::new(err));
-        }
-    };
-
-    if let Some(rodt) = result_iter.next() {
-        for rodt in result_struct {
-            tracing::info!("Info: token_id: {}", rodt.token_id);
-            tracing::info!("Info: owner_id: {}", rodt.owner_id);
-            tracing::info!("Info: issuername: {}", rodt.metadata.issuername);
-            tracing::info!("Info: description: {}", rodt.metadata.description);
-            tracing::info!("Info: notafter: {}", rodt.metadata.notafter);
-            tracing::info!("Info: notbefore: {}", rodt.metadata.notbefore);
-            tracing::info!("Info: listenport: {}", rodt.metadata.listenport);
-            tracing::info!("Info: cidrblock: {}", rodt.metadata.cidrblock);
-            tracing::info!("Info: dns: {}", rodt.metadata.dns);
-            // tracing::info!("Info: postup: {}", rodt.metadata.postup);
-            // tracing::info!("Info: postdown: {}", rodt.metadata.postdown);
-            tracing::info!("Info: allowedips: {}", rodt.metadata.allowedips);
-            tracing::info!("Info: subjectuniqueidentifierurl {}", rodt.metadata.subjectuniqueidentifierurl);
-            tracing::info!("Info: serviceproviderid: {}", rodt.metadata.serviceproviderid);
-            tracing::info!("Info: serviceprovidersignature: {}", rodt.metadata.serviceprovidersignature);
-            // tracing::info!("Info: kbpersecond: {}", rodt.metadata.kbpersecond);
-        }
-     // Return the first Rodt instance as the result
-        tracing::info!("Info: Rodt instance found");
-        return Ok(rodt.clone());
-     } else {
-     // If no Rodt instance is available, return an Error
-        return Err("Error: No Rodt instance found".into());
-    }
-}
-
-pub fn nearorg_rpc_state(
-    xnet: &str, // Network that can be mainnet or testnet
-    id: &str, // Smart contract that controls the tokens
-    account_id: &str, // Account ID in a json string like for example {"account_id":"ACCOUNTIDINBASE58"}
-) -> Result<(), Box<dyn std::error::Error>> {
-    let client: Client = Client::new();
-    let url: String = "https://rpc".to_string() + &xnet + "near.org";
-    if xnet == "." {
-        tracing::debug!("Info: Blockchain Directory Network is mainnet (nearorg_rpc_state)");
-    } else {
-        tracing::debug!("Info: Blockchain Directory Network is {} (nearorg_rpc_state)",xnet);
-    }
-    let json_data: String = format!(
-        r#"{{
-            "jsonrpc": "2.0",
-            "id": "{}",
-            "method": "query",
-            "params": {{
-                "request_type": "view_account",
-                "finality": "final",
-                "account_id": "{}"
-            }}
-        }}"#,
-        id, account_id
-    );
-
-    let response: reqwest::blocking::Response = client
-        .post(&url)
-        .body(json_data)
-        .header("Content-Type", "application/json")
-        .send()?;
-
-    let response_text: String = response.text()?; // Convert the ASCII array to the String type
-    let parsed_json: Value = serde_json::from_str(&response_text).unwrap(); // Deserialize the string into a JSON
-    if parsed_json.to_string().contains("does not exist while viewing") {
-        tracing::trace!("Error: The NEAR account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network");
-        return Err("Error: The NEAR account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network".into());
-    }
-    Ok(()) // This function returns the RODT in the parsed_json variable but we are not currently doing anything with it in the main function
-}
-
 fn produce_sock_dir() {
     let _ = create_dir(SOCK_DIR); // Create the directory if it does not exist
 
@@ -605,4 +467,142 @@ fn api_set_peer(
         cmd.clear();
     }
     0
+}
+
+pub fn nearorg_rpc_tokens_for_owner(
+    xnet: &str, // Network that can be mainnet or testnet
+    id: &str, // Smart contract that controls the tokens
+    account_id: &str, // Smart contract that controls the tokens
+    method_name: &str, // Method name, for example "nft_tokens_for_owner"
+    args: &str,  // Account ID in a json string followwin the format "{\"account_id\":\"".to_owned() + account_id + "\",\"from_index\":0,\"limit\":1}"
+) -> Result<Rodt, Box<dyn std::error::Error>> {
+    let client: Client = Client::new();
+    let url: String = "https://rpc".to_string() + &xnet + "near.org";
+    if xnet == "." {
+        tracing::debug!("Info: Blockchain Directory Network is mainnet (nearorg_rpc_tokens_for_owner)");
+    } else {
+        tracing::debug!("Info: Blockchain Directory Network is {} (nearorg_rpc_tokens_for_owner)",xnet);
+    }
+    let json_data: String = format!(
+        r#"{{
+            "jsonrpc": "2.0",
+            "id": "{}",
+            "method": "query",
+            "params": {{
+                "request_type": "call_function",
+                "finality": "optimistic",
+                "account_id": "{}",
+                "method_name": "{}",
+                "args_base64": "{}"
+            }}
+        }}"#,
+        id, account_id, method_name, base64::encode_config(args,URL_SAFE_NO_PAD)
+    );
+
+    let response: reqwest::blocking::Response = client
+        .post(&url)
+        .body(json_data)
+        .header("Content-Type", "application/json")
+        .send()?;
+
+    let response_text: String = response.text()?;
+
+    let parsed_json: Value = serde_json::from_str(&response_text).unwrap();
+
+    let result_array = parsed_json["result"]["result"].as_array().ok_or("Result is not an array")?;
+
+    let result_bytes: Vec<u8> = result_array
+        .iter()
+        .map(|v| v.as_u64().unwrap() as u8)
+        .collect();
+
+    let result_slice: &[u8] = &result_bytes;
+
+    let result_string = core::str::from_utf8(&result_slice).unwrap();
+
+    let result_struct: Vec<Rodt> = match serde_json::from_str(result_string) {
+        Ok(value) => value,
+        Err(err) => {
+            tracing::trace!("Error: Invalid RODiT struct of owner {:?}",result_string);
+            // Handle the Error, such as logging or returning an Error
+            return Err(Box::new(err));
+        }
+    };
+
+    let mut result_iter = match serde_json::from_str::<Vec<Rodt>>(result_string) {
+        Ok(value) => value.into_iter(),
+        Err(err) => {
+            tracing::trace!("Error: Invalid RODiT iter of owner {}",result_string);
+            // Handle the Error, such as logging or returning an Error
+            return Err(Box::new(err));
+        }
+    };
+
+    if let Some(rodt) = result_iter.next() {
+        for rodt in result_struct {
+            tracing::info!("Info: token_id: {}", rodt.token_id);
+            tracing::info!("Info: owner_id: {}", rodt.owner_id);
+            tracing::info!("Info: issuername: {}", rodt.metadata.issuername);
+            tracing::info!("Info: description: {}", rodt.metadata.description);
+            tracing::info!("Info: notafter: {}", rodt.metadata.notafter);
+            tracing::info!("Info: notbefore: {}", rodt.metadata.notbefore);
+            tracing::info!("Info: listenport: {}", rodt.metadata.listenport);
+            tracing::info!("Info: cidrblock: {}", rodt.metadata.cidrblock);
+            tracing::info!("Info: dns: {}", rodt.metadata.dns);
+            // tracing::info!("Info: postup: {}", rodt.metadata.postup);
+            // tracing::info!("Info: postdown: {}", rodt.metadata.postdown);
+            tracing::info!("Info: allowedips: {}", rodt.metadata.allowedips);
+            tracing::info!("Info: subjectuniqueidentifierurl {}", rodt.metadata.subjectuniqueidentifierurl);
+            tracing::info!("Info: serviceproviderid: {}", rodt.metadata.serviceproviderid);
+            tracing::info!("Info: serviceprovidersignature: {}", rodt.metadata.serviceprovidersignature);
+            // tracing::info!("Info: kbpersecond: {}", rodt.metadata.kbpersecond);
+        }
+     // Return the first Rodt instance as the result
+        tracing::info!("Info: Rodt instance found");
+        return Ok(rodt.clone());
+     } else {
+     // If no Rodt instance is available, return an Error
+        return Err("Error: No Rodt instance found".into());
+    }
+}
+
+pub fn nearorg_rpc_state(
+    xnet: &str, // Network that can be mainnet or testnet
+    id: &str, // Smart contract that controls the tokens
+    account_id: &str, // Account ID in a json string like for example {"account_id":"ACCOUNTIDINBASE58"}
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client: Client = Client::new();
+    let url: String = "https://rpc".to_string() + &xnet + "near.org";
+    if xnet == "." {
+        tracing::debug!("Info: Blockchain Directory Network is mainnet (nearorg_rpc_state)");
+    } else {
+        tracing::debug!("Info: Blockchain Directory Network is {} (nearorg_rpc_state)",xnet);
+    }
+    let json_data: String = format!(
+        r#"{{
+            "jsonrpc": "2.0",
+            "id": "{}",
+            "method": "query",
+            "params": {{
+                "request_type": "view_account",
+                "finality": "final",
+                "account_id": "{}"
+            }}
+        }}"#,
+        id, account_id
+    );
+
+    let response: reqwest::blocking::Response = client
+        .post(&url)
+        .body(json_data)
+        .header("Content-Type", "application/json")
+        .send()?;
+
+    let response_text: String = response.text()?; // Convert the ASCII array to the String type
+    let parsed_json: Value = serde_json::from_str(&response_text).unwrap(); // Deserialize the string into a JSON
+    if parsed_json.to_string().contains("does not exist while viewing") {
+        tracing::trace!("Error: The NEAR account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network");
+        return Err("Error: The NEAR account does not exist in the blockchain, it needs to be funded with at least 0.01 NEAR in this network".into());
+    }
+    Ok(()) // This function returns the RODT in the parsed_json variable but we are not currently doing anything with it in the main function
 }

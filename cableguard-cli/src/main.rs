@@ -3,11 +3,10 @@
 
 use clap::{Arg, Command};
 use cableguard::device::{DeviceConfig, DeviceHandle,ed2x_private_key_bytes,skx2pkx};
+use cableguard::device::drop_privileges::drop_privileges;
 use cableguard::noise::Rodt;
 use cableguard::device::api::{nearorg_rpc_tokens_for_owner,nearorg_rpc_state};
 use cableguard::noise::constants::{SMART_CONTRACT,BLOCKCHAIN_NETWORK};
-use cableguard::device::drop_privileges::drop_privileges;
-// use daemonize::Daemonize;
 use daemonize::{Daemonize, Outcome};
 use base64::encode as base64encode;
 use hex::{FromHex};
@@ -294,6 +293,8 @@ fn main() {
     device_handle.wait();
 }
 
+// May need it later
+/*
 fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
     let hex_string = hex_bytes.iter()
         .map(|byte| format!("{:02X}", byte))
@@ -303,3 +304,4 @@ fn hex_to_base64(hex_bytes: &[u8; 32]) -> String {
     let bytes = Vec::from_hex(&hex_string).expect("Error: Invalid Hex string");
     base64encode(&bytes)
 }
+*/

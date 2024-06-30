@@ -1,9 +1,6 @@
 #[derive(Debug)]
 pub(crate) struct KeyBytes(pub [u8; 32]);
 
-// CG2: I can't see how this improves the handling for keys,
-// strong candidate for removal
-// Also I need to make sure that all conversions are reliable and consistent
 pub (crate) fn keybytes_to_hex_string(key_bytes: &KeyBytes) -> String {
     let bytes = &key_bytes.0;
     let hex_digits: Vec<String> = bytes.iter()
@@ -12,10 +9,11 @@ pub (crate) fn keybytes_to_hex_string(key_bytes: &KeyBytes) -> String {
     hex_digits.join("")
 }
 
+// CG: I can't see how this improves the handling for keys,
 impl std::str::FromStr for KeyBytes {
     type Err = &'static str;
 
-    // From Hex or base64 to KeyBytes ~ [u8; 32] 
+    // From Hex or base64 to KeyBytes ~ [u8; 32]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut internal = [0u8; 32];
 
@@ -43,3 +41,5 @@ impl std::str::FromStr for KeyBytes {
         Ok(KeyBytes(internal))
     }
 }
+
+
