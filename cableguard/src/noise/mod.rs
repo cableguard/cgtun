@@ -56,7 +56,7 @@ const KEY_LEN: usize = 32;
 
 pub mod constants {
     // Define the smart contract account (the Issuer) and the blockchain environment and 'global constants'
-    pub const SMART_CONTRACT: &str = "cableguard-org.testnet";
+    pub const SMART_CONTRACT: &str = "09313-cableguard-org.testnet";
     pub const BLOCKCHAIN_NETWORK: &str = ".testnet."; // IMPORTANT: Values here must be either "testnet." for tesnet or "." for mainnet;
 }
 
